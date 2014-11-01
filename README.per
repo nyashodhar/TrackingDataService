@@ -1,0 +1,23 @@
+
+To build:
+
+  mvn clean package spring-boot:repackage
+
+After that find build in target folder
+
+To run it:
+
+  java -jar target/tracking-data-service-0.1.0.jar  
+
+      or
+  
+  mvn spring-boot:run
+
+Example request:
+
+  curl -v -X GET localhost:9000/hello-world
+
+Kairos db doc:
+
+  https://github.com/kairosdb/kairosdb
+  https://github.com/kairosdb/kairosdb-client
