@@ -1,7 +1,6 @@
 package com.petpal.tracking.integration;
 
 import com.petpal.tracking.TrackingDataServiceConfiguration;
-import com.petpal.tracking.data.TrackingData;
 import com.petpal.tracking.util.JSONUtil;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,13 +20,17 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
+import java.util.TreeMap;
+import java.util.UUID;
 
 
 /**
@@ -47,9 +50,6 @@ public class TrackingDataControllerIntegrationTest {
     private static final String TRACKED_ENTITY_ID = "c45c4cd8-06fd-41be-aa0c-76a5418d3021";
     private static final String TRACKING_DEVICE_ID = "263e6c54-69c9-45f5-853c-b5f4420ceb5e";
 
-    //@Autowired   // 5
-    //CharacterRepository repository;
-
     @Value("${local.server.port}")   // 6
     int port;
 
@@ -61,7 +61,7 @@ public class TrackingDataControllerIntegrationTest {
     }
 
     @Test
-    public void test_noop() {
+    public void test_timeZoneStuff() {
 
         TimeZone timeZonePDT = TimeZone.getTimeZone("America/Los_Angeles");
         TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
@@ -109,66 +109,30 @@ public class TrackingDataControllerIntegrationTest {
         System.out.println("printUTCForCalendar: calendar.getTime() = " + calendar.getTime() + ", utc millis = " + calendar.getTimeInMillis());
     }
 
-    //@Test
+    @Test
     public void test_boundaryTest() {
 
-        //private static final String TRACKED_ENTITY_ID = "c45c4cd8-06fd-41be-aa0c-76a5418d3021";
-        //private static final String TRACKING_DEVICE_ID = "263e6c54-69c9-45f5-853c-b5f4420ceb5e";
+        TestTrackingData testTrackingData = new TestTrackingData();
+        testTrackingData.setTrackedEntityId("c45c4cd8-06fd-41be-aa0c-76a5418d3025");
+        testTrackingData.setTrackingDeviceId("263e6c54-69c9-45f5-853c-b5f4420ceb5i");
 
-        TrackingData trackingData = new TrackingData();
-        trackingData.setTrackedEntityId("c45c4cd8-06fd-41be-aa0c-76a5418d3023");
-        trackingData.setTrackingDeviceId("263e6c54-69c9-45f5-853c-b5f4420ceb5g");
+        Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
 
         // Data point 1: May 29th, 2014, PDT - 1401346800488
-
-        Map<Long, Long> walkingData = new HashMap<Long, Long>();
-        walkingData.put(1401346800488L, 3L);
-        Map<Long, Long> runningData = new HashMap<Long, Long>();
-        runningData.put(1401346800488L, 3L);
-        Map<Long, Long> sleepingData = new HashMap<Long, Long>();
-        sleepingData.put(1401346800488L, 3L);
-        Map<Long, Long> restingData = new HashMap<Long, Long>();
-        restingData.put(1401346800488L, 3L);
+        dataPoints.put(1401346800488L, 3L);
 
         // Data point 2: July 2nd, 2014, PDT - 1404284400598
+        dataPoints.put(1404284400598L, 2L);
 
-        walkingData.put(1404284400598L, 2L);
-        runningData.put(1404284400598L, 2L);
-        sleepingData.put(1404284400598L, 2L);
-        restingData.put(1404284400598L, 2L);
+        List<TestTrackingMetric> metrics = new ArrayList<TestTrackingMetric>();
+        metrics.add(TestTrackingMetric.WALKINGSTEPS);
+        metrics.add(TestTrackingMetric.RUNNINGSTEPS);
+        metrics.add(TestTrackingMetric.SLEEPINGSECONDS);
+        metrics.add(TestTrackingMetric.RESTINGSECONDS);
 
-        trackingData.setWalkingData(walkingData);
-        trackingData.setRunningData(runningData);
-        trackingData.setSleepingData(sleepingData);
-        trackingData.setRestingData(restingData);
+        addDataPointForMetrics(testTrackingData, metrics, dataPoints);
 
-        String json = JSONUtil.convertToString(trackingData);
-
-        System.out.println("*** Tracking data to string: " + trackingData);
-        System.out.println("*** Tracking data json: " + json);
-
-        RestTemplate restTemplate = new RestTemplate();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setAccept(Arrays.asList(MediaType.ALL.ALL.APPLICATION_JSON));
-        headers.setContentType(MediaType.ALL.APPLICATION_JSON);
-
-        HttpEntity<String> entity = new HttpEntity<String>(json, headers);
-        String url = "http://localhost:" + port + "/tracking";
-
-        try {
-            System.out.println("*** HelloWorldControllerIntegrationTest.test_boundaryTest(): doing post");
-            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-            System.out.println("*** HelloWorldControllerIntegrationTest.test_boundaryTest(): response = " + response);
-        } catch(RestClientException e) {
-            if(e instanceof HttpServerErrorException) {
-                System.out.println("** HelloWorldControllerIntegrationTest.test_boundaryTest(): Unexpected server error: " + ((HttpServerErrorException) e).getStatusCode());
-            } else if(e instanceof HttpClientErrorException) {
-                System.out.println("** HelloWorldControllerIntegrationTest.test_boundaryTest(): Unexpected client error: " + ((HttpClientErrorException) e).getStatusCode());
-            } else {
-                System.out.println("** HelloWorldControllerIntegrationTest.test_boundaryTest(): Unexpected error: " + ((HttpClientErrorException) e).getStatusCode());
-            }
-        }
+        ResponseEntity<String> response = postMetrics(testTrackingData);
     }
 
 
@@ -176,11 +140,27 @@ public class TrackingDataControllerIntegrationTest {
     public void test_createTrackingData() {
         System.out.println("*** HelloWorldControllerIntegrationTest.test_hello(): port = " + port);
 
-        //TrackingData trackingData = generateTrackingData(5, 80, 200, 60, 60);
-        TrackingData trackingData = generateTrackingData(525600, 80, 200, 60, 60);
-        String json = JSONUtil.convertToString(trackingData);
+        String trackedEntityId = createTrackedEntityId();
+        String trackingDeviceId = createTrackingDeviceId();
 
-        System.out.println("*** Tracking data to string: " + trackingData);
+        // 5 minutes..
+        //TrackingData trackingData = generateTrackingData(5, 80, 200, 60, 60);
+
+        // 1 year..
+        TestTrackingData testTrackingData = generateRandomTrackingData(trackedEntityId, trackingDeviceId, 525600, 80, 200, 60, 60);
+        ResponseEntity<String> responseData = postMetrics(testTrackingData);
+    }
+
+
+    //
+    //
+    //
+
+
+    private ResponseEntity<String> postMetrics(TestTrackingData testTrackingData) {
+
+        String json = JSONUtil.convertToString(testTrackingData);
+        System.out.println("*** Tracking data to string: " + testTrackingData);
         System.out.println("*** Tracking data json: " + json);
 
         RestTemplate restTemplate = new RestTemplate();
@@ -197,6 +177,7 @@ public class TrackingDataControllerIntegrationTest {
             //ResponseEntity<String> response = restTemplate.postForEntity("http://localhost:" + port + "/tracking", json, String.class);
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
             System.out.println("*** HelloWorldControllerIntegrationTest.test_hello(): response = " + response);
+            return response;
         } catch(RestClientException e) {
             if(e instanceof HttpServerErrorException) {
                 System.out.println("** HelloWorldControllerIntegrationTest.test_hello(): Unexpected server error: " + ((HttpServerErrorException) e).getStatusCode());
@@ -205,38 +186,57 @@ public class TrackingDataControllerIntegrationTest {
             } else {
                 System.out.println("** HelloWorldControllerIntegrationTest.test_hello(): Unexpected error: " + ((HttpClientErrorException) e).getStatusCode());
             }
+            throw e;
         }
     }
 
 
-    private TrackingData generateTrackingData(
+    private void addDataPointForMetrics(TestTrackingData testTrackingData, List<TestTrackingMetric> metrics, Map<Long, Long> dataPoints) {
+
+        for(TestTrackingMetric metric : metrics) {
+
+            if(metric == TestTrackingMetric.WALKINGSTEPS) {
+                testTrackingData.setWalkingData(dataPoints);
+            } else if(metric == TestTrackingMetric.RUNNINGSTEPS) {
+                testTrackingData.setRunningData(dataPoints);
+            } else if(metric == TestTrackingMetric.SLEEPINGSECONDS) {
+                testTrackingData.setSleepingData(dataPoints);
+            } else if(metric == TestTrackingMetric.RESTINGSECONDS) {
+                testTrackingData.setRestingData(dataPoints);
+            }
+        }
+    }
+
+    private TestTrackingData generateRandomTrackingData(
+            String trackedEntityId,
+            String trackingDeviceId,
             int minutesIntoPast,
             int maxWalkingStepsPerMinute, int maxRunningStepsPerMinute,
             int maxSleepSecondsPerMinute, int maxRestSeconds) {
 
-        TrackingData trackingData = new TrackingData();
-        trackingData.setTrackedEntityId(createTrackedEntityId());
-        trackingData.setTrackingDeviceId(createTrackingDeviceId());
-        addTimeData(trackingData, minutesIntoPast,
+        TestTrackingData testTrackingData = new TestTrackingData();
+        testTrackingData.setTrackedEntityId(trackedEntityId);
+        testTrackingData.setTrackingDeviceId(trackingDeviceId);
+        addTimeData(testTrackingData, minutesIntoPast,
             maxWalkingStepsPerMinute, maxRunningStepsPerMinute,
             maxSleepSecondsPerMinute, maxRestSeconds);
 
-        return trackingData;
+        return testTrackingData;
     }
 
-    private void addTimeData(TrackingData trackingData, int minutesIntoPast,
-                                 int maxWalkingStepsPerBucket, int maxRunningStepsPerMinute,
-                                 int maxSleepSecondsPerMinute, int maxRestSecondsPerMinute) {
+    private void addTimeData(TestTrackingData testTrackingData,
+                             int minutesIntoPast, int maxWalkingStepsPerBucket, int maxRunningStepsPerMinute,
+                             int maxSleepSecondsPerMinute, int maxRestSecondsPerMinute) {
 
         Map<Long, Long> walkingData = generateTimeData(minutesIntoPast, maxWalkingStepsPerBucket);
         Map<Long, Long> runningData = generateTimeData(minutesIntoPast, maxRunningStepsPerMinute);
         Map<Long, Long> sleepingData = generateTimeData(minutesIntoPast, maxSleepSecondsPerMinute);
         Map<Long, Long> restingData = generateTimeData(minutesIntoPast, maxRestSecondsPerMinute);
 
-        trackingData.setWalkingData(walkingData);
-        trackingData.setRunningData(runningData);
-        trackingData.setSleepingData(sleepingData);
-        trackingData.setRestingData(restingData);
+        testTrackingData.setWalkingData(walkingData);
+        testTrackingData.setRunningData(runningData);
+        testTrackingData.setSleepingData(sleepingData);
+        testTrackingData.setRestingData(restingData);
     }
 
     private Map<Long, Long> generateTimeData(int minutesIntoPast, int maxRandomValueForMetric) {
@@ -259,13 +259,13 @@ public class TrackingDataControllerIntegrationTest {
     }
 
     private static String createTrackedEntityId() {
-        // UUID.randomUUID().toString()
-        return TRACKED_ENTITY_ID;
+        return UUID.randomUUID().toString();
+        //return TRACKED_ENTITY_ID;
     }
 
     private static String createTrackingDeviceId() {
-        // UUID.randomUUID().toString()
-        return TRACKING_DEVICE_ID;
+        return UUID.randomUUID().toString();
+        //return TRACKING_DEVICE_ID;
     }
 
 }
