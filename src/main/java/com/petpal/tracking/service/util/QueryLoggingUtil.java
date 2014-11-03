@@ -1,6 +1,7 @@
 package com.petpal.tracking.service.util;
 
 import com.petpal.tracking.service.TrackingMetric;
+import com.petpal.tracking.service.TrackingTag;
 import org.apache.log4j.Logger;
 import org.kairosdb.client.builder.TimeUnit;
 
@@ -35,7 +36,7 @@ public class QueryLoggingUtil {
         }
     }
 
-    public static void logTimeSeriesQueryDescription(Map<String, String> tags,
+    public static void logTimeSeriesQueryDescription(Map<TrackingTag, String> tags,
                                                List<TrackingMetric> trackingMetrics,
                                                int beginUnitsIntoPast,
                                                Integer endUnitsIntoPast,
@@ -55,7 +56,7 @@ public class QueryLoggingUtil {
                 resultBucketMultiplier + " " + resultTimeUnit + ".");
     }
 
-    public static void logTimeSeriesQueryDescription(Map<String, String> tags,
+    public static void logTimeSeriesQueryDescription(Map<TrackingTag, String> tags,
                                                List<TrackingMetric> trackingMetrics,
                                                Long utcBegin,
                                                Long utcEnd,

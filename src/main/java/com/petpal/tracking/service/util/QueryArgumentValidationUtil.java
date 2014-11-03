@@ -1,6 +1,7 @@
 package com.petpal.tracking.service.util;
 
 import com.petpal.tracking.service.TrackingMetric;
+import com.petpal.tracking.service.TrackingTag;
 import org.kairosdb.client.builder.TimeUnit;
 import org.springframework.util.CollectionUtils;
 
@@ -12,7 +13,7 @@ import java.util.Map;
  */
 public class QueryArgumentValidationUtil {
 
-    public static void validateMetricsQueryParameters(Map<String, String> tags,
+    public static void validateMetricsQueryParameters(Map<TrackingTag, String> tags,
                                                 List<TrackingMetric> trackingMetrics,
                                                 int beginUnitsIntoPast,
                                                 Integer endUnitsIntoPast,
@@ -59,7 +60,7 @@ public class QueryArgumentValidationUtil {
     }
 
 
-    public static void validateMetricsQueryParameters(Map<String, String> tags,
+    public static void validateMetricsQueryParameters(Map<TrackingTag, String> tags,
                                                 List<TrackingMetric> trackingMetrics,
                                                 Long utcBegin,
                                                 Long utcEnd,

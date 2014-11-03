@@ -3,6 +3,7 @@ package com.petpal.tracking.web.controllers;
 import com.petpal.tracking.data.TrackingData;
 import com.petpal.tracking.service.TrackingDataService;
 import com.petpal.tracking.service.TrackingMetric;
+import com.petpal.tracking.service.TrackingTag;
 import com.petpal.tracking.web.editors.DateEditor;
 import com.petpal.tracking.web.editors.TrackingMetricsSet;
 import com.petpal.tracking.web.editors.TrackingMetricsSetEditor;
@@ -111,9 +112,9 @@ public class TrackingDataController {
         logger.info("getMetricsForDeviceRelativeTiming(): trackingMetricsSet = " + trackingMetricsSet);
         logger.info("getMetricsForDeviceRelativeTiming(): verboseResponse = " + verboseResponse);
 
-        Map<String, String> tags = new HashMap<String, String>();
+        Map<TrackingTag, String> tags = new HashMap<TrackingTag, String>();
         //tags.put(TrackingDataService.TAG_TRACKED_ENTITY, "c45c4cd8-06fd-41be-aa0c-76a5418d3021");
-        tags.put(TrackingDataService.TAG_TRACKING_DEVICE, deviceId);
+        tags.put(TrackingTag.TRACKINGDEVICE, deviceId);
 
         //
         // If the request is itemizing the metrics to query for, only pass those along.
@@ -190,9 +191,9 @@ public class TrackingDataController {
 
         //return new HashMap<TrackingMetric, Map<Long, Long>>();
 
-        Map<String, String> tags = new HashMap<String, String>();
+        Map<TrackingTag, String> tags = new HashMap<TrackingTag, String>();
         //tags.put(TrackingDataService.TAG_TRACKED_ENTITY, "c45c4cd8-06fd-41be-aa0c-76a5418d3021");
-        tags.put(TrackingDataService.TAG_TRACKING_DEVICE, deviceId);
+        tags.put(TrackingTag.TRACKINGDEVICE, deviceId);
 
         //
         // If the request is itemizing the metrics to query for, only pass those along.

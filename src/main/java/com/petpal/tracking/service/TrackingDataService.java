@@ -40,10 +40,6 @@ import java.util.TreeMap;
 @Component
 public class TrackingDataService {
 
-    // TAG NAMES
-    public static final String TAG_TRACKED_ENTITY = "trackedentity";
-    public static final String TAG_TRACKING_DEVICE = "trackingdevice";
-
     private Logger logger = Logger.getLogger(this.getClass());
 
     @Value("${trackingService.kairosDBHost}")
@@ -60,9 +56,9 @@ public class TrackingDataService {
         logger.info("storeTrackingData(): trackingData=" + trackingData);
         logger.info("storeTrackingData(): HELLO THERE");
 
-        Map<String, String> tags = new HashMap<String, String>();
-        tags.put(TAG_TRACKED_ENTITY, trackingData.getTrackedEntityId());
-        tags.put(TAG_TRACKING_DEVICE, trackingData.getTrackingDeviceId());
+        Map<TrackingTag, String> tags = new HashMap<TrackingTag, String>();
+        tags.put(TrackingTag.TRACKEDENTITY, trackingData.getTrackedEntityId());
+        tags.put(TrackingTag.TRACKINGDEVICE, trackingData.getTrackingDeviceId());
 
         MetricBuilder metricBuilder = MetricBuilder.getInstance();
 
@@ -77,7 +73,7 @@ public class TrackingDataService {
 
 
     public Map<TrackingMetric, Map<Long, Long>> getMetricsForAbsoluteRange(
-            Map<String, String> tags,
+            Map<TrackingTag, String> tags,
             List<TrackingMetric> trackingMetrics,
             Long utcBegin,
             Long utcEnd,
@@ -122,7 +118,7 @@ public class TrackingDataService {
     }
 
 
-    public Map<TrackingMetric, Map<Long, Long>> getMetrics(Map<String, String> tags,
+    public Map<TrackingMetric, Map<Long, Long>> getMetrics(Map<TrackingTag, String> tags,
                            List<TrackingMetric> trackingMetrics,
                            int beginUnitsIntoPast,
                            Integer endUnitsIntoPast,
@@ -163,12 +159,12 @@ public class TrackingDataService {
     }
 
     private void addMetricsAndAggregator(QueryBuilder queryBuilder, List<TrackingMetric> trackingMetrics,
-                                         TimeUnit resultBucketSize, int resultBucketMultiplier, Map<String, String> tags) {
+                                         TimeUnit resultBucketSize, int resultBucketMultiplier, Map<TrackingTag, String> tags) {
         for(TrackingMetric trackingMetric : trackingMetrics) {
             QueryMetric queryMetric = queryBuilder.addMetric(trackingMetric.toString());
             queryMetric.addAggregator(AggregatorFactory.createSumAggregator(resultBucketMultiplier, resultBucketSize));
-            for(String tag : tags.keySet()) {
-                queryMetric.addTag(tag, tags.get(tag));
+            for(TrackingTag tag : tags.keySet()) {
+                queryMetric.addTag(tag.toString(), tags.get(tag));
             }
         }
     }
@@ -371,11 +367,16 @@ public class TrackingDataService {
     }
 
 
-    private void addMetricsToBuilder(MetricBuilder metricBuilder, Map<Long, Long> timeStampValueMap, TrackingMetric trackingMetric, Map<String, String> tags) {
+    private void addMetricsToBuilder(MetricBuilder metricBuilder, Map<Long, Long> timeStampValueMap, TrackingMetric trackingMetric, Map<TrackingTag, String> tags) {
+
+        if(timeStampValueMap.isEmpty()) {
+            logger.info("Metric " + trackingMetric + ": no metrics provided");
+            return;
+        }
 
         Metric metric = metricBuilder.addMetric(trackingMetric.toString());
-        for(String tagName : tags.keySet()) {
-            metric.addTag(tagName, tags.get(tagName));
+        for(TrackingTag tag : tags.keySet()) {
+            metric.addTag(tag.toString(), tags.get(tag));
         }
 
         for(long timeStamp : timeStampValueMap.keySet()) {
@@ -383,7 +384,7 @@ public class TrackingDataService {
             metric.addDataPoint(timeStamp, metricValue);
         }
 
-        logger.info("Metric " + trackingMetric + " prepped: timeStampValueMap = " + timeStampValueMap + ", tags = " + tags);
+        logger.info("Metric " + trackingMetric + " prepped: " + timeStampValueMap.size() + " data points, tags = " + tags);
     }
 
     @PostConstruct
