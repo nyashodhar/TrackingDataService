@@ -1,10 +1,12 @@
 package com.petpal.tracking.integration;
 
 import com.petpal.tracking.TrackingDataServiceConfiguration;
+import com.petpal.tracking.util.BucketCalculator;
 import com.petpal.tracking.util.JSONUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.kairosdb.client.builder.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.IntegrationTest;
 import org.springframework.boot.test.SpringApplicationConfiguration;
@@ -23,7 +25,6 @@ import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,74 +48,37 @@ import java.util.UUID;
 @IntegrationTest({"server.port:0","management.port:0"})   // Will start the server on a random port
 public class TrackingDataControllerIntegrationTest {
 
-    private static final String TRACKED_ENTITY_ID = "c45c4cd8-06fd-41be-aa0c-76a5418d3021";
-    private static final String TRACKING_DEVICE_ID = "263e6c54-69c9-45f5-853c-b5f4420ceb5e";
-
-    @Value("${local.server.port}")   // 6
+    @Value("${local.server.port}")
     int port;
 
     @Before
     public void setUp() {
-
-        System.out.println("*** HelloWorldControllerIntegrationTest.setup(): port = " + port);
-
+        System.out.println("*** TrackingDataControllerIntegrationTest.setup(): port = " + port);
     }
 
     @Test
     public void test_timeZoneStuff() {
 
         TimeZone timeZonePDT = TimeZone.getTimeZone("America/Los_Angeles");
-        TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
+        //TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
 
-        /*
-        Calendar calendar1 = new GregorianCalendar();
-        calendar1.setTimeZone(timeZonePDT);
-        calendar1.set(2014, Calendar.MAY, 1, 0, 0, 0);
-        System.out.println("May 1st 2014 PDT, Midnight: Millis: " + calendar1.getTimeInMillis());
-        System.out.println("May 1st 2014 PDT, Midnight: Date: " + calendar1.getTime());
-
-        Calendar calendar2 = new GregorianCalendar();
-        calendar2.setTimeZone(timeZonePDT);
-        calendar2.set(2014, Calendar.JUNE, 1, 0, 0, 0);
-        System.out.println("June 31st 2014 PDT, Midnight: UTC Millis: " + calendar2.getTimeInMillis());
-        System.out.println("June 31st 2014 PDT, Midnight: Date: " + calendar2.getTime());
-
-        calendar2.setTimeZone(timeZoneUTC);
-
-        //
-        // NOTE: Just changing the timezone doesn't make the UTC millis recompute to happen based
-        // on the specified time. The old computation follows the previously spec computation with
-        // outcome derived from whatever timezone was set at that time. So we need to do another
-        // time set to get the UTC millis to change...
-        //
-
-        calendar2.set(2014, Calendar.OCTOBER, 31, 0, 0, 0);
-        System.out.println("Oct 31st 2014 UTC, Midnight: UTC Millis: " + calendar2.getTimeInMillis());
-        System.out.println("Oct 31st 2014 UTC, Midnight: Date: " + calendar2.getTime());
-        */
-
-        printUTCForCalendar(2014, Calendar.MAY, 29, 0, 0, 0, timeZonePDT);
-        printUTCForCalendar(2014, Calendar.JUNE, 2, 0, 0, 0, timeZonePDT);
-        printUTCForCalendar(2014, Calendar.JULY, 2, 0, 0, 0, timeZonePDT);
-        printUTCForCalendar(2014, Calendar.MAY, 1, 0, 0, 0, timeZonePDT);
-        printUTCForCalendar(2014, Calendar.JULY, 1, 0, 0, 0, timeZonePDT);
-        printUTCForCalendar(2014, Calendar.AUGUST, 1, 0, 0, 0, timeZonePDT);
-    }
-
-    private void printUTCForCalendar(int year, int month, int date, int hour, int minute, int second, TimeZone timeZone) {
-
-        Calendar calendar = new GregorianCalendar();
-        calendar.setTimeZone(timeZone);
-        calendar.set(year, month, date, hour, minute, second);
-        System.out.println("printUTCForCalendar: calendar.getTime() = " + calendar.getTime() + ", utc millis = " + calendar.getTimeInMillis());
+        BucketCalculator.printUTCForCalendar(2014, Calendar.MAY, 29, 0, 0, 0, timeZonePDT);
+        BucketCalculator.printUTCForCalendar(2014, Calendar.JUNE, 2, 0, 0, 0, timeZonePDT);
+        BucketCalculator.printUTCForCalendar(2014, Calendar.JULY, 2, 0, 0, 0, timeZonePDT);
+        BucketCalculator.printUTCForCalendar(2014, Calendar.MAY, 1, 0, 0, 0, timeZonePDT);
+        BucketCalculator.printUTCForCalendar(2014, Calendar.JULY, 1, 0, 0, 0, timeZonePDT);
+        BucketCalculator.printUTCForCalendar(2014, Calendar.AUGUST, 1, 0, 0, 0, timeZonePDT);
     }
 
     @Test
     public void test_boundaryTest() {
 
+        String trackedEntityId = "c45c4cd8-06fd-41be-aa0c-76a5418d3027";
+        String trackingDeviceId = "263e6c54-69c9-45f5-853c-b5f4420ceb5k";
+
         TestTrackingData testTrackingData = new TestTrackingData();
-        testTrackingData.setTrackedEntityId("c45c4cd8-06fd-41be-aa0c-76a5418d3025");
-        testTrackingData.setTrackingDeviceId("263e6c54-69c9-45f5-853c-b5f4420ceb5i");
+        testTrackingData.setTrackedEntityId(trackedEntityId);
+        testTrackingData.setTrackingDeviceId(trackingDeviceId);
 
         Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
 
@@ -132,13 +96,21 @@ public class TrackingDataControllerIntegrationTest {
 
         addDataPointForMetrics(testTrackingData, metrics, dataPoints);
 
-        ResponseEntity<String> response = postMetrics(testTrackingData);
+        ResponseEntity<String> postResponse = postMetrics(testTrackingData);
+
+        ResponseEntity<String> getResponse = getMetrics(
+                trackingDeviceId,
+                1398927600141L,
+                null,
+                TimeUnit.MONTHS,
+                1,
+                null,
+                null);
     }
 
 
     //@Test
     public void test_createTrackingData() {
-        System.out.println("*** HelloWorldControllerIntegrationTest.test_hello(): port = " + port);
 
         String trackedEntityId = createTrackedEntityId();
         String trackingDeviceId = createTrackingDeviceId();
@@ -153,9 +125,74 @@ public class TrackingDataControllerIntegrationTest {
 
 
     //
-    //
+    // Utility methods
     //
 
+
+    private ResponseEntity<String> getMetrics(
+            String trackingDeviceId,
+            long utcBegin,
+            Long utcEnd,
+            TimeUnit resultBucketSize,
+            int resultBucketMultiplier,
+            List<TestTrackingMetric> trackingMetrics,
+            Boolean verboseResponse) {
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.ALL.APPLICATION_JSON));
+        headers.setContentType(MediaType.ALL.APPLICATION_JSON);
+
+        HttpEntity<String> entity = new HttpEntity<String>(headers);
+
+        String url = "http://localhost:" + port + "/metrics/absolute/device/{deviceId}?utcBegin={utcBegin}&resultBucketSize={resultBucketSize}&resultBucketMultiplier={resultBucketMultiplier}";
+
+        // Conditionally add optional query/url parameters
+
+        if(utcEnd != null) {
+            url = url + "&utcEnd={utcEnd}";
+        }
+
+        if(trackingMetrics != null) {
+            url = url + "&trackingMetrics={trackingMetrics}";
+        }
+
+        if(verboseResponse != null) {
+            url = url + "&verboseResponse={verboseResponse}";
+        }
+
+        //
+        // EXAMPLE:
+        //
+        //    curl -v -X GET "http://localhost:9000/metrics/absolute/device/263e6c54-69c9-45f5-853c-b5f4420ceb5i?utcBegin=1398927600141&utcEnd=1406876400141&resultBucketSize=MONTHS&resultBucketMultiplier=1&trackingMetrics=walkingsteps,runningsteps&verboseResponse=true" -H "Accept: application/json" -H "Content-Type: application/json"
+        //
+
+        try {
+            System.out.println("*** getMetrics(): doing GET");
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class,
+                    trackingDeviceId,
+                    utcBegin,
+                    resultBucketSize.toString(),
+                    resultBucketMultiplier,
+                    utcEnd,
+                    trackingMetricsToCommaSeparated(trackingMetrics),
+                    verboseResponse);
+            System.out.println("** getMetrics(): response = " + response.getBody());
+            return response;
+        } catch(RestClientException e) {
+            if(e instanceof HttpServerErrorException) {
+                System.out.println("** getMetrics(): Unexpected server error: " + ((HttpServerErrorException) e).getStatusCode());
+            } else if(e instanceof HttpClientErrorException) {
+                System.out.println("** getMetrics(): Unexpected client error: " + ((HttpClientErrorException) e).getStatusCode());
+            } else {
+                System.out.println("** getMetrics(): Unexpected error: " + ((HttpClientErrorException) e).getStatusCode());
+            }
+            throw e;
+        }
+
+
+    }
 
     private ResponseEntity<String> postMetrics(TestTrackingData testTrackingData) {
 
@@ -173,18 +210,18 @@ public class TrackingDataControllerIntegrationTest {
         String url = "http://localhost:" + port + "/tracking";
 
         try {
-            System.out.println("*** HelloWorldControllerIntegrationTest.test_hello(): doing post");
+            System.out.println("*** postMetrics(): doing post");
             //ResponseEntity<String> response = restTemplate.postForEntity("http://localhost:" + port + "/tracking", json, String.class);
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-            System.out.println("*** HelloWorldControllerIntegrationTest.test_hello(): response = " + response);
+            System.out.println("*** postMetrics(): response = " + response);
             return response;
         } catch(RestClientException e) {
             if(e instanceof HttpServerErrorException) {
-                System.out.println("** HelloWorldControllerIntegrationTest.test_hello(): Unexpected server error: " + ((HttpServerErrorException) e).getStatusCode());
+                System.out.println("** postMetrics(): Unexpected server error: " + ((HttpServerErrorException) e).getStatusCode());
             } else if(e instanceof HttpClientErrorException) {
-                System.out.println("** HelloWorldControllerIntegrationTest.test_hello(): Unexpected client error: " + ((HttpClientErrorException) e).getStatusCode());
+                System.out.println("** postMetrics(): Unexpected client error: " + ((HttpClientErrorException) e).getStatusCode());
             } else {
-                System.out.println("** HelloWorldControllerIntegrationTest.test_hello(): Unexpected error: " + ((HttpClientErrorException) e).getStatusCode());
+                System.out.println("** postMetrics(): Unexpected error: " + ((HttpClientErrorException) e).getStatusCode());
             }
             throw e;
         }
@@ -268,4 +305,19 @@ public class TrackingDataControllerIntegrationTest {
         //return TRACKING_DEVICE_ID;
     }
 
+    private String trackingMetricsToCommaSeparated(List<TestTrackingMetric> trackingMetrics) {
+
+        if(trackingMetrics == null) {
+            return null;
+        }
+
+        StringBuilder stringBuilder = new StringBuilder();
+        for(TestTrackingMetric testTrackingMetric : trackingMetrics) {
+            if(stringBuilder.length() > 0) {
+                stringBuilder.append(",");
+            }
+            stringBuilder.append(testTrackingMetric.toString());
+        }
+        return stringBuilder.toString();
+    }
 }
