@@ -12,8 +12,4 @@ public enum TrackingMetric {
     RUNNINGSTEPS,
     SLEEPINGSECONDS,
     RESTINGSECONDS;
-
-    public String toString() {
-        return name().toLowerCase();
-    }
 }
