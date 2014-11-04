@@ -8,8 +8,4 @@ public enum TrackingTag {
 
     TRACKEDENTITY,
     TRACKINGDEVICE;
-
-    public String toString() {
-        return name().toLowerCase();
-    }
 }

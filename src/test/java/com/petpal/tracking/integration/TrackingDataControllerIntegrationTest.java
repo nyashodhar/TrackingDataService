@@ -1,8 +1,10 @@
 package com.petpal.tracking.integration;
 
 import com.petpal.tracking.TrackingDataServiceConfiguration;
+import com.petpal.tracking.service.TrackingMetric;
 import com.petpal.tracking.util.BucketCalculator;
 import com.petpal.tracking.util.JSONUtil;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,6 +12,7 @@ import org.kairosdb.client.builder.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.IntegrationTest;
 import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -48,6 +51,8 @@ import java.util.UUID;
 @IntegrationTest({"server.port:0","management.port:0"})   // Will start the server on a random port
 public class TrackingDataControllerIntegrationTest {
 
+    private static final Long KAIROS_WRITE_DELAY = 1000L;
+
     @Value("${local.server.port}")
     int port;
 
@@ -56,7 +61,7 @@ public class TrackingDataControllerIntegrationTest {
         System.out.println("*** TrackingDataControllerIntegrationTest.setup(): port = " + port);
     }
 
-    @Test
+    //@Test
     public void test_timeZoneStuff() {
 
         TimeZone timeZonePDT = TimeZone.getTimeZone("America/Los_Angeles");
@@ -71,10 +76,10 @@ public class TrackingDataControllerIntegrationTest {
     }
 
     @Test
-    public void test_boundaryTest() {
+    public void test_get_metrics_boundary_test_empty_bucket_excluded() {
 
-        String trackedEntityId = "c45c4cd8-06fd-41be-aa0c-76a5418d3027";
-        String trackingDeviceId = "263e6c54-69c9-45f5-853c-b5f4420ceb5k";
+        String trackedEntityId = createTrackedEntityId();
+        String trackingDeviceId = createTrackingDeviceId();
 
         TestTrackingData testTrackingData = new TestTrackingData();
         testTrackingData.setTrackedEntityId(trackedEntityId);
@@ -82,30 +87,69 @@ public class TrackingDataControllerIntegrationTest {
 
         Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
 
+        TimeZone timeZonePDT = TimeZone.getTimeZone("America/Los_Angeles");
+
         // Data point 1: May 29th, 2014, PDT - 1401346800488
-        dataPoints.put(1401346800488L, 3L);
+        long timeStamp1 = BucketCalculator.getUTCMillis(2014, Calendar.MAY, 29, 0, 0, 0, timeZonePDT);
+        dataPoints.put(timeStamp1, 3L);
 
         // Data point 2: July 2nd, 2014, PDT - 1404284400598
-        dataPoints.put(1404284400598L, 2L);
+        long timeStamp2 = BucketCalculator.getUTCMillis(2014, Calendar.JULY, 2, 0, 0, 0, timeZonePDT);
+        dataPoints.put(timeStamp2, 2L);
 
-        List<TestTrackingMetric> metrics = new ArrayList<TestTrackingMetric>();
-        metrics.add(TestTrackingMetric.WALKINGSTEPS);
-        metrics.add(TestTrackingMetric.RUNNINGSTEPS);
-        metrics.add(TestTrackingMetric.SLEEPINGSECONDS);
-        metrics.add(TestTrackingMetric.RESTINGSECONDS);
+        List<TestTrackingMetric> allMetrics = new ArrayList<TestTrackingMetric>();
+        allMetrics.add(TestTrackingMetric.WALKINGSTEPS);
+        allMetrics.add(TestTrackingMetric.RUNNINGSTEPS);
+        allMetrics.add(TestTrackingMetric.SLEEPINGSECONDS);
+        allMetrics.add(TestTrackingMetric.RESTINGSECONDS);
 
-        addDataPointForMetrics(testTrackingData, metrics, dataPoints);
+        addDataPointForMetrics(testTrackingData, allMetrics, dataPoints);
+
+        System.out.println("********* test_get_metrics_boundary_test_empty_bucket_excluded(): testTrackingData = " + testTrackingData);
 
         ResponseEntity<String> postResponse = postMetrics(testTrackingData);
 
-        ResponseEntity<String> getResponse = getMetrics(
+        // Sleep a little to ensure read after write consistency
+
+        Map<TestTrackingMetric, Map<Long, Long>> getResponse = getMetrics(
                 trackingDeviceId,
-                1398927600141L,
+                BucketCalculator.getUTCMillis(2014, Calendar.MAY, 1, 0, 0, 0, timeZonePDT),
                 null,
                 TimeUnit.MONTHS,
                 1,
                 null,
                 null);
+
+        System.out.println("********* test_get_metrics_boundary_test_empty_bucket_excluded(): getResponse = " + getResponse);
+
+        // There should be 4 metrics in the response, since we didn't itemize metrics
+
+        Assert.assertEquals(4, getResponse.size());
+
+        //
+        // Bucket one should start at May 1, 2014 PDT
+        // Bucket one should have a value of 3 for each metric
+        //
+
+        long bucketKey = BucketCalculator.getUTCMillis(2014, Calendar.MAY, 1, 0, 0, 0, timeZonePDT);
+        for(TestTrackingMetric metric : allMetrics) {
+            verifyValueForMetric(metric, bucketKey, 3L, getResponse);
+        }
+
+        //
+        // We didn't request verbose response, so the empty June bucket will not be
+        // present in the response
+        //
+
+        //
+        // Bucket two should start at May 1, 2014 PDT
+        // Bucket two should have a value of 2 for each metric
+        //
+
+        bucketKey = BucketCalculator.getUTCMillis(2014, Calendar.JULY, 1, 0, 0, 0, timeZonePDT);
+        for(TestTrackingMetric metric : allMetrics) {
+            verifyValueForMetric(metric, bucketKey, 2L, getResponse);
+        }
     }
 
 
@@ -128,8 +172,14 @@ public class TrackingDataControllerIntegrationTest {
     // Utility methods
     //
 
+    private void verifyValueForMetric(TestTrackingMetric testTrackingMetric, Long bucketKey, Long bucketValue, Map<TestTrackingMetric, Map<Long, Long>> metricResponse) {
+        Map<Long, Long> bucketsForMetric = metricResponse.get(testTrackingMetric);
+        Assert.assertNotNull(bucketsForMetric);
+        Assert.assertEquals(bucketValue, bucketsForMetric.get(bucketKey));
+    }
 
-    private ResponseEntity<String> getMetrics(
+
+    private Map<TestTrackingMetric, Map<Long, Long>> getMetrics(
             String trackingDeviceId,
             long utcBegin,
             Long utcEnd,
@@ -170,7 +220,9 @@ public class TrackingDataControllerIntegrationTest {
 
         try {
             System.out.println("*** getMetrics(): doing GET");
-            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class,
+            ResponseEntity<Map<TestTrackingMetric, Map<Long, Long>>> response =
+                    restTemplate.exchange(url, HttpMethod.GET, entity,
+                    new ParameterizedTypeReference<Map<TestTrackingMetric, Map<Long, Long>>>() {},
                     trackingDeviceId,
                     utcBegin,
                     resultBucketSize.toString(),
@@ -179,7 +231,7 @@ public class TrackingDataControllerIntegrationTest {
                     trackingMetricsToCommaSeparated(trackingMetrics),
                     verboseResponse);
             System.out.println("** getMetrics(): response = " + response.getBody());
-            return response;
+            return response.getBody();
         } catch(RestClientException e) {
             if(e instanceof HttpServerErrorException) {
                 System.out.println("** getMetrics(): Unexpected server error: " + ((HttpServerErrorException) e).getStatusCode());
@@ -190,8 +242,6 @@ public class TrackingDataControllerIntegrationTest {
             }
             throw e;
         }
-
-
     }
 
     private ResponseEntity<String> postMetrics(TestTrackingData testTrackingData) {
@@ -211,9 +261,15 @@ public class TrackingDataControllerIntegrationTest {
 
         try {
             System.out.println("*** postMetrics(): doing post");
-            //ResponseEntity<String> response = restTemplate.postForEntity("http://localhost:" + port + "/tracking", json, String.class);
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
             System.out.println("*** postMetrics(): response = " + response);
+
+            try {
+                Thread.sleep(KAIROS_WRITE_DELAY);
+            } catch(InterruptedException e) {
+                // Swallow
+            }
+
             return response;
         } catch(RestClientException e) {
             if(e instanceof HttpServerErrorException) {
@@ -297,12 +353,10 @@ public class TrackingDataControllerIntegrationTest {
 
     private static String createTrackedEntityId() {
         return UUID.randomUUID().toString();
-        //return TRACKED_ENTITY_ID;
     }
 
     private static String createTrackingDeviceId() {
         return UUID.randomUUID().toString();
-        //return TRACKING_DEVICE_ID;
     }
 
     private String trackingMetricsToCommaSeparated(List<TestTrackingMetric> trackingMetrics) {

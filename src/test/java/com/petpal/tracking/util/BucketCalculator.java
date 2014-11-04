@@ -21,6 +21,7 @@ public class BucketCalculator {
 
     private static Calendar createCalendar(int year, int month, int date, int hour, int minute, int second, TimeZone timeZone) {
         Calendar calendar = new GregorianCalendar();
+        calendar.clear();
         calendar.setTimeZone(timeZone);
         calendar.set(year, month, date, hour, minute, second);
         return calendar;

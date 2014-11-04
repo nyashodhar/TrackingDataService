@@ -105,7 +105,7 @@ public class TrackingDataController {
             @RequestParam(value="verboseResponse", required=false) Boolean verboseResponse) {
 
         logger.info("getMetricsForDeviceRelativeTiming(): deviceId = " + deviceId);
-        logger.info("getMetricsForDeviceRelativeTiming(): utcBegin = " + utcBegin);
+        logger.info("getMetricsForDeviceRelativeTiming(): utcBegin = " + utcBegin + " (" + new Date(utcBegin) + ")");
         logger.info("getMetricsForDeviceRelativeTiming(): utcEnd = " + utcEnd);
         logger.info("getMetricsForDeviceRelativeTiming(): resultBucketSize = " + resultBucketSize);
         logger.info("getMetricsForDeviceRelativeTiming(): resultBucketMultiplier = " + resultBucketMultiplier);

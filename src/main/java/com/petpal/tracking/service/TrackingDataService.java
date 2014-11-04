@@ -101,13 +101,15 @@ public class TrackingDataService {
         // Do the query
         QueryResponse queryResponse = KairosClientUtil.executeQuery(queryBuilder, kairosRestClient);
 
-        logger.info("getMetrics(): Query completed with status code " + queryResponse.getStatusCode());
+        logger.info("getMetricsForAbsoluteRange(): Query completed with status code " + queryResponse.getStatusCode());
 
         // Extract the result for response
         Map<TrackingMetric, Map<Long, Long>> metricResults = getMetricsResultFromResponse(queryResponse);
 
+        logger.info("getMetricsForAbsoluteRange(): metricResults = " + metricResults);
+
         QueryLoggingUtil.printMetricsResults(metricResults);
-        logger.info("Doing result adjustment..");
+        logger.info("getMetricsForAbsoluteRange(): Doing result adjustment..");
 
         // Adjust the bucket boundaries (and insert explicit empty buckets is response is to be verbose)
         adjustBucketBoundaries(metricResults, utcBegin, utcEnd, resultBucketSize, verboseResponse);
