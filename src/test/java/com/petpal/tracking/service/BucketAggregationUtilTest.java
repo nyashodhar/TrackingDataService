@@ -21,6 +21,132 @@ public class BucketAggregationUtilTest {
         bucketAggregationUtil = new BucketAggregationUtil();
     }
 
+
+    //
+    // getBucketEndTime()
+    //
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetBucketEndTime_bucket_start_missing() {
+        bucketAggregationUtil.getBucketEndTime(null, TimeUnit.MONTHS);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetBucketEndTime_bucket_size_missing() {
+        bucketAggregationUtil.getBucketEndTime(1L, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetBucketEndTime_bucket_size_millis_not_allowed() {
+        bucketAggregationUtil.getBucketEndTime(1L, TimeUnit.MILLISECONDS);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetBucketEndTime_bucket_size_seconds_not_allowed() {
+        bucketAggregationUtil.getBucketEndTime(1L, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void testGetBucketEndTime_years() {
+
+        Calendar now = Calendar.getInstance();
+        now.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
+        long bucketStart = now.getTimeInMillis();
+        long bucketEndTime = bucketAggregationUtil.getBucketEndTime(bucketStart, TimeUnit.YEARS);
+
+        Calendar calExpected = Calendar.getInstance();
+        calExpected.clear();
+        calExpected.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
+        calExpected.setTimeInMillis(bucketStart);
+        calExpected.add(Calendar.YEAR, 1);
+
+        Assert.assertEquals((calExpected.getTimeInMillis()-1L), bucketEndTime);
+    }
+
+    @Test
+    public void testGetBucketEndTime_months() {
+        Calendar now = Calendar.getInstance();
+        now.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
+        long bucketStart = now.getTimeInMillis();
+        long bucketEndTime = bucketAggregationUtil.getBucketEndTime(bucketStart, TimeUnit.MONTHS);
+
+        Calendar calExpected = Calendar.getInstance();
+        calExpected.clear();
+        calExpected.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
+        calExpected.setTimeInMillis(bucketStart);
+        calExpected.add(Calendar.MONTH, 1);
+
+        Assert.assertEquals((calExpected.getTimeInMillis()-1L), bucketEndTime);
+    }
+
+    @Test
+    public void testGetBucketEndTime_weeks() {
+        Calendar now = Calendar.getInstance();
+        now.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
+        long bucketStart = now.getTimeInMillis();
+        long bucketEndTime = bucketAggregationUtil.getBucketEndTime(bucketStart, TimeUnit.WEEKS);
+
+        Calendar calExpected = Calendar.getInstance();
+        calExpected.clear();
+        calExpected.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
+        calExpected.setTimeInMillis(bucketStart);
+        calExpected.add(Calendar.WEEK_OF_YEAR, 1);
+
+        Assert.assertEquals((calExpected.getTimeInMillis()-1L), bucketEndTime);
+    }
+
+    @Test
+    public void testGetBucketEndTime_days() {
+        Calendar now = Calendar.getInstance();
+        now.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
+        long bucketStart = now.getTimeInMillis();
+        long bucketEndTime = bucketAggregationUtil.getBucketEndTime(bucketStart, TimeUnit.DAYS);
+
+        Calendar calExpected = Calendar.getInstance();
+        calExpected.clear();
+        calExpected.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
+        calExpected.setTimeInMillis(bucketStart);
+        calExpected.add(Calendar.DATE, 1);
+
+        Assert.assertEquals((calExpected.getTimeInMillis()-1L), bucketEndTime);
+    }
+
+    @Test
+    public void testGetBucketEndTime_hours() {
+        Calendar now = Calendar.getInstance();
+        now.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
+        long bucketStart = now.getTimeInMillis();
+        long bucketEndTime = bucketAggregationUtil.getBucketEndTime(bucketStart, TimeUnit.HOURS);
+
+        Calendar calExpected = Calendar.getInstance();
+        calExpected.clear();
+        calExpected.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
+        calExpected.setTimeInMillis(bucketStart);
+        calExpected.add(Calendar.HOUR, 1);
+
+        Assert.assertEquals((calExpected.getTimeInMillis()-1L), bucketEndTime);
+    }
+
+    @Test
+    public void testGetBucketEndTime_minutes() {
+        Calendar now = Calendar.getInstance();
+        now.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
+        long bucketStart = now.getTimeInMillis();
+        long bucketEndTime = bucketAggregationUtil.getBucketEndTime(bucketStart, TimeUnit.MINUTES);
+
+        Calendar calExpected = Calendar.getInstance();
+        calExpected.clear();
+        calExpected.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
+        calExpected.setTimeInMillis(bucketStart);
+        calExpected.add(Calendar.MINUTE, 1);
+
+        Assert.assertEquals((calExpected.getTimeInMillis()-1L), bucketEndTime);
+    }
+
+    //
+    // determineInitialBucket()
+    //
+
     @Test
     public void test_determineInitialBucket_year_PDT() {
 

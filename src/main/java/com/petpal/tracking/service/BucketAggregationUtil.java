@@ -1,15 +1,10 @@
 package com.petpal.tracking.service;
 
-import org.apache.commons.lang.math.LongRange;
 import org.kairosdb.client.builder.TimeUnit;
 
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.TreeMap;
 
 /**
  * Contains operations to perform calculations on buckets ranges.
@@ -66,6 +61,33 @@ public class BucketAggregationUtil {
 
         return null;
     }
+
+
+
+    /*
+    protected TreeMap<Long, Long> aggregateData(Long initialTimeStamp, TreeMap<Long, Long> unaggregatedData) {
+
+        if(unaggregatedData.isEmpty()) {
+            throw new IllegalArgumentException("No unaggregated data");
+        }
+
+        if(unaggregatedData.isEmpty()) {
+            throw new IllegalArgumentException("No initial timestamp");
+        }
+
+        TreeMap<Long, Long> aggregatedData = new TreeMap<Long, Long>();
+        //aggregatedData.put
+
+        LongRange
+
+
+
+        for(Long timeStamp : unaggregatedData.keySet()) {
+
+        }
+    }
+    */
+
 
     protected long determineInitialBucket(Long initialTimeStamp, TimeZone timeZone, TimeUnit bucketSize) {
 
@@ -126,5 +148,48 @@ public class BucketAggregationUtil {
         return bucketStartCal.getTimeInMillis();
     }
 
+
+    /**
+     * Calculate the end time of a bucket given its start time and bucket size
+     * @param bucketStart
+     * @param bucketSize
+     * @return the end time of a bucket
+     */
+    protected long getBucketEndTime(Long bucketStart, TimeUnit bucketSize) {
+
+        if(bucketSize == null) {
+            throw new IllegalArgumentException("Bucket size not specified");
+        }
+
+        if(bucketStart == null) {
+            throw new IllegalArgumentException("Bucket start not specified");
+        }
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeZone(TimeZone.getTimeZone("UTC"));
+        cal.clear();
+        cal.setTimeInMillis(bucketStart);
+
+        int fieldToStepForward;
+
+        if(bucketSize == TimeUnit.YEARS) {
+            fieldToStepForward = Calendar.YEAR;
+        } else if(bucketSize == TimeUnit.MONTHS) {
+            fieldToStepForward = Calendar.MONTH;
+        } else if(bucketSize == TimeUnit.WEEKS) {
+            fieldToStepForward = Calendar.WEEK_OF_YEAR;
+        } else if(bucketSize == TimeUnit.DAYS) {
+            fieldToStepForward = Calendar.DATE;
+        } else if(bucketSize == TimeUnit.HOURS) {
+            fieldToStepForward = Calendar.HOUR;
+        } else if(bucketSize == TimeUnit.MINUTES) {
+            fieldToStepForward = Calendar.MINUTE;
+        } else {
+            throw new IllegalArgumentException("Unexpected TimeUnit for bucketsize: " + bucketSize);
+        }
+
+        cal.add(fieldToStepForward, 1);
+        return (cal.getTimeInMillis() - 1L);
+    }
 
 }
