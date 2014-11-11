@@ -154,6 +154,46 @@ public class TrackingDataControllerIntegrationTest {
 
 
     //@Test
+    public void metricTest() {
+
+        String trackedEntityId = "tralalala";
+        String trackingDeviceId = "blablabla";
+
+        TestTrackingData testTrackingData = new TestTrackingData();
+        testTrackingData.setTrackedEntityId(trackedEntityId);
+        testTrackingData.setTrackingDeviceId(trackingDeviceId);
+
+        Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
+
+        TimeZone timeZonePDT = TimeZone.getTimeZone("America/Los_Angeles");
+
+        // Data point 1: May 29th, 2014, PDT
+        long timeStamp1 = BucketCalculator.getUTCMillis(2014, Calendar.MAY, 29, 0, 0, 0, timeZonePDT);
+        dataPoints.put(timeStamp1, 4L);
+
+        List<TestTrackingMetric> allMetrics = new ArrayList<TestTrackingMetric>();
+        allMetrics.add(TestTrackingMetric.WALKINGSTEPS);
+        allMetrics.add(TestTrackingMetric.RUNNINGSTEPS);
+        allMetrics.add(TestTrackingMetric.SLEEPINGSECONDS);
+        allMetrics.add(TestTrackingMetric.RESTINGSECONDS);
+
+        addDataPointForMetrics(testTrackingData, allMetrics, dataPoints);
+
+        ResponseEntity<String> responseData = postMetrics(testTrackingData);
+
+        //
+        // EXAMPLE ON HOW TO QUERY FOR THIS:
+        //
+        //   curl -v -X POST http://localhost:8080/api/v1/datapoints/query -H "Content-Type: application/json" -d '{ "start_absolute": 1357023600000, "metrics": [ { "tags": { "TRACKEDENTITY": ["tralalala"] }, "name": "WALKINGSTEPS", "aggregators": [ {"name": "sum", "sampling": {"value": 1,"unit": "days"} } ] } ] }'
+        //
+        // EXAMPLE RESULT:
+        //
+        //   {"queries":[{"sample_size":1,"results":[{"name":"WALKINGSTEPS","group_by":[{"name":"type","type":"number"}],"tags":{"TRACKEDENTITY":["tralalala"],"TRACKINGDEVICE":["blablabla"]},"values":[[1401346800000,3]]}]}]}
+        //
+    }
+
+
+    //@Test
     public void test_createTrackingData() {
 
         String trackedEntityId = createTrackedEntityId();
