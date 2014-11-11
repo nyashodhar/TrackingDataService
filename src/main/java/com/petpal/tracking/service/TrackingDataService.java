@@ -252,7 +252,7 @@ public class TrackingDataService {
         logger.info("Metric " + trackingMetric + " prepped: " + timeStampValueMap.size() + " data points, tags = " + tags);
     }
 
-    
+
     @PostConstruct
     public void afterPropertiesSet() throws Exception {
         String kairosDBURL = "http://" + kairosDBHost + ":" + kairosDBPort;

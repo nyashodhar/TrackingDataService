@@ -65,19 +65,19 @@ public class BucketAggregationUtil {
 
         // Ensure the unaggregated data is sorted by timestamp
 
-        TreeMap<Long, Long> sortedUnaggregatepData = new TreeMap<Long, Long>();
-        sortedUnaggregatepData.putAll(unaggregatedData);
+        TreeMap<Long, Long> sortedUnaggregatedData = new TreeMap<Long, Long>();
+        sortedUnaggregatedData.putAll(unaggregatedData);
 
         long initialBucketStart = determineInitialBucket(unaggregatedData.keySet().iterator().next(), timeZone, bucketSize);
 
         long currentBucketStart = initialBucketStart;
-        long currentBucketEnd = getBucketEndTime(currentBucketStart, bucketSize);
+        long currentBucketEnd = getBucketEndTime(currentBucketStart, bucketSize, timeZone);
         TreeMap<Long, Long> aggregatedData = new TreeMap<Long, Long>();
         aggregatedData.put(currentBucketStart, 0L);
 
-        for(Long timeStamp : sortedUnaggregatepData.keySet()) {
+        for(Long timeStamp : sortedUnaggregatedData.keySet()) {
 
-            long value = sortedUnaggregatepData.get(timeStamp);
+            long value = sortedUnaggregatedData.get(timeStamp);
 
             while(!(currentBucketStart <= timeStamp && currentBucketEnd >= timeStamp)) {
                 //
@@ -86,7 +86,7 @@ public class BucketAggregationUtil {
                 //
 
                 currentBucketStart = currentBucketEnd + 1L;
-                currentBucketEnd = getBucketEndTime(currentBucketStart, bucketSize);
+                currentBucketEnd = getBucketEndTime(currentBucketStart, bucketSize, timeZone);
                 aggregatedData.put(currentBucketStart, 0L);
             }
 
@@ -169,7 +169,7 @@ public class BucketAggregationUtil {
             //int calenderUnitToStepForward = getCalendarUnitForTimeUnit(resultBucketSize);
             //cursorCalendar.add(calenderUnitToStepForward, 1);
 
-            long bucketEnd = getBucketEndTime(cursorCalendar.getTimeInMillis(), resultBucketSize);
+            long bucketEnd = getBucketEndTime(cursorCalendar.getTimeInMillis(), resultBucketSize, cursorCalendar.getTimeZone());
             cursorCalendar.setTimeInMillis(bucketEnd+1);
 
             if(cursorCalendar.getTimeInMillis() >= endOfInterval) {
@@ -235,9 +235,9 @@ public class BucketAggregationUtil {
             throw new IllegalArgumentException("Bucketsize not specified");
         }
 
-        Calendar cal = Calendar.getInstance();;
-        cal.setTimeZone(timeZone);
+        Calendar cal = Calendar.getInstance();
         cal.clear();
+        cal.setTimeZone(timeZone);
         cal.setTimeInMillis(initialTimeStamp);
 
         //
@@ -285,9 +285,10 @@ public class BucketAggregationUtil {
      * Calculate the end time of a bucket given its start time and bucket size
      * @param bucketStart
      * @param bucketSize
+     * @param timeZone
      * @return the end time of a bucket
      */
-    protected long getBucketEndTime(Long bucketStart, TimeUnit bucketSize) {
+    protected long getBucketEndTime(Long bucketStart, TimeUnit bucketSize, TimeZone timeZone) {
 
         if(bucketSize == null) {
             throw new IllegalArgumentException("Bucket size not specified");
@@ -298,8 +299,8 @@ public class BucketAggregationUtil {
         }
 
         Calendar cal = Calendar.getInstance();
-        cal.setTimeZone(TimeZone.getTimeZone("UTC"));
         cal.clear();
+        cal.setTimeZone(timeZone);
         cal.setTimeInMillis(bucketStart);
 
         int fieldToStepForward;
