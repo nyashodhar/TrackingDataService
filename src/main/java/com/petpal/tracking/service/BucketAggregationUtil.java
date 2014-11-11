@@ -1,10 +1,12 @@
 package com.petpal.tracking.service;
 
 import org.kairosdb.client.builder.TimeUnit;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Calendar;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.TreeMap;
 
 /**
  * Contains operations to perform calculations on buckets ranges.
@@ -37,9 +39,9 @@ public class BucketAggregationUtil {
      *
      * @return data aggregated into the specified bucket size for the given time zone.
      */
-    private Map<Long, Long> aggregateIntoBucketsForTimeZone(Map<Long, Long> unaggregatedData, TimeZone timeZone, TimeUnit bucketSize) {
+    public TreeMap<Long, Long> aggregateIntoBucketsForTimeZone(Map<Long, Long> unaggregatedData, TimeZone timeZone, TimeUnit bucketSize) {
 
-        if (unaggregatedData.isEmpty()) {
+        if (CollectionUtils.isEmpty(unaggregatedData)) {
             return null;
         }
 
@@ -47,48 +49,56 @@ public class BucketAggregationUtil {
             throw new IllegalArgumentException("Timezone not specified for aggregation");
         }
 
-        // TODO: Ensure the results are sorted by timestamp
+        if(bucketSize == null) {
+            throw new IllegalArgumentException("Bucket size time unit not specified for aggregation");
+        }
 
-        // Find the start of the first applicable bucket
+        // Ensure the unaggregated data is sorted by timestamp
+
+        TreeMap<Long, Long> sortedUnaggregatepData = new TreeMap<Long, Long>();
+        sortedUnaggregatepData.putAll(unaggregatedData);
 
         long initialBucketStart = determineInitialBucket(unaggregatedData.keySet().iterator().next(), timeZone, bucketSize);
 
-        // TODO: Build all the bucket ranges into which the data will fit.
-
-        // TODO: Filter any buckets that got no data...
-
-        // Done
-
-        return null;
-    }
-
-
-
-    /*
-    protected TreeMap<Long, Long> aggregateData(Long initialTimeStamp, TreeMap<Long, Long> unaggregatedData) {
-
-        if(unaggregatedData.isEmpty()) {
-            throw new IllegalArgumentException("No unaggregated data");
-        }
-
-        if(unaggregatedData.isEmpty()) {
-            throw new IllegalArgumentException("No initial timestamp");
-        }
-
+        long currentBucketStart = initialBucketStart;
+        long currentBucketEnd = getBucketEndTime(currentBucketStart, bucketSize);
         TreeMap<Long, Long> aggregatedData = new TreeMap<Long, Long>();
-        //aggregatedData.put
+        aggregatedData.put(currentBucketStart, 0L);
 
-        LongRange
+        for(Long timeStamp : sortedUnaggregatepData.keySet()) {
 
+            long value = sortedUnaggregatepData.get(timeStamp);
 
+            while(!(currentBucketStart <= timeStamp && currentBucketEnd >= timeStamp)) {
+                //
+                // The value does not belong in the current bucket, make new buckets
+                // until we hit the timerange to which this value belongs
+                //
 
-        for(Long timeStamp : unaggregatedData.keySet()) {
+                currentBucketStart = currentBucketEnd + 1L;
+                currentBucketEnd = getBucketEndTime(currentBucketStart, bucketSize);
+                aggregatedData.put(currentBucketStart, 0L);
+            }
 
+            // Add the value to the bucket
+            long newValue = aggregatedData.get(currentBucketStart) + value;
+            aggregatedData.put(currentBucketStart, newValue);
         }
+
+        return aggregatedData;
     }
-    */
 
 
+    /**
+     * Determine the timestamp for the beginning of the bucket into which the data for
+     * a given timestamp would be aggregated.
+     * @param initialTimeStamp A UTC timestamp for which some data is to be aggregated into a bucket
+     * @param timeZone the boundary point for a bucket in UTC is dependent on what timezones the client
+     *                 wants to view the aggregated data relative to.
+     * @param bucketSize the length of a bucket, e.g. MONTHS.
+     * @return a timestamp in UTC identifying the start of the bucket into which the data for the
+     * given timestamp will be aggregated.
+     */
     protected long determineInitialBucket(Long initialTimeStamp, TimeZone timeZone, TimeUnit bucketSize) {
 
         if(initialTimeStamp == null) {
@@ -191,5 +201,4 @@ public class BucketAggregationUtil {
         cal.add(fieldToStepForward, 1);
         return (cal.getTimeInMillis() - 1L);
     }
-
 }
