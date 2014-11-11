@@ -87,6 +87,15 @@ public class BucketAggregationUtil {
 
                 currentBucketStart = currentBucketEnd + 1L;
                 currentBucketEnd = getBucketEndTime(currentBucketStart, bucketSize, timeZone);
+                //aggregatedData.put(currentBucketStart, 0L);
+            }
+
+            //
+            // At this point at least one value will be injected into the current bucket.
+            // Make sure it is created.
+            //
+
+            if(aggregatedData.get(currentBucketStart) == null) {
                 aggregatedData.put(currentBucketStart, 0L);
             }
 

@@ -101,25 +101,19 @@ public class BucketAggregationUtilTest {
                 unaggregatedData, timeZonePDT, TimeUnit.YEARS);
 
         //
-        // The aggregated data should be in 3 buckets
+        // The aggregated data should be in 2 buckets
         // Bucket 1 should start at midnight 3 years ago and have value 11
-        // Bucket 2 should start at midnight 2 years ago and have value 0
-        // Bucket 3 should start at midnight 1 year ago and have value 3
+        // Bucket 2 should start at midnight 1 year ago and have value 3
         //
 
-        Calendar tmp = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.YEARS);
-        long bucket1Start = tmp.getTimeInMillis();
-        tmp.add(Calendar.YEAR, 1);
-        long bucket2Start = tmp.getTimeInMillis();
-        long bucket3Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.YEARS).getTimeInMillis();
+        long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.YEARS).getTimeInMillis();
+        long bucket2Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.YEARS).getTimeInMillis();
 
-        Assert.assertEquals(3, aggregatedData.size());
+        Assert.assertEquals(2, aggregatedData.size());
         Assert.assertNotNull(aggregatedData.get(bucket1Start));
         Assert.assertEquals(11L, aggregatedData.get(bucket1Start).longValue());
         Assert.assertNotNull(aggregatedData.get(bucket2Start));
-        Assert.assertEquals(0L, aggregatedData.get(bucket2Start).longValue());
-        Assert.assertNotNull(aggregatedData.get(bucket3Start));
-        Assert.assertEquals(3L, aggregatedData.get(bucket3Start).longValue());
+        Assert.assertEquals(3L, aggregatedData.get(bucket2Start).longValue());
     }
 
     @Test
@@ -154,25 +148,19 @@ public class BucketAggregationUtilTest {
                 unaggregatedData, timeZonePDT, TimeUnit.MONTHS);
 
         //
-        // The aggregated data should be in 3 buckets
+        // The aggregated data should be in 2 buckets
         // Bucket 1 should start at midnight 3 months ago and have value 11
-        // Bucket 2 should start at midnight 2 months ago and have value 0
-        // Bucket 3 should start at midnight 1 month ago and have value 3
+        // Bucket 2 should start at midnight 1 month ago and have value 3
         //
 
-        Calendar tmp = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.MONTHS);
-        long bucket1Start = tmp.getTimeInMillis();
-        tmp.add(Calendar.MONTH, 1);
-        long bucket2Start = tmp.getTimeInMillis();
-        long bucket3Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.MONTHS).getTimeInMillis();
+        long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.MONTHS).getTimeInMillis();
+        long bucket2Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.MONTHS).getTimeInMillis();
 
-        Assert.assertEquals(3, aggregatedData.size());
+        Assert.assertEquals(2, aggregatedData.size());
         Assert.assertNotNull(aggregatedData.get(bucket1Start));
         Assert.assertEquals(11L, aggregatedData.get(bucket1Start).longValue());
         Assert.assertNotNull(aggregatedData.get(bucket2Start));
-        Assert.assertEquals(0L, aggregatedData.get(bucket2Start).longValue());
-        Assert.assertNotNull(aggregatedData.get(bucket3Start));
-        Assert.assertEquals(3L, aggregatedData.get(bucket3Start).longValue());
+        Assert.assertEquals(3L, aggregatedData.get(bucket2Start).longValue());
     }
 
     @Test
@@ -195,7 +183,6 @@ public class BucketAggregationUtilTest {
 
         Calendar cal3 = Calendar.getInstance();
         cal3.setTimeZone(timeZonePDT);
-        //cal3.add(Calendar.DATE, -3);
 
         TreeMap<Long, Long> unaggregatedData = new TreeMap<Long, Long>();
         unaggregatedData.put(cal1.getTimeInMillis(), 5L);
@@ -205,34 +192,23 @@ public class BucketAggregationUtilTest {
         TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
                 unaggregatedData, timeZonePDT, TimeUnit.WEEKS);
         //
-        // The aggregated data should be in 4 buckets
+        // The aggregated data should be in 3 buckets
         // Bucket 1 should start at midnight 4 weeks ago and have value 5
         // Bucket 2 should start at midnight 3 weeks ago and have value 6
-        // Bucket 3 should start at midnight 2 weeks ago and have value 0
-        // Bucket 4 should start at beginning of current week at midnight and have value 3
+        // Bucket 3 should start at beginning of current week at midnight and have value 3
         //
 
         long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.WEEKS).getTimeInMillis();
+        long bucket2Start = BucketCalculator.getBucketStartForCalendar(cal2, TimeUnit.WEEKS).getTimeInMillis();
+        long bucket3Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.WEEKS).getTimeInMillis();
 
-        Calendar tmp = BucketCalculator.getBucketStartForCalendar(cal2, TimeUnit.WEEKS);
-        long bucket2Start = tmp.getTimeInMillis();
-        tmp.add(Calendar.WEEK_OF_YEAR, 1);
-        long bucket3Start = tmp.getTimeInMillis();
-        long bucket4Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.WEEKS).getTimeInMillis();
-
-        Assert.assertEquals(4, aggregatedData.size());
-
+        Assert.assertEquals(3, aggregatedData.size());
         Assert.assertNotNull(aggregatedData.get(bucket1Start));
         Assert.assertEquals(5L, aggregatedData.get(bucket1Start).longValue());
-
         Assert.assertNotNull(aggregatedData.get(bucket2Start));
         Assert.assertEquals(6L, aggregatedData.get(bucket2Start).longValue());
-
         Assert.assertNotNull(aggregatedData.get(bucket3Start));
-        Assert.assertEquals(0L, aggregatedData.get(bucket3Start).longValue());
-
-        Assert.assertNotNull(aggregatedData.get(bucket4Start));
-        Assert.assertEquals(3L, aggregatedData.get(bucket4Start).longValue());
+        Assert.assertEquals(3L, aggregatedData.get(bucket3Start).longValue());
     }
 
 
@@ -268,25 +244,19 @@ public class BucketAggregationUtilTest {
                 unaggregatedData, timeZonePDT, TimeUnit.DAYS);
 
         //
-        // The aggregated data should be in 3 buckets
+        // The aggregated data should be in 2 buckets
         // Bucket 1 should start at midnight 3 days ago and have value 11
-        // Bucket 2 should start at midnight 2 days ago and have value 0
-        // Bucket 3 should start at midnight 1 days ago and have value 3
+        // Bucket 2 should start at midnight 1 days ago and have value 3
         //
 
-        Calendar tmp = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.DAYS);
-        long bucket1Start = tmp.getTimeInMillis();
-        tmp.add(Calendar.DATE, 1);
-        long bucket2Start = tmp.getTimeInMillis();
-        long bucket3Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.DAYS).getTimeInMillis();
+        long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.DAYS).getTimeInMillis();
+        long bucket2Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.DAYS).getTimeInMillis();
 
-        Assert.assertEquals(3, aggregatedData.size());
+        Assert.assertEquals(2, aggregatedData.size());
         Assert.assertNotNull(aggregatedData.get(bucket1Start));
         Assert.assertEquals(11L, aggregatedData.get(bucket1Start).longValue());
         Assert.assertNotNull(aggregatedData.get(bucket2Start));
-        Assert.assertEquals(0L, aggregatedData.get(bucket2Start).longValue());
-        Assert.assertNotNull(aggregatedData.get(bucket3Start));
-        Assert.assertEquals(3L, aggregatedData.get(bucket3Start).longValue());
+        Assert.assertEquals(3L, aggregatedData.get(bucket2Start).longValue());
     }
 
 
@@ -322,25 +292,19 @@ public class BucketAggregationUtilTest {
                 unaggregatedData, timeZonePDT, TimeUnit.HOURS);
 
         //
-        // The aggregated data should be in 3 buckets
+        // The aggregated data should be in 2 buckets
         // Bucket 1 should start at midnight 3 hours ago and have value 11
-        // Bucket 2 should start at midnight 2 hours ago and have value 0
-        // Bucket 3 should start at midnight 1 hours ago and have value 3
+        // Bucket 2 should start at midnight 1 hours ago and have value 3
         //
 
-        Calendar tmp = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.HOURS);
-        long bucket1Start = tmp.getTimeInMillis();
-        tmp.add(Calendar.HOUR, 1);
-        long bucket2Start = tmp.getTimeInMillis();
-        long bucket3Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.HOURS).getTimeInMillis();
+        long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.HOURS).getTimeInMillis();
+        long bucket2Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.HOURS).getTimeInMillis();
 
-        Assert.assertEquals(3, aggregatedData.size());
+        Assert.assertEquals(2, aggregatedData.size());
         Assert.assertNotNull(aggregatedData.get(bucket1Start));
         Assert.assertEquals(11L, aggregatedData.get(bucket1Start).longValue());
         Assert.assertNotNull(aggregatedData.get(bucket2Start));
-        Assert.assertEquals(0L, aggregatedData.get(bucket2Start).longValue());
-        Assert.assertNotNull(aggregatedData.get(bucket3Start));
-        Assert.assertEquals(3L, aggregatedData.get(bucket3Start).longValue());
+        Assert.assertEquals(3L, aggregatedData.get(bucket2Start).longValue());
     }
 
 
