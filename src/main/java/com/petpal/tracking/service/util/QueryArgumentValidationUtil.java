@@ -1,5 +1,6 @@
 package com.petpal.tracking.service.util;
 
+import com.petpal.tracking.service.metrics.TimeSeriesMetric;
 import com.petpal.tracking.service.tag.TimeSeriesTag;
 import org.kairosdb.client.builder.TimeUnit;
 import org.springframework.util.CollectionUtils;
@@ -13,7 +14,7 @@ import java.util.Map;
 public class QueryArgumentValidationUtil {
 
     public static void validateMetricsQueryParameters(Map<TimeSeriesTag, String> tags,
-                                                List<String> queryMetrics,
+                                                List<TimeSeriesMetric> timeSeriesMetrics,
                                                 Long utcBegin,
                                                 Long utcEnd,
                                                 TimeUnit resultBucketSize,
@@ -23,8 +24,8 @@ public class QueryArgumentValidationUtil {
             throw new IllegalArgumentException("No tags specified");
         }
 
-        if(CollectionUtils.isEmpty(queryMetrics)) {
-            throw new IllegalArgumentException("No metrics specified");
+        if(CollectionUtils.isEmpty(timeSeriesMetrics)) {
+            throw new IllegalArgumentException("No time series metrics specified");
         }
 
         if(utcBegin == null) {

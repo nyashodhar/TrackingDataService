@@ -1,6 +1,7 @@
 package com.petpal.tracking.service;
 
 import com.petpal.tracking.data.TrackingData;
+import com.petpal.tracking.service.metrics.TimeSeriesMetric;
 import com.petpal.tracking.service.tag.TimeSeriesTag;
 import com.petpal.tracking.service.util.QueryArgumentValidationUtil;
 import com.petpal.tracking.service.util.QueryLoggingUtil;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -54,7 +56,7 @@ public class TrackingDataService {
     private KairosRestClient kairosRestClient;
 
 
-    public Map<String, Map<Long, Long>> getMetricsForAbsoluteRange(
+    public Map<TimeSeriesMetric, Map<Long, Long>> getMetricsForAbsoluteRange(
             Map<TimeSeriesTag, String> tags,
             List<TrackingMetric> trackingMetrics,
             Long utcBegin,
@@ -63,14 +65,14 @@ public class TrackingDataService {
             int resultBucketMultiplier,
             boolean verboseResponse) {
 
-        List<String> queryMetrics = new ArrayList<String>();
+        List<TimeSeriesMetric> timeSeriesMetrics = new ArrayList<TimeSeriesMetric>();
         if(!CollectionUtils.isEmpty(trackingMetrics)) {
             for(TrackingMetric t : trackingMetrics) {
-                queryMetrics.add(t.toString());
+                timeSeriesMetrics.add(TimeSeriesMetric.getRawMetric(t));
             }
         }
 
-        return getMetricsForRange(tags, queryMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier, verboseResponse);
+        return getMetricsForRange(tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier, verboseResponse);
     }
 
     public void storeTrackingData(TrackingData trackingData) {
@@ -126,18 +128,17 @@ public class TrackingDataService {
         }
 
         // Query for the existing aggregated data
-        String metric = trackingMetric.toString() + "_" + bucketSize;
-        List<String> queryMetrics = new ArrayList<String>();
-        queryMetrics.add(metric);
+        List<TimeSeriesMetric> timeSeriesMetrics = TimeSeriesMetric.getAggregatedTimeSeriesMetrics(trackingMetric, bucketSize);
+        TimeSeriesMetric timeSeriesMetric = timeSeriesMetrics.iterator().next();
 
         long startOfFirstBucket = aggregatedData.keySet().iterator().next();
 
-        Map<String, Map<Long, Long>> existingAggregatedDataForMetric =
-                getMetricsForRange(tags, queryMetrics, startOfFirstBucket, null, bucketSize, 1, false);
+        Map<TimeSeriesMetric, Map<Long, Long>> existingAggregatedDataForMetric =
+                getMetricsForRange(tags, timeSeriesMetrics, startOfFirstBucket, null, bucketSize, 1, false);
 
         // Incorporate the existing values for the contributed data points
         Map<Long, Long> existingDataPoints =
-                existingAggregatedDataForMetric.isEmpty() ? null : existingAggregatedDataForMetric.get(metric);
+                existingAggregatedDataForMetric.isEmpty() ? null : existingAggregatedDataForMetric.get(timeSeriesMetric);
 
         Map<Long, Long> updatedAggregatedData = bucketAggregationUtil.
                 mergeExistingDataPointsIntoNew(aggregatedData, existingDataPoints);
@@ -153,9 +154,9 @@ public class TrackingDataService {
 
 
 
-    protected Map<String, Map<Long, Long>> getMetricsForRange(
+    protected Map<TimeSeriesMetric, Map<Long, Long>> getMetricsForRange(
             Map<TimeSeriesTag, String> tags,
-            List<String> queryMetrics,
+            List<TimeSeriesMetric> timeSeriesMetrics,
             Long utcBegin,
             Long utcEnd,
             TimeUnit resultBucketSize,
@@ -164,10 +165,10 @@ public class TrackingDataService {
 
         // Do some validation of the input parameters
         QueryArgumentValidationUtil.validateMetricsQueryParameters(
-                tags, queryMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
+                tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
 
         // Print a description of the query in the log
-        QueryLoggingUtil.logTimeSeriesQueryDescription(tags, queryMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
+        QueryLoggingUtil.logTimeSeriesQueryDescription(tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
 
         // Set the time interval for the query
         QueryBuilder queryBuilder = QueryBuilder.getInstance();
@@ -177,7 +178,7 @@ public class TrackingDataService {
         }
 
         // Add metrics, aggregator and tags to the query
-        addMetricsAndAggregator(queryBuilder, queryMetrics, resultBucketSize, resultBucketMultiplier, tags);
+        addMetricsAndAggregator(queryBuilder, timeSeriesMetrics, resultBucketSize, resultBucketMultiplier, tags);
 
         // Do the query
         QueryResponse queryResponse = KairosClientUtil.executeQuery(queryBuilder, kairosRestClient);
@@ -185,7 +186,7 @@ public class TrackingDataService {
         logger.info("getMetricsForAbsoluteRange(): Query completed with status code " + queryResponse.getStatusCode());
 
         // Extract the result for response
-        Map<String, Map<Long, Long>> metricResults = getMetricsResultFromResponse(queryResponse);
+        Map<TimeSeriesMetric, Map<Long, Long>> metricResults = getMetricsResultFromResponse(queryResponse);
 
         logger.info("getMetricsForAbsoluteRange(): metricResults = " + metricResults);
 
@@ -200,10 +201,10 @@ public class TrackingDataService {
         return metricResults;
     }
 
-    private void addMetricsAndAggregator(QueryBuilder queryBuilder, List<String> queryMetrics,
+    private void addMetricsAndAggregator(QueryBuilder queryBuilder, List<TimeSeriesMetric> timeSeriesMetrics,
                                          TimeUnit resultBucketSize, int resultBucketMultiplier, Map<TimeSeriesTag, String> tags) {
-        for(String queryMetricStr : queryMetrics) {
-            QueryMetric queryMetric = queryBuilder.addMetric(queryMetricStr.toString());
+        for(TimeSeriesMetric timeSeriesMetric : timeSeriesMetrics) {
+            QueryMetric queryMetric = queryBuilder.addMetric(timeSeriesMetric.toString());
             queryMetric.addAggregator(AggregatorFactory.createSumAggregator(resultBucketMultiplier, resultBucketSize));
             for(TimeSeriesTag tag : tags.keySet()) {
                 queryMetric.addTag(tag.toString(), tags.get(tag));
@@ -211,7 +212,7 @@ public class TrackingDataService {
         }
     }
 
-    private Map<String, Map<Long, Long>> getMetricsResultFromResponse(QueryResponse queryResponse) {
+    private Map<TimeSeriesMetric, Map<Long, Long>> getMetricsResultFromResponse(QueryResponse queryResponse) {
 
         //
         // Gather the results into a data structure
@@ -221,22 +222,22 @@ public class TrackingDataService {
 
         List<Queries> queries = queryResponse.getQueries();
 
-        Map<String, Map<Long, Long>> metricResults = new HashMap<String, Map<Long, Long>>();
+        Map<TimeSeriesMetric, Map<Long, Long>> metricResults = new HashMap<TimeSeriesMetric, Map<Long, Long>>();
 
         for(Queries query : queries) {
             List<Results> results = query.getResults();
             for(Results result : results) {
                 List<DataPoint> dataPoints = result.getDataPoints();
                 String resultName = result.getName();
-                String metric = resultName.toUpperCase();
+                TimeSeriesMetric timeSeriesMetric = TimeSeriesMetric.valueOf(resultName.toUpperCase());
                 if(!dataPoints.isEmpty()) {
                     if (!metricResults.containsKey(resultName)) {
-                        metricResults.put(metric, new TreeMap<Long, Long>());
+                        metricResults.put(timeSeriesMetric, new TreeMap<Long, Long>());
                     }
                 }
 
                 for(DataPoint dataPoint : dataPoints) {
-                    metricResults.get(metric).put(dataPoint.getTimestamp(), KairosClientUtil.getLongValueFromDataPoint(dataPoint));
+                    metricResults.get(timeSeriesMetric).put(dataPoint.getTimestamp(), KairosClientUtil.getLongValueFromDataPoint(dataPoint));
                 }
             }
         }
@@ -245,20 +246,20 @@ public class TrackingDataService {
     }
 
 
-    private void adjustBucketBoundaries(Map<String, Map<Long, Long>> metricResults,
+    private void adjustBucketBoundaries(Map<TimeSeriesMetric, Map<Long, Long>> metricResults,
                                         Long utcBegin, Long utcEnd, TimeUnit resultBucketSize, boolean verboseResponse) {
 
-        for (String metric : metricResults.keySet()) {
+        for (TimeSeriesMetric timeSeriesMetric : metricResults.keySet()) {
 
             //
             // Adjust the bucket boundaries and inject empty buckets.
             //
             Map<Long, Long> adjustedMetricResult = bucketAggregationUtil.adjustBoundariesForMetricResult(
-                    metricResults.get(metric), utcBegin, utcEnd, resultBucketSize);
-            metricResults.put(metric, adjustedMetricResult);
+                    metricResults.get(timeSeriesMetric), utcBegin, utcEnd, resultBucketSize);
+            metricResults.put(timeSeriesMetric, adjustedMetricResult);
 
-            logger.debug("Bucket adjust for metric " + metric + ": old bucket count = " +
-                    metricResults.get(metric).size() + ", new bucket count = " + adjustedMetricResult.size());
+            logger.debug("Bucket adjust for time series metric " + timeSeriesMetric + ": old bucket count = " +
+                    metricResults.get(timeSeriesMetric).size() + ", new bucket count = " + adjustedMetricResult.size());
 
             // If the response is not to be verbose, filter out the empty buckets.
             if(!verboseResponse) {

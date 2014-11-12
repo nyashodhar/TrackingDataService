@@ -3,6 +3,7 @@ package com.petpal.tracking.web.controllers;
 import com.petpal.tracking.data.TrackingData;
 import com.petpal.tracking.service.TrackingDataService;
 import com.petpal.tracking.service.TrackingMetric;
+import com.petpal.tracking.service.metrics.TimeSeriesMetric;
 import com.petpal.tracking.service.tag.TimeSeriesTag;
 import com.petpal.tracking.web.editors.DateEditor;
 import com.petpal.tracking.web.editors.TrackingMetricsSet;
@@ -95,7 +96,7 @@ public class TrackingDataController {
      */
     @RequestMapping(value="/metrics/absolute/device/{deviceId}", method=RequestMethod.GET)
     @ResponseStatus( HttpStatus.OK )
-    public @ResponseBody Map<String, Map<Long, Long>> getMetricsForDeviceAbsoluteTiming(
+    public @ResponseBody Map<TimeSeriesMetric, Map<Long, Long>> getMetricsForDeviceAbsoluteTiming(
             @PathVariable String deviceId,
             @RequestParam(value="utcBegin", required=true) Long utcBegin,
             @RequestParam(value="utcEnd", required=false) Long utcEnd,
@@ -133,7 +134,7 @@ public class TrackingDataController {
 
         boolean createVerboseResponse = (verboseResponse == null) ? false : verboseResponse;
 
-        Map<String, Map<Long, Long>> metricResults = trackingService.getMetricsForAbsoluteRange(
+        Map<TimeSeriesMetric, Map<Long, Long>> metricResults = trackingService.getMetricsForAbsoluteRange(
                 tags, trackingMetricsParam, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier, createVerboseResponse);
 
         logger.info("getMetricsForDeviceAbsoluteTiming(): Results: " + metricResults);

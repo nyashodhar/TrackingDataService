@@ -1,5 +1,6 @@
 package com.petpal.tracking.service.util;
 
+import com.petpal.tracking.service.metrics.TimeSeriesMetric;
 import com.petpal.tracking.service.tag.TimeSeriesTag;
 import org.apache.log4j.Logger;
 import org.kairosdb.client.builder.TimeUnit;
@@ -17,25 +18,25 @@ public class QueryLoggingUtil {
 
     private static Logger logger = Logger.getLogger(QueryLoggingUtil.class);
 
-    public static void printMetricsResults(Map<String, Map<Long, Long>> metricResults) {
+    public static void printMetricsResults(Map<TimeSeriesMetric, Map<Long, Long>> metricResults) {
 
-        for(String metric : metricResults.keySet()) {
+        for(TimeSeriesMetric timeSeriesMetric : metricResults.keySet()) {
 
             StringBuffer metricResult = new StringBuffer();
-            for(Long timestamp : metricResults.get(metric).keySet()) {
+            for(Long timestamp : metricResults.get(timeSeriesMetric).keySet()) {
                 Date date = new Date();
                 date.setTime(timestamp);
                 if(metricResult.length() > 0) {
                     metricResult.append(", ");
                 }
-                metricResult.append(getUTCFormat(date.getTime()) + "=" + metricResults.get(metric).get(timestamp));
+                metricResult.append(getUTCFormat(date.getTime()) + "=" + metricResults.get(timeSeriesMetric).get(timestamp));
             }
-            logger.info("Result for " + metric + ": " + metricResult.toString());
+            logger.info("Result for " + timeSeriesMetric + ": " + metricResult.toString());
         }
     }
 
     public static void logTimeSeriesQueryDescription(Map<TimeSeriesTag, String> tags,
-                                               List<String> queryMetrics,
+                                               List<TimeSeriesMetric> timeSeriesMetrics,
                                                Long utcBegin,
                                                Long utcEnd,
                                                TimeUnit resultBucketSize,
@@ -48,7 +49,7 @@ public class QueryLoggingUtil {
             intervalDescriptor.append(" " + getUTCFormat(utcBegin) + "]");
         }
 
-        logger.info("Time series query for interval " + intervalDescriptor + " for query metrics " + queryMetrics +
+        logger.info("Time series query for interval " + intervalDescriptor + " for time series metrics " + timeSeriesMetrics +
                 ", each metric tagged by " + tags + ". Results will be grouped into buckets of " +
                 resultBucketMultiplier + " " + resultBucketSize + " size.");
     }
