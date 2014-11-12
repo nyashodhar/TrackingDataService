@@ -91,16 +91,41 @@ public class TrackingDataService {
 
     }
 
-    /*
-    protected void updateAggregatedSeriesForMetric(TrackingMetric trackingMetric, Map<Long, Long> unaggregatedData, Map<TrackingTag, String> tags, TimeZone timeZone, TimeUnit bucketSize) {
+    protected void updateAggregatedSeriesForMetric(TrackingMetric trackingMetric, Map<Long, Long> unaggregatedData,
+                                                   Map<TrackingTag, String> tags, TimeZone timeZone, TimeUnit bucketSize) {
 
+        // Aggregate the input data
         Map<Long, Long> aggregatedData = bucketAggregationUtil.
                 aggregateIntoBucketsForTimeZone(unaggregatedData, timeZone, bucketSize);
 
-        //Map<TrackingMetric, Map<Long, Long>>
+        if(CollectionUtils.isEmpty(aggregatedData)) {
+            logger.info("updateAggregatedSeriesForMetric(): No aggregated data found for metric " +
+                    trackingMetric + ", returning.");
+            return;
+        }
+
+        // Query for the existing aggregated data
+        String metric = trackingMetric.toString() + "_" + bucketSize;
+        List<String> queryMetrics = new ArrayList<String>();
+        queryMetrics.add(metric);
+
+        long startOfFirstBucket = aggregatedData.keySet().iterator().next();
+
+        Map<String, Map<Long, Long>> existingAggregatedDataForMetric =
+                getMetricsForRange(tags, queryMetrics, startOfFirstBucket, null, bucketSize, 1, false);
+
+        // Incorporate the existing values for the contributed data points
+        Map<Long, Long> existingDataPoints =
+                existingAggregatedDataForMetric.isEmpty() ? null : existingAggregatedDataForMetric.get(metric);
+
+        Map<Long, Long> updatedAggregatedData = bucketAggregationUtil.
+                mergeExistingDataPointsIntoNew(aggregatedData, existingDataPoints);
+
+        // Persist the updated data in the time series
+
+        // TODO
 
     }
-    */
 
     public Map<String, Map<Long, Long>> getMetricsForAbsoluteRange(
             Map<TrackingTag, String> tags,

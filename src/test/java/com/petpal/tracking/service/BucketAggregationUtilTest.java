@@ -5,9 +5,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.client.builder.TimeUnit;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.TreeMap;
 
@@ -26,6 +29,66 @@ public class BucketAggregationUtilTest {
     public void setup() {
         bucketAggregationUtil = new BucketAggregationUtil();
         timeZonePDT = TimeZone.getTimeZone("America/Los_Angeles");
+    }
+
+    //
+    // mergeExistingDataPointsIntoNew()
+    //
+
+    @Test
+    public void testMergeExistingDataPointsIntoNew_both_args_null() {
+        Map<Long, Long> updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(null, null);
+        Assert.assertTrue(CollectionUtils.isEmpty(updatedDataPoints));
+    }
+
+    @Test
+    public void testMergeExistingDataPointsIntoNew_new_data_null_old_data_empty() {
+        Map<Long, Long> updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(null, new HashMap<Long, Long>());
+        Assert.assertTrue(CollectionUtils.isEmpty(updatedDataPoints));
+    }
+
+    @Test
+    public void testMergeExistingDataPointsIntoNew_new_data_empty_old_data_null() {
+        Map<Long, Long> updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(new HashMap<Long, Long>(), null);
+        Assert.assertTrue(CollectionUtils.isEmpty(updatedDataPoints));
+    }
+
+    @Test
+    public void testMergeExistingDataPointsIntoNew_new_data_empty_old_data_empty() {
+        Map<Long, Long> updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(new HashMap<Long, Long>(), new HashMap<Long, Long>());
+        Assert.assertTrue(CollectionUtils.isEmpty(updatedDataPoints));
+    }
+
+    @Test
+    public void testMergeExistingDataPointsIntoNew_new_data_not_empty_old_data_empty() {
+
+        Map<Long, Long> newDataPoints = new HashMap<Long, Long>();
+        newDataPoints.put(1L, 333L);
+        newDataPoints.put(2L, 444L);
+
+        Map<Long, Long> updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(newDataPoints, new HashMap<Long, Long>());
+        Assert.assertEquals(2, updatedDataPoints.size());
+        Assert.assertEquals(newDataPoints.get(1L), updatedDataPoints.get(1L));
+        Assert.assertEquals(newDataPoints.get(2L), updatedDataPoints.get(2L));
+    }
+
+    @Test
+    public void testMergeExistingDataPointsIntoNew_new_data_not_empty_and_old_data_not_empty() {
+
+        Map<Long, Long> newDataPoints = new HashMap<Long, Long>();
+        newDataPoints.put(1L, 333L);
+        newDataPoints.put(2L, 444L);
+
+        Map<Long, Long> existingDataPoints = new HashMap<Long, Long>();
+        existingDataPoints.put(2L, 1L);
+        existingDataPoints.put(7L, 888L);
+
+        Map<Long, Long> updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(newDataPoints, existingDataPoints);
+        Assert.assertEquals(2, updatedDataPoints.size());
+        Assert.assertEquals(newDataPoints.get(1L), updatedDataPoints.get(1L));
+
+        Long expectedSum = newDataPoints.get(2L) + existingDataPoints.get(2L);
+        Assert.assertEquals(expectedSum, updatedDataPoints.get(2L));
     }
 
     //

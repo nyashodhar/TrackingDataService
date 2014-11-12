@@ -25,6 +25,44 @@ public class BucketAggregationUtil {
     private Logger logger = Logger.getLogger(this.getClass());
 
     /**
+     * If a key present in newDataPoints also exists in existingDataPoints,
+     * the two values are added together to create a new value in the returned map.
+     * If the key only exists in newDataPoints, the value in the returned map will
+     * be equal to the value present for the key in newDataPoints.
+     * @param newDataPoints
+     * @param existingDataPoints
+     * @return a map containing contributions from any existing datapoints incorporated
+     * into the new data.
+     */
+    public Map<Long, Long> mergeExistingDataPointsIntoNew(
+            Map<Long, Long> newDataPoints, Map<Long, Long> existingDataPoints) {
+
+        Map<Long, Long> updatedDataPoints = new TreeMap<Long, Long>();
+
+        if(CollectionUtils.isEmpty(existingDataPoints)) {
+            logger.info("mergeExistingDataPointsIntoNew(): No existing data points found.");
+            if(!CollectionUtils.isEmpty(newDataPoints)) {
+                updatedDataPoints.putAll(newDataPoints);
+            }
+        } else {
+
+            logger.info("mergeExistingDataPointsIntoNew(): Previously aggregated data found => " +
+                    "merging in current aggregated data for update.");
+
+            for(long newAggregatedDataPoint : newDataPoints.keySet()) {
+                long newAddedValue = newDataPoints.get(newAggregatedDataPoint);
+                long existingValue = existingDataPoints.get(newAggregatedDataPoint) == null ?
+                        0L : existingDataPoints.get(newAggregatedDataPoint);
+                long updatedValue = newAddedValue + existingValue;
+                updatedDataPoints.put(newAggregatedDataPoint, updatedValue);
+            }
+        }
+
+        return updatedDataPoints;
+    }
+
+
+    /**
      * Organize tracking data into bucket of the given time unit.
      *
      * For buckets that are larger than minute-size, the boundaries of the buckets
