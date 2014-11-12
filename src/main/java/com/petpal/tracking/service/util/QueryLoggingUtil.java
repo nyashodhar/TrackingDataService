@@ -29,7 +29,6 @@ public class QueryLoggingUtil {
                 if(metricResult.length() > 0) {
                     metricResult.append(", ");
                 }
-                //metricResult.append(date + "=" + metricResults.get(trackingMetric).get(timestamp));
                 metricResult.append(getUTCFormat(date.getTime()) + "=" + metricResults.get(trackingMetric).get(timestamp));
             }
             logger.info("Result for " + trackingMetric + ": " + metricResult.toString());
@@ -37,27 +36,7 @@ public class QueryLoggingUtil {
     }
 
     public static void logTimeSeriesQueryDescription(Map<TrackingTag, String> tags,
-                                               List<TrackingMetric> trackingMetrics,
-                                               int beginUnitsIntoPast,
-                                               Integer endUnitsIntoPast,
-                                               TimeUnit queryIntervalTimeUnit,
-                                               TimeUnit resultTimeUnit,
-                                               int resultBucketMultiplier) {
-
-        StringBuffer intervalDescriptor = new StringBuffer("[" + beginUnitsIntoPast + " " + queryIntervalTimeUnit + " ago,");
-        if(endUnitsIntoPast == null) {
-            intervalDescriptor.append(" now]");
-        } else {
-            intervalDescriptor.append(" " + endUnitsIntoPast + " " + queryIntervalTimeUnit + " ago]");
-        }
-
-        logger.info("Time series query for interval " + intervalDescriptor + " for tracking metrics " + trackingMetrics +
-                ", each metric tagged by " + tags + ". Results will be grouped into buckets of " +
-                resultBucketMultiplier + " " + resultTimeUnit + ".");
-    }
-
-    public static void logTimeSeriesQueryDescription(Map<TrackingTag, String> tags,
-                                               List<TrackingMetric> trackingMetrics,
+                                               List<String> queryMetrics,
                                                Long utcBegin,
                                                Long utcEnd,
                                                TimeUnit resultBucketSize,
@@ -70,7 +49,7 @@ public class QueryLoggingUtil {
             intervalDescriptor.append(" " + getUTCFormat(utcBegin) + "]");
         }
 
-        logger.info("Time series query for interval " + intervalDescriptor + " for tracking metrics " + trackingMetrics +
+        logger.info("Time series query for interval " + intervalDescriptor + " for query metrics " + queryMetrics +
                 ", each metric tagged by " + tags + ". Results will be grouped into buckets of " +
                 resultBucketMultiplier + " " + resultBucketSize + " size.");
     }
@@ -79,7 +58,6 @@ public class QueryLoggingUtil {
         if(utcMillis == null) {
             throw new IllegalArgumentException("UTCMillis was not specified");
         }
-        //final Date currentTime = new Date();
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEE-MMM-d yyyy hh:mm:ss a z");
         simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         return simpleDateFormat.format(new Date(utcMillis.longValue()));

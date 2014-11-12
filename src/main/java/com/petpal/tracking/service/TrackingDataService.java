@@ -20,14 +20,17 @@ import org.kairosdb.client.response.Results;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.TreeMap;
 
 /**
@@ -71,6 +74,34 @@ public class TrackingDataService {
     }
 
 
+    protected void storeDataForMetric(TrackingMetric trackingMetric, Map<Long, Long> unaggregatedMetricData, Map<TrackingTag, String> tags, TimeZone timeZone) {
+
+        // Step 1: Store the raw data for this metric
+
+        // TODO:
+
+        // Step 2: Update all the aggregated data series for this metric
+
+        // Step 2.1: Aggregate the unaggregated data into buckets for each aggregated series
+
+        // Step 2.2: For each series, query the current data points in aggregate series and then update each data point
+        //           with contributions from the current data being aggregated.
+
+        // Step 2.3: Store the updated aggregated series
+
+    }
+
+    /*
+    protected void updateAggregatedSeriesForMetric(TrackingMetric trackingMetric, Map<Long, Long> unaggregatedData, Map<TrackingTag, String> tags, TimeZone timeZone, TimeUnit bucketSize) {
+
+        Map<Long, Long> aggregatedData = bucketAggregationUtil.
+                aggregateIntoBucketsForTimeZone(unaggregatedData, timeZone, bucketSize);
+
+        //Map<TrackingMetric, Map<Long, Long>>
+
+    }
+    */
+
     public Map<TrackingMetric, Map<Long, Long>> getMetricsForAbsoluteRange(
             Map<TrackingTag, String> tags,
             List<TrackingMetric> trackingMetrics,
@@ -80,12 +111,32 @@ public class TrackingDataService {
             int resultBucketMultiplier,
             boolean verboseResponse) {
 
+        List<String> queryMetrics = new ArrayList<String>();
+        if(!CollectionUtils.isEmpty(trackingMetrics)) {
+            for(TrackingMetric t : trackingMetrics) {
+                queryMetrics.add(t.toString());
+            }
+        }
+
+        return getMetricsForRange(tags, queryMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier, verboseResponse);
+    }
+
+
+    protected Map<TrackingMetric, Map<Long, Long>> getMetricsForRange(
+            Map<TrackingTag, String> tags,
+            List<String> queryMetrics,
+            Long utcBegin,
+            Long utcEnd,
+            TimeUnit resultBucketSize,
+            int resultBucketMultiplier,
+            boolean verboseResponse) {
+
         // Do some validation of the input parameters
         QueryArgumentValidationUtil.validateMetricsQueryParameters(
-                tags, trackingMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
+                tags, queryMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
 
         // Print a description of the query in the log
-        QueryLoggingUtil.logTimeSeriesQueryDescription(tags, trackingMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
+        QueryLoggingUtil.logTimeSeriesQueryDescription(tags, queryMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
 
         // Set the time interval for the query
         QueryBuilder queryBuilder = QueryBuilder.getInstance();
@@ -95,7 +146,7 @@ public class TrackingDataService {
         }
 
         // Add metrics, aggregator and tags to the query
-        addMetricsAndAggregator(queryBuilder, trackingMetrics, resultBucketSize, resultBucketMultiplier, tags);
+        addMetricsAndAggregator(queryBuilder, queryMetrics, resultBucketSize, resultBucketMultiplier, tags);
 
         // Do the query
         QueryResponse queryResponse = KairosClientUtil.executeQuery(queryBuilder, kairosRestClient);
@@ -118,51 +169,10 @@ public class TrackingDataService {
         return metricResults;
     }
 
-
-    public Map<TrackingMetric, Map<Long, Long>> getMetrics(Map<TrackingTag, String> tags,
-                           List<TrackingMetric> trackingMetrics,
-                           int beginUnitsIntoPast,
-                           Integer endUnitsIntoPast,
-                           TimeUnit queryIntervalTimeUnit,
-                           TimeUnit resultTimeUnit,
-                           int resultBucketMultiplier) {
-
-        // Do some validation of the input parameters
-        QueryArgumentValidationUtil.validateMetricsQueryParameters(tags, trackingMetrics, beginUnitsIntoPast, endUnitsIntoPast,
-                queryIntervalTimeUnit, resultTimeUnit, resultBucketMultiplier);
-
-        // Print a description of the query in the log
-        QueryLoggingUtil.logTimeSeriesQueryDescription(tags, trackingMetrics, beginUnitsIntoPast, endUnitsIntoPast,
-                queryIntervalTimeUnit, resultTimeUnit, resultBucketMultiplier);
-
-        QueryBuilder queryBuilder = QueryBuilder.getInstance();
-
-        // Set the time interval for the query
-        queryBuilder.setStart(beginUnitsIntoPast, queryIntervalTimeUnit);
-        if(endUnitsIntoPast != null) {
-            queryBuilder.setEnd(endUnitsIntoPast, queryIntervalTimeUnit);
-        }
-
-        // Add metrics, aggregator and tags to the query
-        addMetricsAndAggregator(queryBuilder, trackingMetrics, resultTimeUnit, resultBucketMultiplier, tags);
-
-        // Do the query
-        QueryResponse queryResponse = KairosClientUtil.executeQuery(queryBuilder, kairosRestClient);
-
-        logger.info("getMetrics(): Query completed with status code " + queryResponse.getStatusCode());
-
-        // Extract the result for response
-        Map<TrackingMetric, Map<Long, Long>> metricResults = getMetricsResultFromResponse(queryResponse);
-
-        QueryLoggingUtil.printMetricsResults(metricResults);
-
-        return metricResults;
-    }
-
-    private void addMetricsAndAggregator(QueryBuilder queryBuilder, List<TrackingMetric> trackingMetrics,
+    private void addMetricsAndAggregator(QueryBuilder queryBuilder, List<String> queryMetrics,
                                          TimeUnit resultBucketSize, int resultBucketMultiplier, Map<TrackingTag, String> tags) {
-        for(TrackingMetric trackingMetric : trackingMetrics) {
-            QueryMetric queryMetric = queryBuilder.addMetric(trackingMetric.toString());
+        for(String queryMetricStr : queryMetrics) {
+            QueryMetric queryMetric = queryBuilder.addMetric(queryMetricStr.toString());
             queryMetric.addAggregator(AggregatorFactory.createSumAggregator(resultBucketMultiplier, resultBucketSize));
             for(TrackingTag tag : tags.keySet()) {
                 queryMetric.addTag(tag.toString(), tags.get(tag));
