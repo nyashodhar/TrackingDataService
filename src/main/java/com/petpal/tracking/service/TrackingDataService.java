@@ -1,6 +1,7 @@
 package com.petpal.tracking.service;
 
 import com.petpal.tracking.data.TrackingData;
+import com.petpal.tracking.service.tag.TimeSeriesTag;
 import com.petpal.tracking.service.util.QueryArgumentValidationUtil;
 import com.petpal.tracking.service.util.QueryLoggingUtil;
 import org.apache.log4j.Logger;
@@ -54,7 +55,7 @@ public class TrackingDataService {
 
 
     public Map<String, Map<Long, Long>> getMetricsForAbsoluteRange(
-            Map<TrackingTag, String> tags,
+            Map<TimeSeriesTag, String> tags,
             List<TrackingMetric> trackingMetrics,
             Long utcBegin,
             Long utcEnd,
@@ -78,9 +79,9 @@ public class TrackingDataService {
         logger.info("storeTrackingData(): trackingData=" + trackingData);
         logger.info("storeTrackingData(): HELLO THERE");
 
-        Map<TrackingTag, String> tags = new HashMap<TrackingTag, String>();
-        tags.put(TrackingTag.TRACKEDENTITY, trackingData.getTrackedEntityId());
-        tags.put(TrackingTag.TRACKINGDEVICE, trackingData.getTrackingDeviceId());
+        Map<TimeSeriesTag, String> tags = new HashMap<TimeSeriesTag, String>();
+        tags.put(TimeSeriesTag.TRACKEDENTITY, trackingData.getTrackedEntityId());
+        tags.put(TimeSeriesTag.TRACKINGDEVICE, trackingData.getTrackingDeviceId());
 
         MetricBuilder metricBuilder = MetricBuilder.getInstance();
 
@@ -94,7 +95,7 @@ public class TrackingDataService {
     }
 
 
-    protected void storeDataForMetric(TrackingMetric trackingMetric, Map<Long, Long> unaggregatedMetricData, Map<TrackingTag, String> tags, TimeZone timeZone) {
+    protected void storeDataForMetric(TrackingMetric trackingMetric, Map<Long, Long> unaggregatedMetricData, Map<TimeSeriesTag, String> tags, TimeZone timeZone) {
 
         // Step 1: Store the raw data for this metric
 
@@ -112,7 +113,7 @@ public class TrackingDataService {
     }
 
     protected void updateAggregatedSeriesForMetric(TrackingMetric trackingMetric, Map<Long, Long> unaggregatedData,
-                                                   Map<TrackingTag, String> tags, TimeZone timeZone, TimeUnit bucketSize) {
+                                                   Map<TimeSeriesTag, String> tags, TimeZone timeZone, TimeUnit bucketSize) {
 
         // Aggregate the input data
         Map<Long, Long> aggregatedData = bucketAggregationUtil.
@@ -153,7 +154,7 @@ public class TrackingDataService {
 
 
     protected Map<String, Map<Long, Long>> getMetricsForRange(
-            Map<TrackingTag, String> tags,
+            Map<TimeSeriesTag, String> tags,
             List<String> queryMetrics,
             Long utcBegin,
             Long utcEnd,
@@ -200,11 +201,11 @@ public class TrackingDataService {
     }
 
     private void addMetricsAndAggregator(QueryBuilder queryBuilder, List<String> queryMetrics,
-                                         TimeUnit resultBucketSize, int resultBucketMultiplier, Map<TrackingTag, String> tags) {
+                                         TimeUnit resultBucketSize, int resultBucketMultiplier, Map<TimeSeriesTag, String> tags) {
         for(String queryMetricStr : queryMetrics) {
             QueryMetric queryMetric = queryBuilder.addMetric(queryMetricStr.toString());
             queryMetric.addAggregator(AggregatorFactory.createSumAggregator(resultBucketMultiplier, resultBucketSize));
-            for(TrackingTag tag : tags.keySet()) {
+            for(TimeSeriesTag tag : tags.keySet()) {
                 queryMetric.addTag(tag.toString(), tags.get(tag));
             }
         }
@@ -271,7 +272,7 @@ public class TrackingDataService {
         }
     }
 
-    private void addMetricsToBuilder(MetricBuilder metricBuilder, Map<Long, Long> timeStampValueMap, TrackingMetric trackingMetric, Map<TrackingTag, String> tags) {
+    private void addMetricsToBuilder(MetricBuilder metricBuilder, Map<Long, Long> timeStampValueMap, TrackingMetric trackingMetric, Map<TimeSeriesTag, String> tags) {
 
         if(timeStampValueMap.isEmpty()) {
             logger.info("Metric " + trackingMetric + ": no metrics provided");
@@ -279,7 +280,7 @@ public class TrackingDataService {
         }
 
         Metric metric = metricBuilder.addMetric(trackingMetric.toString());
-        for(TrackingTag tag : tags.keySet()) {
+        for(TimeSeriesTag tag : tags.keySet()) {
             metric.addTag(tag.toString(), tags.get(tag));
         }
 

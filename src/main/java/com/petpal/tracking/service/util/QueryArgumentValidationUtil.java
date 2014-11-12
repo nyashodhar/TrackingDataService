@@ -1,6 +1,6 @@
 package com.petpal.tracking.service.util;
 
-import com.petpal.tracking.service.TrackingTag;
+import com.petpal.tracking.service.tag.TimeSeriesTag;
 import org.kairosdb.client.builder.TimeUnit;
 import org.springframework.util.CollectionUtils;
 
@@ -12,7 +12,7 @@ import java.util.Map;
  */
 public class QueryArgumentValidationUtil {
 
-    public static void validateMetricsQueryParameters(Map<TrackingTag, String> tags,
+    public static void validateMetricsQueryParameters(Map<TimeSeriesTag, String> tags,
                                                 List<String> queryMetrics,
                                                 Long utcBegin,
                                                 Long utcEnd,
@@ -32,7 +32,6 @@ public class QueryArgumentValidationUtil {
         }
 
         if(utcEnd != null) {
-            //if(!(utcEnd.getTime() > utcBegin.getTime())) {
             if(!(utcEnd.longValue() > utcBegin)) {
                 throw new IllegalArgumentException("The time stamp " + utcEnd + " for end of time interval, must be " +
                         "> than the timestamp for the start of the interval (" + utcBegin + ")");

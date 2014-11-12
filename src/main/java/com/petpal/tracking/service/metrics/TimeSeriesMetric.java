@@ -1,18 +1,15 @@
-package com.petpal.tracking.service;
+package com.petpal.tracking.service.metrics;
 
+import com.petpal.tracking.service.TrackingMetric;
 import org.kairosdb.client.builder.TimeUnit;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * This enumeration names metrics for all the actual time series that are
- * stored to back the types of metrics an end user can refer to in the API
- * via as the TrackingMetric enum.
- *
  * Created by per on 11/12/14.
  */
-public enum AggregatedTrackingMetric {
+public enum TimeSeriesMetric {
 
     WALKINGSTEPS_YEARS,
     WALKINGSTEPS_MONTHS,
@@ -33,10 +30,21 @@ public enum AggregatedTrackingMetric {
     RESTINGSECONDS_MONTHS,
     RESTINGSECONDS_WEEKS,
     RESTINGSECONDS_DAYS,
-    RESTINGSECONDS_HOURS;
+    RESTINGSECONDS_HOURS,
+    WALKINGSTEPS_RAW,
+    RUNNINGSTEPS_RAW,
+    SLEEPINGSECONDS_RAW,
+    RESTINGSECONDS_RAW;
 
 
-    public static List<AggregatedTrackingMetric> getAggregatedTrackingMetrics(TrackingMetric trackingMetric, TimeUnit timeUnit) {
+    public static TimeSeriesMetric getRawMetric(TrackingMetric trackingMetric) {
+        if(trackingMetric == null) {
+            throw new IllegalArgumentException("Tracking metric missing");
+        }
+        return TimeSeriesMetric.valueOf(trackingMetric.toString()+"_RAW");
+    }
+
+    public static List<TimeSeriesMetric> getAggregatedTimeSeriesMetrics(TrackingMetric trackingMetric, TimeUnit timeUnit) {
 
         if(trackingMetric == null) {
             throw new IllegalArgumentException("Tracking metric missing");
@@ -53,16 +61,16 @@ public enum AggregatedTrackingMetric {
             throw new IllegalArgumentException("Invalid time unit " + timeUnit);
         }
 
-        List<AggregatedTrackingMetric> aggregatedTrackingMetrics = new ArrayList<AggregatedTrackingMetric>();
+        List<TimeSeriesMetric> aggregatedTrackingMetrics = new ArrayList<TimeSeriesMetric>();
 
         if(timeUnit != null) {
-            AggregatedTrackingMetric aggregatedTrackingMetric =
-                    AggregatedTrackingMetric.valueOf(trackingMetric.toString() + "_" + timeUnit.toString());
+            TimeSeriesMetric aggregatedTrackingMetric =
+                    TimeSeriesMetric.valueOf(trackingMetric.toString() + "_" + timeUnit.toString());
             aggregatedTrackingMetrics.add(aggregatedTrackingMetric);
         } else {
             for(TimeUnit validTimeUnit : validTimeUnits) {
-                AggregatedTrackingMetric aggregatedTrackingMetric =
-                        AggregatedTrackingMetric.valueOf(trackingMetric.toString() + "_" + validTimeUnit.toString());
+                TimeSeriesMetric aggregatedTrackingMetric =
+                        TimeSeriesMetric.valueOf(trackingMetric.toString() + "_" + validTimeUnit.toString());
                 aggregatedTrackingMetrics.add(aggregatedTrackingMetric);
             }
         }
