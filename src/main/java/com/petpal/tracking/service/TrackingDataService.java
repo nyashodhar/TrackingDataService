@@ -52,6 +52,26 @@ public class TrackingDataService {
 
     private KairosRestClient kairosRestClient;
 
+
+    public Map<String, Map<Long, Long>> getMetricsForAbsoluteRange(
+            Map<TrackingTag, String> tags,
+            List<TrackingMetric> trackingMetrics,
+            Long utcBegin,
+            Long utcEnd,
+            TimeUnit resultBucketSize,
+            int resultBucketMultiplier,
+            boolean verboseResponse) {
+
+        List<String> queryMetrics = new ArrayList<String>();
+        if(!CollectionUtils.isEmpty(trackingMetrics)) {
+            for(TrackingMetric t : trackingMetrics) {
+                queryMetrics.add(t.toString());
+            }
+        }
+
+        return getMetricsForRange(tags, queryMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier, verboseResponse);
+    }
+
     public void storeTrackingData(TrackingData trackingData) {
 
         System.out.println("TrackingService.storeTrackingData(): Hello - kairosDBHost=" + kairosDBHost + ", kairosDBPort=" + kairosDBPort);
@@ -123,28 +143,13 @@ public class TrackingDataService {
 
         // Persist the updated data in the time series
 
+        //Response response = KairosClientUtil.pushMetrics(metricBuilder, kairosRestClient);
+        //logger.info("Metrics pushed, response.getStatusCode() = " + response.getStatusCode());
+
         // TODO
 
     }
 
-    public Map<String, Map<Long, Long>> getMetricsForAbsoluteRange(
-            Map<TrackingTag, String> tags,
-            List<TrackingMetric> trackingMetrics,
-            Long utcBegin,
-            Long utcEnd,
-            TimeUnit resultBucketSize,
-            int resultBucketMultiplier,
-            boolean verboseResponse) {
-
-        List<String> queryMetrics = new ArrayList<String>();
-        if(!CollectionUtils.isEmpty(trackingMetrics)) {
-            for(TrackingMetric t : trackingMetrics) {
-                queryMetrics.add(t.toString());
-            }
-        }
-
-        return getMetricsForRange(tags, queryMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier, verboseResponse);
-    }
 
 
     protected Map<String, Map<Long, Long>> getMetricsForRange(
@@ -266,7 +271,6 @@ public class TrackingDataService {
         }
     }
 
-
     private void addMetricsToBuilder(MetricBuilder metricBuilder, Map<Long, Long> timeStampValueMap, TrackingMetric trackingMetric, Map<TrackingTag, String> tags) {
 
         if(timeStampValueMap.isEmpty()) {
@@ -287,11 +291,9 @@ public class TrackingDataService {
         logger.info("Metric " + trackingMetric + " prepped: " + timeStampValueMap.size() + " data points, tags = " + tags);
     }
 
-
     @PostConstruct
     public void afterPropertiesSet() throws Exception {
         String kairosDBURL = "http://" + kairosDBHost + ":" + kairosDBPort;
         kairosRestClient = new KairosRestClient(kairosDBURL);
     }
-
 }
