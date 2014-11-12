@@ -37,6 +37,44 @@ public class TimeSeriesMetricTest {
         }
     }
 
+    //
+    // getAggregatedTimeSeriesMetric()
+    //
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetAggregatedTimeSeriesMetric_tracking_metric_null() {
+        TimeSeriesMetric.getAggregatedTimeSeriesMetric(null, TimeUnit.YEARS);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetAggregatedTimeSeriesMetric_time_unit_null() {
+        TimeSeriesMetric.getAggregatedTimeSeriesMetric(TrackingMetric.WALKINGSTEPS, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getAggregatedTimeSeriesMetric_invalid_time_unit() {
+        TimeSeriesMetric.getAggregatedTimeSeriesMetric(TrackingMetric.WALKINGSTEPS, TimeUnit.MILLISECONDS);
+    }
+
+    @Test
+    public void getAggregatedTimeSeriesMetric_valid_time_unit_walkingsteps() {
+        checkTimeSeriesMetricForAllValidTimeUnits(TrackingMetric.WALKINGSTEPS);
+    }
+
+    @Test
+    public void getAggregatedTimeSeriesMetric_valid_time_unit_runningsteps() {
+        checkTimeSeriesMetricForAllValidTimeUnits(TrackingMetric.RUNNINGSTEPS);
+    }
+
+    @Test
+    public void getAggregatedTimeSeriesMetric_valid_time_unit_sleepingseconds() {
+        checkTimeSeriesMetricForAllValidTimeUnits(TrackingMetric.SLEEPINGSECONDS);
+    }
+
+    @Test
+    public void getAggregatedTimeSeriesMetric_valid_time_unit_restingseconds() {
+        checkTimeSeriesMetricForAllValidTimeUnits(TrackingMetric.RESTINGSECONDS);
+    }
 
     //
     // getAggregatedTimeSeriesMetrics()
@@ -44,69 +82,39 @@ public class TimeSeriesMetricTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void getAggregatedTimeSeriesMetrics_null_tracking_metric() {
-        TimeSeriesMetric.getAggregatedTimeSeriesMetrics(null, TimeUnit.YEARS);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void getAggregatedTimeSeriesMetrics_invalid_time_unit() {
-        TimeSeriesMetric.getAggregatedTimeSeriesMetrics(TrackingMetric.WALKINGSTEPS, TimeUnit.MILLISECONDS);
+        TimeSeriesMetric.getAggregatedTimeSeriesMetrics(null);
     }
 
     @Test
-    public void getAggregatedTimeSeriesMetrics_null_time_unit_walkingsteps() {
-        List<TimeSeriesMetric> aggregatedTrackingMetrics =
-                TimeSeriesMetric.getAggregatedTimeSeriesMetrics(TrackingMetric.WALKINGSTEPS, null);
-        assertAllValidTimeUnitsCovered(TrackingMetric.WALKINGSTEPS, aggregatedTrackingMetrics);
+    public void getAggregatedTimeSeriesMetrics_walkingsteps() {
+        List<TimeSeriesMetric> timeSeriesMetrics = TimeSeriesMetric.getAggregatedTimeSeriesMetrics(TrackingMetric.WALKINGSTEPS);
+        assertAllValidTimeUnitsCovered(TrackingMetric.WALKINGSTEPS, timeSeriesMetrics);
     }
 
     @Test
-    public void getAggregatedTimeSeriesMetrics_null_time_unit_runningsteps() {
-        List<TimeSeriesMetric> aggregatedTrackingMetrics =
-                TimeSeriesMetric.getAggregatedTimeSeriesMetrics(TrackingMetric.RUNNINGSTEPS, null);
-        assertAllValidTimeUnitsCovered(TrackingMetric.RUNNINGSTEPS, aggregatedTrackingMetrics);
+    public void getAggregatedTimeSeriesMetrics_runningsteps() {
+        List<TimeSeriesMetric> timeSeriesMetrics = TimeSeriesMetric.getAggregatedTimeSeriesMetrics(TrackingMetric.RUNNINGSTEPS);
+        assertAllValidTimeUnitsCovered(TrackingMetric.RUNNINGSTEPS, timeSeriesMetrics);
     }
 
     @Test
-    public void getAggregatedTimeSeriesMetrics_null_time_unit_sleepingseconds() {
-        List<TimeSeriesMetric> aggregatedTrackingMetrics =
-                TimeSeriesMetric.getAggregatedTimeSeriesMetrics(TrackingMetric.SLEEPINGSECONDS, null);
-        assertAllValidTimeUnitsCovered(TrackingMetric.SLEEPINGSECONDS, aggregatedTrackingMetrics);
+    public void getAggregatedTimeSeriesMetrics_sleepingseconds() {
+        List<TimeSeriesMetric> timeSeriesMetrics = TimeSeriesMetric.getAggregatedTimeSeriesMetrics(TrackingMetric.SLEEPINGSECONDS);
+        assertAllValidTimeUnitsCovered(TrackingMetric.SLEEPINGSECONDS, timeSeriesMetrics);
     }
 
     @Test
-    public void getAggregatedTimeSeriesMetrics_null_time_unit_restingseconds() {
-        List<TimeSeriesMetric> aggregatedTrackingMetrics =
-                TimeSeriesMetric.getAggregatedTimeSeriesMetrics(TrackingMetric.RESTINGSECONDS, null);
-        assertAllValidTimeUnitsCovered(TrackingMetric.RESTINGSECONDS, aggregatedTrackingMetrics);
+    public void getAggregatedTimeSeriesMetrics_restingseconds() {
+        List<TimeSeriesMetric> timeSeriesMetrics = TimeSeriesMetric.getAggregatedTimeSeriesMetrics(TrackingMetric.RESTINGSECONDS);
+        assertAllValidTimeUnitsCovered(TrackingMetric.RESTINGSECONDS, timeSeriesMetrics);
     }
 
-    @Test
-    public void getAggregatedTimeSeriesMetrics_valid_time_unit_walkingsteps() {
-        checkAggregatedMetricForValidTimeUnits(TrackingMetric.WALKINGSTEPS);
-    }
 
-    @Test
-    public void getAggregatedTimeSeriesMetrics_valid_time_unit_runningsteps() {
-        checkAggregatedMetricForValidTimeUnits(TrackingMetric.RUNNINGSTEPS);
-    }
-
-    @Test
-    public void getAggregatedTimeSeriesMetrics_valid_time_unit_sleeingseconds() {
-        checkAggregatedMetricForValidTimeUnits(TrackingMetric.SLEEPINGSECONDS);
-    }
-
-    @Test
-    public void getAggregatedTimeSeriesMetrics_valid_time_unit_restingseconds() {
-        checkAggregatedMetricForValidTimeUnits(TrackingMetric.RESTINGSECONDS);
-    }
-
-    private void checkAggregatedMetricForValidTimeUnits(TrackingMetric trackingMetric) {
+    private void checkTimeSeriesMetricForAllValidTimeUnits(TrackingMetric trackingMetric) {
         List<TimeUnit> validTimeUnits = getValidTimeUnits();
         for(TimeUnit timeUnit : validTimeUnits) {
-            List<TimeSeriesMetric> aggregatedTrackingMetrics =
-                    TimeSeriesMetric.getAggregatedTimeSeriesMetrics(trackingMetric, timeUnit);
-            Assert.assertEquals(1, aggregatedTrackingMetrics.size());
-            Assert.assertTrue(aggregatedTrackingMetrics.contains(TimeSeriesMetric.valueOf(trackingMetric.toString() + "_" + timeUnit.toString())));
+            TimeSeriesMetric timeSeriesMetric = TimeSeriesMetric.getAggregatedTimeSeriesMetric(trackingMetric, timeUnit);
+            Assert.assertEquals(TimeSeriesMetric.valueOf(trackingMetric.toString() + "_" + timeUnit), timeSeriesMetric);
         }
     }
 

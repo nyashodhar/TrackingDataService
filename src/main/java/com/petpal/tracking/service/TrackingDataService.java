@@ -86,7 +86,6 @@ public class TrackingDataService {
         tags.put(TimeSeriesTag.TRACKINGDEVICE, trackingData.getTrackingDeviceId());
 
         MetricBuilder metricBuilder = MetricBuilder.getInstance();
-
         addMetricsToBuilder(metricBuilder, trackingData.getWalkingData(), TrackingMetric.WALKINGSTEPS, tags);
         addMetricsToBuilder(metricBuilder, trackingData.getRunningData(), TrackingMetric.RUNNINGSTEPS, tags);
         addMetricsToBuilder(metricBuilder, trackingData.getSleepingData(), TrackingMetric.SLEEPINGSECONDS, tags);
@@ -128,8 +127,9 @@ public class TrackingDataService {
         }
 
         // Query for the existing aggregated data
-        List<TimeSeriesMetric> timeSeriesMetrics = TimeSeriesMetric.getAggregatedTimeSeriesMetrics(trackingMetric, bucketSize);
-        TimeSeriesMetric timeSeriesMetric = timeSeriesMetrics.iterator().next();
+        TimeSeriesMetric timeSeriesMetric = TimeSeriesMetric.getAggregatedTimeSeriesMetric(trackingMetric, bucketSize);
+        List<TimeSeriesMetric> timeSeriesMetrics = new ArrayList<TimeSeriesMetric>();
+        timeSeriesMetrics.add(timeSeriesMetric);
 
         long startOfFirstBucket = aggregatedData.keySet().iterator().next();
 
