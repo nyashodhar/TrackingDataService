@@ -102,7 +102,7 @@ public class TrackingDataService {
     }
     */
 
-    public Map<TrackingMetric, Map<Long, Long>> getMetricsForAbsoluteRange(
+    public Map<String, Map<Long, Long>> getMetricsForAbsoluteRange(
             Map<TrackingTag, String> tags,
             List<TrackingMetric> trackingMetrics,
             Long utcBegin,
@@ -122,7 +122,7 @@ public class TrackingDataService {
     }
 
 
-    protected Map<TrackingMetric, Map<Long, Long>> getMetricsForRange(
+    protected Map<String, Map<Long, Long>> getMetricsForRange(
             Map<TrackingTag, String> tags,
             List<String> queryMetrics,
             Long utcBegin,
@@ -154,7 +154,7 @@ public class TrackingDataService {
         logger.info("getMetricsForAbsoluteRange(): Query completed with status code " + queryResponse.getStatusCode());
 
         // Extract the result for response
-        Map<TrackingMetric, Map<Long, Long>> metricResults = getMetricsResultFromResponse(queryResponse);
+        Map<String, Map<Long, Long>> metricResults = getMetricsResultFromResponse(queryResponse);
 
         logger.info("getMetricsForAbsoluteRange(): metricResults = " + metricResults);
 
@@ -180,7 +180,7 @@ public class TrackingDataService {
         }
     }
 
-    private Map<TrackingMetric, Map<Long, Long>> getMetricsResultFromResponse(QueryResponse queryResponse) {
+    private Map<String, Map<Long, Long>> getMetricsResultFromResponse(QueryResponse queryResponse) {
 
         //
         // Gather the results into a data structure
@@ -190,22 +190,22 @@ public class TrackingDataService {
 
         List<Queries> queries = queryResponse.getQueries();
 
-        Map<TrackingMetric, Map<Long, Long>> metricResults = new HashMap<TrackingMetric, Map<Long, Long>>();
+        Map<String, Map<Long, Long>> metricResults = new HashMap<String, Map<Long, Long>>();
 
         for(Queries query : queries) {
             List<Results> results = query.getResults();
             for(Results result : results) {
                 List<DataPoint> dataPoints = result.getDataPoints();
                 String resultName = result.getName();
-                TrackingMetric trackingMetric = TrackingMetric.valueOf(resultName.toUpperCase());
+                String metric = resultName.toUpperCase();
                 if(!dataPoints.isEmpty()) {
                     if (!metricResults.containsKey(resultName)) {
-                        metricResults.put(trackingMetric, new TreeMap<Long, Long>());
+                        metricResults.put(metric, new TreeMap<Long, Long>());
                     }
                 }
 
                 for(DataPoint dataPoint : dataPoints) {
-                    metricResults.get(trackingMetric).put(dataPoint.getTimestamp(), KairosClientUtil.getLongValueFromDataPoint(dataPoint));
+                    metricResults.get(metric).put(dataPoint.getTimestamp(), KairosClientUtil.getLongValueFromDataPoint(dataPoint));
                 }
             }
         }
@@ -214,20 +214,20 @@ public class TrackingDataService {
     }
 
 
-    private void adjustBucketBoundaries(Map<TrackingMetric, Map<Long, Long>> metricResults,
+    private void adjustBucketBoundaries(Map<String, Map<Long, Long>> metricResults,
                                         Long utcBegin, Long utcEnd, TimeUnit resultBucketSize, boolean verboseResponse) {
 
-        for (TrackingMetric trackingMetric : metricResults.keySet()) {
+        for (String metric : metricResults.keySet()) {
 
             //
             // Adjust the bucket boundaries and inject empty buckets.
             //
             Map<Long, Long> adjustedMetricResult = bucketAggregationUtil.adjustBoundariesForMetricResult(
-                    metricResults.get(trackingMetric), utcBegin, utcEnd, resultBucketSize);
-            metricResults.put(trackingMetric, adjustedMetricResult);
+                    metricResults.get(metric), utcBegin, utcEnd, resultBucketSize);
+            metricResults.put(metric, adjustedMetricResult);
 
-            logger.debug("Bucket adjust for metric " + trackingMetric + ": old bucket count = " +
-                    metricResults.get(trackingMetric).size() + ", new bucket count = " + adjustedMetricResult.size());
+            logger.debug("Bucket adjust for metric " + metric + ": old bucket count = " +
+                    metricResults.get(metric).size() + ", new bucket count = " + adjustedMetricResult.size());
 
             // If the response is not to be verbose, filter out the empty buckets.
             if(!verboseResponse) {

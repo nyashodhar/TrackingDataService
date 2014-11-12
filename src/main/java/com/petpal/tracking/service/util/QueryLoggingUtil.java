@@ -18,20 +18,20 @@ public class QueryLoggingUtil {
 
     private static Logger logger = Logger.getLogger(QueryLoggingUtil.class);
 
-    public static void printMetricsResults(Map<TrackingMetric, Map<Long, Long>> metricResults) {
+    public static void printMetricsResults(Map<String, Map<Long, Long>> metricResults) {
 
-        for(TrackingMetric trackingMetric : metricResults.keySet()) {
+        for(String metric : metricResults.keySet()) {
 
             StringBuffer metricResult = new StringBuffer();
-            for(Long timestamp : metricResults.get(trackingMetric).keySet()) {
+            for(Long timestamp : metricResults.get(metric).keySet()) {
                 Date date = new Date();
                 date.setTime(timestamp);
                 if(metricResult.length() > 0) {
                     metricResult.append(", ");
                 }
-                metricResult.append(getUTCFormat(date.getTime()) + "=" + metricResults.get(trackingMetric).get(timestamp));
+                metricResult.append(getUTCFormat(date.getTime()) + "=" + metricResults.get(metric).get(timestamp));
             }
-            logger.info("Result for " + trackingMetric + ": " + metricResult.toString());
+            logger.info("Result for " + metric + ": " + metricResult.toString());
         }
     }
 
