@@ -33,7 +33,7 @@ public class QueryLoggingUtil {
                 }
                 metricResult.append(getUTCFormat(date.getTime()) + "=" + metricResults.get(timeSeriesMetric).get(timestamp));
             }
-            logger.info("Result for " + timeSeriesMetric + ": " + metricResult.toString());
+            logger.debug("Result for " + timeSeriesMetric + ": " + metricResult.toString());
         }
     }
 

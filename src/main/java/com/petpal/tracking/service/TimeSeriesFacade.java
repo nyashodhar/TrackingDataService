@@ -87,7 +87,7 @@ public class TimeSeriesFacade {
         QueryLoggingUtil.printMetricsResults(resultsByMetric);
 
         Map<Long, Long> results = resultsByMetric.get(timeSeriesMetric);
-        logger.info("querySingleTimeSeries(): results = " + results);
+        logger.debug("querySingleTimeSeries(): results = " + results);
 
         return results;
     }

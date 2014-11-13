@@ -79,10 +79,10 @@ public class TrackingData {
         final StringBuilder sb = new StringBuilder("TrackingData{");
         sb.append("trackedEntityId='").append(trackedEntityId).append('\'');
         sb.append(", trackingDeviceId='").append(trackingDeviceId).append('\'');
-        sb.append(", walkingData=").append(walkingData);
-        sb.append(", runningData=").append(runningData);
-        sb.append(", sleepingData=").append(sleepingData);
-        sb.append(", restingData=").append(restingData);
+        sb.append(", walkingDataPoints=").append(walkingData.size());
+        sb.append(", runningDataPoints=").append(runningData.size());
+        sb.append(", sleepingDataPoints=").append(sleepingData.size());
+        sb.append(", restingDataPoints=").append(restingData.size());
         sb.append('}');
         return sb.toString();
     }
