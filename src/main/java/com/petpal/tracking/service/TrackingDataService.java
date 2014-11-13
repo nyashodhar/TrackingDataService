@@ -3,38 +3,17 @@ package com.petpal.tracking.service;
 import com.petpal.tracking.data.TrackingData;
 import com.petpal.tracking.service.metrics.TimeSeriesMetric;
 import com.petpal.tracking.service.tag.TimeSeriesTag;
-import com.petpal.tracking.service.util.QueryArgumentValidationUtil;
-import com.petpal.tracking.service.util.QueryLoggingUtil;
 import org.apache.log4j.Logger;
-import org.kairosdb.client.KairosClientUtil;
-import org.kairosdb.client.KairosRestClient;
-import org.kairosdb.client.builder.AggregatorFactory;
-import org.kairosdb.client.builder.DataPoint;
-import org.kairosdb.client.builder.Metric;
-import org.kairosdb.client.builder.MetricBuilder;
-import org.kairosdb.client.builder.QueryBuilder;
-import org.kairosdb.client.builder.QueryMetric;
 import org.kairosdb.client.builder.TimeUnit;
-import org.kairosdb.client.response.Queries;
-import org.kairosdb.client.response.QueryResponse;
-import org.kairosdb.client.response.Response;
-import org.kairosdb.client.response.Results;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import javax.annotation.PostConstruct;
-import java.sql.Time;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TimeZone;
-import java.util.TreeMap;
 
 /**
  * Created by per on 10/28/14.
@@ -47,16 +26,22 @@ public class TrackingDataService {
     @Autowired
     private BucketAggregationUtil bucketAggregationUtil;
 
-    @Value("${trackingService.kairosDBHost}")
-    private String kairosDBHost;
+    @Autowired
+    private TimeSeriesFacade timeSeriesFacade;
 
-    @Value("${trackingService.kairosDBPort}")
-    private String kairosDBPort;
-
-    private KairosRestClient kairosRestClient;
-
-
-    public Map<TimeSeriesMetric, Map<Long, Long>> getMetricsForAbsoluteRange(
+    /**
+     * Query data for multiple API level metrics for a given time range and time horizon
+     * based on aggregated time series data.
+     * @param tags
+     * @param trackingMetrics
+     * @param utcBegin
+     * @param utcEnd
+     * @param resultBucketSize
+     * @param resultBucketMultiplier
+     * @param verboseResponse
+     * @return time series data obtained from queries against aggregated time series.
+     */
+    public Map<TrackingMetric, Map<Long, Long>> getAggregatedTimeSeriesData(
             Map<TimeSeriesTag, String> tags,
             List<TrackingMetric> trackingMetrics,
             Long utcBegin,
@@ -65,58 +50,113 @@ public class TrackingDataService {
             int resultBucketMultiplier,
             boolean verboseResponse) {
 
-        List<TimeSeriesMetric> timeSeriesMetrics = new ArrayList<TimeSeriesMetric>();
-        if(!CollectionUtils.isEmpty(trackingMetrics)) {
-            for(TrackingMetric t : trackingMetrics) {
-                timeSeriesMetrics.add(TimeSeriesMetric.getRawMetric(t));
-            }
+        if(CollectionUtils.isEmpty(trackingMetrics)) {
+            throw new IllegalArgumentException("No tracking metrics provided");
         }
 
-        return getMetricsForRange(tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier, verboseResponse);
+        //
+        // The 'tracking metric' in the API level corresponds to a different time series level
+        // tracking metric since the data is aggregated into different time series based on time
+        // horizon. Therefore we need to map into the actual time series we are going to query,
+        // and after we get the result, we will map it back the API level metric identifier
+        // expected by the client.
+        //
+        Map<TimeSeriesMetric, TrackingMetric> metricMap = new HashMap<TimeSeriesMetric, TrackingMetric>();
+        List<TimeSeriesMetric> timeSeriesMetrics = new ArrayList<TimeSeriesMetric>();
+
+        for(TrackingMetric trackingMetric : trackingMetrics) {
+            TimeSeriesMetric timeSeriesMetric = TimeSeriesMetric.getAggregatedTimeSeriesMetric(trackingMetric, resultBucketSize);
+            timeSeriesMetrics.add(timeSeriesMetric);
+            metricMap.put(timeSeriesMetric, trackingMetric);
+        }
+
+        Map<TimeSeriesMetric, Map<Long, Long>> results = timeSeriesFacade.queryMultipleTimeSeries(
+                tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier, verboseResponse);
+
+        Map<TrackingMetric, Map<Long, Long>> mappedResults = new HashMap<TrackingMetric, Map<Long, Long>>();
+
+        for(TimeSeriesMetric timeSeriesMetric : results.keySet()) {
+            mappedResults.put(metricMap.get(timeSeriesMetric), results.get(timeSeriesMetric));
+        }
+
+        return mappedResults;
     }
 
+    /**
+     * Store raw tracking data. The raw data itself is persisted, but at
+     * the same time, multiple aggregated time series are updated for each
+     * metric. This makes is possible to later query the time series data
+     * from those aggregated series, yielding a much fast query.
+     * @param trackingData the data to be inserted into the time series
+     *                     date store.
+     */
     public void storeTrackingData(TrackingData trackingData) {
 
-        System.out.println("TrackingService.storeTrackingData(): Hello - kairosDBHost=" + kairosDBHost + ", kairosDBPort=" + kairosDBPort);
         logger.info("storeTrackingData(): trackingData=" + trackingData);
-        logger.info("storeTrackingData(): HELLO THERE");
 
         Map<TimeSeriesTag, String> tags = new HashMap<TimeSeriesTag, String>();
         tags.put(TimeSeriesTag.TRACKEDENTITY, trackingData.getTrackedEntityId());
         tags.put(TimeSeriesTag.TRACKINGDEVICE, trackingData.getTrackingDeviceId());
 
-        MetricBuilder metricBuilder = MetricBuilder.getInstance();
-        addMetricsToBuilder(metricBuilder, trackingData.getWalkingData(), TrackingMetric.WALKINGSTEPS, tags);
-        addMetricsToBuilder(metricBuilder, trackingData.getRunningData(), TrackingMetric.RUNNINGSTEPS, tags);
-        addMetricsToBuilder(metricBuilder, trackingData.getSleepingData(), TrackingMetric.SLEEPINGSECONDS, tags);
-        addMetricsToBuilder(metricBuilder, trackingData.getRestingData(), TrackingMetric.RESTINGSECONDS, tags);
+        //
+        // TODO: TimeZone should be specified by the client, or if not there should be a better
+        // way to determine the default timezone to aggregate relative to.
+        //
 
-        Response response = KairosClientUtil.pushMetrics(metricBuilder, kairosRestClient);
-        logger.info("Metrics pushed, response.getStatusCode() = " + response.getStatusCode());
+        TimeZone timeZonePDT = TimeZone.getTimeZone("America/Los_Angeles");
+
+        storeDataForMetric(TrackingMetric.WALKINGSTEPS, trackingData.getWalkingData(), tags, timeZonePDT);
+        storeDataForMetric(TrackingMetric.RUNNINGSTEPS, trackingData.getRunningData(), tags, timeZonePDT);
+        storeDataForMetric(TrackingMetric.SLEEPINGSECONDS, trackingData.getSleepingData(), tags, timeZonePDT);
+        storeDataForMetric(TrackingMetric.RESTINGSECONDS, trackingData.getRestingData(), tags, timeZonePDT);
+
+        logger.info("storeTrackingData(): tracking data storage completed.");
     }
 
 
-    protected void storeDataForMetric(TrackingMetric trackingMetric, Map<Long, Long> unaggregatedMetricData, Map<TimeSeriesTag, String> tags, TimeZone timeZone) {
+    /**
+     * Handles the storage of new unaggregated date for a given metric. All aggregated
+     * series are updated before storing the raw aggregated as well.
+     * @param trackingMetric the metric to which the new data is related
+     * @param unaggregatedData the new data
+     * @param tags the tags to use for the new data
+     * @param timeZone the timezone to do the bucket aggregation relative to.
+     */
+    protected void storeDataForMetric(TrackingMetric trackingMetric, Map<Long, Long> unaggregatedData, Map<TimeSeriesTag, String> tags, TimeZone timeZone) {
 
-        // Step 1: Store the raw data for this metric
+        if(CollectionUtils.isEmpty(unaggregatedData)) {
+            logger.info("storeDataForMetric(): No unaggregated data found for metric " +
+                    trackingMetric + ", returning.");
+            return;
+        }
 
-        // TODO:
+        // Update all the aggregated data series for this metric
 
-        // Step 2: Update all the aggregated data series for this metric
+        updateAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, TimeUnit.YEARS);
+        updateAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, TimeUnit.MONTHS);
+        updateAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, TimeUnit.WEEKS);
+        updateAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, TimeUnit.DAYS);
+        updateAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, TimeUnit.HOURS);
 
-        // Step 2.1: Aggregate the unaggregated data into buckets for each aggregated series
+        // Store the raw data for this metric
 
-        // Step 2.2: For each series, query the current data points in aggregate series and then update each data point
-        //           with contributions from the current data being aggregated.
-
-        // Step 2.3: Store the updated aggregated series
-
+        TimeSeriesMetric rawTimeSeriesMetric = TimeSeriesMetric.getRawMetric(trackingMetric);
+        timeSeriesFacade.insertDataForSeries(unaggregatedData, rawTimeSeriesMetric, tags);
     }
 
-    protected void updateAggregatedSeriesForMetric(TrackingMetric trackingMetric, Map<Long, Long> unaggregatedData,
-                                                   Map<TimeSeriesTag, String> tags, TimeZone timeZone, TimeUnit bucketSize) {
+    /**
+     * Takes care of updating the aggregated time series to incorporate the new data.
+     * @param trackingMetric the metric to which the new data is related
+     * @param unaggregatedData the new data
+     * @param tags the tags to use for the new data
+     * @param timeZone the timezone to do the bucket aggregation relative to.
+     * @param bucketSize bucket size that is used to identify which time series to update
+     *                   with the new data for this metric.s
+     */
+    protected void updateAggregatedTimeSeries(TrackingMetric trackingMetric, Map<Long, Long> unaggregatedData,
+        Map<TimeSeriesTag, String> tags, TimeZone timeZone, TimeUnit bucketSize) {
 
-        // Aggregate the input data
+        // Aggregate the input into buckets for this aggregated series
         Map<Long, Long> aggregatedData = bucketAggregationUtil.
                 aggregateIntoBucketsForTimeZone(unaggregatedData, timeZone, bucketSize);
 
@@ -133,169 +173,15 @@ public class TrackingDataService {
 
         long startOfFirstBucket = aggregatedData.keySet().iterator().next();
 
-        Map<TimeSeriesMetric, Map<Long, Long>> existingAggregatedDataForMetric =
-                getMetricsForRange(tags, timeSeriesMetrics, startOfFirstBucket, null, bucketSize, 1, false);
+        Map<Long, Long> existingDataPoints =
+                timeSeriesFacade.querySingleTimeSeries(tags, timeSeriesMetric, startOfFirstBucket, null, bucketSize, 1, false);
 
         // Incorporate the existing values for the contributed data points
-        Map<Long, Long> existingDataPoints =
-                existingAggregatedDataForMetric.isEmpty() ? null : existingAggregatedDataForMetric.get(timeSeriesMetric);
-
         Map<Long, Long> updatedAggregatedData = bucketAggregationUtil.
                 mergeExistingDataPointsIntoNew(aggregatedData, existingDataPoints);
 
         // Persist the updated data in the time series
-
-        //Response response = KairosClientUtil.pushMetrics(metricBuilder, kairosRestClient);
-        //logger.info("Metrics pushed, response.getStatusCode() = " + response.getStatusCode());
-
-        // TODO
-
+        timeSeriesFacade.insertDataForSeries(updatedAggregatedData, timeSeriesMetric, tags);
     }
 
-
-
-    protected Map<TimeSeriesMetric, Map<Long, Long>> getMetricsForRange(
-            Map<TimeSeriesTag, String> tags,
-            List<TimeSeriesMetric> timeSeriesMetrics,
-            Long utcBegin,
-            Long utcEnd,
-            TimeUnit resultBucketSize,
-            int resultBucketMultiplier,
-            boolean verboseResponse) {
-
-        // Do some validation of the input parameters
-        QueryArgumentValidationUtil.validateMetricsQueryParameters(
-                tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
-
-        // Print a description of the query in the log
-        QueryLoggingUtil.logTimeSeriesQueryDescription(tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
-
-        // Set the time interval for the query
-        QueryBuilder queryBuilder = QueryBuilder.getInstance();
-        queryBuilder.setStart(new Date(utcBegin));
-        if(utcEnd != null) {
-            queryBuilder.setEnd(new Date(utcEnd));
-        }
-
-        // Add metrics, aggregator and tags to the query
-        addMetricsAndAggregator(queryBuilder, timeSeriesMetrics, resultBucketSize, resultBucketMultiplier, tags);
-
-        // Do the query
-        QueryResponse queryResponse = KairosClientUtil.executeQuery(queryBuilder, kairosRestClient);
-
-        logger.info("getMetricsForAbsoluteRange(): Query completed with status code " + queryResponse.getStatusCode());
-
-        // Extract the result for response
-        Map<TimeSeriesMetric, Map<Long, Long>> metricResults = getMetricsResultFromResponse(queryResponse);
-
-        logger.info("getMetricsForAbsoluteRange(): metricResults = " + metricResults);
-
-        QueryLoggingUtil.printMetricsResults(metricResults);
-        logger.info("getMetricsForAbsoluteRange(): Doing result adjustment..");
-
-        // Adjust the bucket boundaries (and insert explicit empty buckets is response is to be verbose)
-        adjustBucketBoundaries(metricResults, utcBegin, utcEnd, resultBucketSize, verboseResponse);
-
-        QueryLoggingUtil.printMetricsResults(metricResults);
-
-        return metricResults;
-    }
-
-    private void addMetricsAndAggregator(QueryBuilder queryBuilder, List<TimeSeriesMetric> timeSeriesMetrics,
-                                         TimeUnit resultBucketSize, int resultBucketMultiplier, Map<TimeSeriesTag, String> tags) {
-        for(TimeSeriesMetric timeSeriesMetric : timeSeriesMetrics) {
-            QueryMetric queryMetric = queryBuilder.addMetric(timeSeriesMetric.toString());
-            queryMetric.addAggregator(AggregatorFactory.createSumAggregator(resultBucketMultiplier, resultBucketSize));
-            for(TimeSeriesTag tag : tags.keySet()) {
-                queryMetric.addTag(tag.toString(), tags.get(tag));
-            }
-        }
-    }
-
-    private Map<TimeSeriesMetric, Map<Long, Long>> getMetricsResultFromResponse(QueryResponse queryResponse) {
-
-        //
-        // Gather the results into a data structure
-        //
-        // There will be one query executed for each metric that was included in the query builder
-        //
-
-        List<Queries> queries = queryResponse.getQueries();
-
-        Map<TimeSeriesMetric, Map<Long, Long>> metricResults = new HashMap<TimeSeriesMetric, Map<Long, Long>>();
-
-        for(Queries query : queries) {
-            List<Results> results = query.getResults();
-            for(Results result : results) {
-                List<DataPoint> dataPoints = result.getDataPoints();
-                String resultName = result.getName();
-                TimeSeriesMetric timeSeriesMetric = TimeSeriesMetric.valueOf(resultName.toUpperCase());
-                if(!dataPoints.isEmpty()) {
-                    if (!metricResults.containsKey(resultName)) {
-                        metricResults.put(timeSeriesMetric, new TreeMap<Long, Long>());
-                    }
-                }
-
-                for(DataPoint dataPoint : dataPoints) {
-                    metricResults.get(timeSeriesMetric).put(dataPoint.getTimestamp(), KairosClientUtil.getLongValueFromDataPoint(dataPoint));
-                }
-            }
-        }
-
-        return metricResults;
-    }
-
-
-    private void adjustBucketBoundaries(Map<TimeSeriesMetric, Map<Long, Long>> metricResults,
-                                        Long utcBegin, Long utcEnd, TimeUnit resultBucketSize, boolean verboseResponse) {
-
-        for (TimeSeriesMetric timeSeriesMetric : metricResults.keySet()) {
-
-            //
-            // Adjust the bucket boundaries and inject empty buckets.
-            //
-            Map<Long, Long> adjustedMetricResult = bucketAggregationUtil.adjustBoundariesForMetricResult(
-                    metricResults.get(timeSeriesMetric), utcBegin, utcEnd, resultBucketSize);
-            metricResults.put(timeSeriesMetric, adjustedMetricResult);
-
-            logger.debug("Bucket adjust for time series metric " + timeSeriesMetric + ": old bucket count = " +
-                    metricResults.get(timeSeriesMetric).size() + ", new bucket count = " + adjustedMetricResult.size());
-
-            // If the response is not to be verbose, filter out the empty buckets.
-            if(!verboseResponse) {
-                Set<Long> bucketTimeStamps = new HashSet<Long>(adjustedMetricResult.keySet());
-                for(Long timestamp : bucketTimeStamps) {
-                    if(adjustedMetricResult.get(timestamp) == 0L) {
-                        adjustedMetricResult.remove(timestamp);
-                    }
-                }
-            }
-        }
-    }
-
-    private void addMetricsToBuilder(MetricBuilder metricBuilder, Map<Long, Long> timeStampValueMap, TrackingMetric trackingMetric, Map<TimeSeriesTag, String> tags) {
-
-        if(timeStampValueMap.isEmpty()) {
-            logger.info("Metric " + trackingMetric + ": no metrics provided");
-            return;
-        }
-
-        Metric metric = metricBuilder.addMetric(trackingMetric.toString());
-        for(TimeSeriesTag tag : tags.keySet()) {
-            metric.addTag(tag.toString(), tags.get(tag));
-        }
-
-        for(long timeStamp : timeStampValueMap.keySet()) {
-            long metricValue = timeStampValueMap.get(timeStamp);
-            metric.addDataPoint(timeStamp, metricValue);
-        }
-
-        logger.info("Metric " + trackingMetric + " prepped: " + timeStampValueMap.size() + " data points, tags = " + tags);
-    }
-
-    @PostConstruct
-    public void afterPropertiesSet() throws Exception {
-        String kairosDBURL = "http://" + kairosDBHost + ":" + kairosDBPort;
-        kairosRestClient = new KairosRestClient(kairosDBURL);
-    }
 }

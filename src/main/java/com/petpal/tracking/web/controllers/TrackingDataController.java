@@ -96,7 +96,7 @@ public class TrackingDataController {
      */
     @RequestMapping(value="/metrics/absolute/device/{deviceId}", method=RequestMethod.GET)
     @ResponseStatus( HttpStatus.OK )
-    public @ResponseBody Map<TimeSeriesMetric, Map<Long, Long>> getMetricsForDeviceAbsoluteTiming(
+    public @ResponseBody Map<TrackingMetric, Map<Long, Long>> getMetricsForDeviceAbsoluteTiming(
             @PathVariable String deviceId,
             @RequestParam(value="utcBegin", required=true) Long utcBegin,
             @RequestParam(value="utcEnd", required=false) Long utcEnd,
@@ -134,7 +134,7 @@ public class TrackingDataController {
 
         boolean createVerboseResponse = (verboseResponse == null) ? false : verboseResponse;
 
-        Map<TimeSeriesMetric, Map<Long, Long>> metricResults = trackingService.getMetricsForAbsoluteRange(
+        Map<TrackingMetric, Map<Long, Long>> metricResults = trackingService.getAggregatedTimeSeriesData(
                 tags, trackingMetricsParam, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier, createVerboseResponse);
 
         logger.info("getMetricsForDeviceAbsoluteTiming(): Results: " + metricResults);

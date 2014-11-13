@@ -5,7 +5,9 @@ import com.petpal.tracking.service.tag.TimeSeriesTag;
 import org.apache.log4j.Logger;
 import org.kairosdb.client.builder.TimeUnit;
 
+import java.sql.Time;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +35,18 @@ public class QueryLoggingUtil {
             }
             logger.info("Result for " + timeSeriesMetric + ": " + metricResult.toString());
         }
+    }
+
+
+    public static void logTimeSeriesQueryDescription(Map<TimeSeriesTag, String> tags,
+                                                     TimeSeriesMetric timeSeriesMetric,
+                                                     Long utcBegin,
+                                                     Long utcEnd,
+                                                     TimeUnit resultBucketSize,
+                                                     int resultBucketMultiplier) {
+        List<TimeSeriesMetric> timeSeriesMetrics = new ArrayList<TimeSeriesMetric>();
+        timeSeriesMetrics.add(timeSeriesMetric);
+        logTimeSeriesQueryDescription(tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
     }
 
     public static void logTimeSeriesQueryDescription(Map<TimeSeriesTag, String> tags,

@@ -1,5 +1,6 @@
 package com.petpal.tracking.service;
 
+import com.petpal.tracking.service.metrics.TimeSeriesMetric;
 import com.petpal.tracking.service.util.QueryLoggingUtil;
 import org.apache.commons.lang.math.LongRange;
 import org.apache.log4j.Logger;
@@ -10,8 +11,10 @@ import org.springframework.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
 
@@ -143,6 +146,34 @@ public class BucketAggregationUtil {
         }
 
         return aggregatedData;
+    }
+
+
+    public void adjustBucketBoundaries(Map<TimeSeriesMetric, Map<Long, Long>> metricResults,
+                                        Long utcBegin, Long utcEnd, TimeUnit resultBucketSize, boolean verboseResponse) {
+
+        for (TimeSeriesMetric timeSeriesMetric : metricResults.keySet()) {
+
+            //
+            // Adjust the bucket boundaries and inject empty buckets.
+            //
+            Map<Long, Long> adjustedMetricResult = adjustBoundariesForMetricResult(
+                    metricResults.get(timeSeriesMetric), utcBegin, utcEnd, resultBucketSize);
+            metricResults.put(timeSeriesMetric, adjustedMetricResult);
+
+            logger.debug("Bucket adjust for time series metric " + timeSeriesMetric + ": old bucket count = " +
+                    metricResults.get(timeSeriesMetric).size() + ", new bucket count = " + adjustedMetricResult.size());
+
+            // If the response is not to be verbose, filter out the empty buckets.
+            if(!verboseResponse) {
+                Set<Long> bucketTimeStamps = new HashSet<Long>(adjustedMetricResult.keySet());
+                for(Long timestamp : bucketTimeStamps) {
+                    if(adjustedMetricResult.get(timestamp) == 0L) {
+                        adjustedMetricResult.remove(timestamp);
+                    }
+                }
+            }
+        }
     }
 
 
