@@ -116,33 +116,34 @@ public class TrackingDataService implements AsyncTrackingDataInserter {
         logger.info("Tracking data prepared for worker thread.");
     }
 
+    /**
+     * This method implements the AsyncTrackingDataInserter interface and is called asynchronously
+     * when tracking data is inserted into the tracking service.
+     * @param trackingData
+     * @param tags
+     * @param timeZone
+     */
     public void asyncTrackingDataInsert(
             TrackingData trackingData, Map<TimeSeriesTag, String> tags, TimeZone timeZone) {
+
+        // Store the raw metrics
         storeRawMetrics(trackingData, tags);
-        updateAggregatedSeriesForMetric(TrackingMetric.WALKINGSTEPS, trackingData.getWalkingData(), tags, timeZone);
-        updateAggregatedSeriesForMetric(TrackingMetric.RUNNINGSTEPS, trackingData.getRunningData(), tags, timeZone);
-        updateAggregatedSeriesForMetric(TrackingMetric.SLEEPINGSECONDS, trackingData.getSleepingData(), tags, timeZone);
-        updateAggregatedSeriesForMetric(TrackingMetric.RESTINGSECONDS, trackingData.getRestingData(), tags, timeZone);
+
+        // Update all the aggregated series
+        for(TrackingMetric trackingMetric : TrackingMetric.getAllTrackingMetrics()) {
+            updateAggregatedSeriesForMetric(trackingMetric, trackingData.getDataForMetric(trackingMetric), tags, timeZone);
+        }
     }
 
     private void storeRawMetrics(TrackingData trackingData, Map<TimeSeriesTag, String> tags) {
 
         MetricBuilder metricBuilder = MetricBuilder.getInstance();
 
-        if(!CollectionUtils.isEmpty(trackingData.getWalkingData())) {
-            timeSeriesFacade.addTimeSeriesDataToMetricBuilder(metricBuilder, trackingData.getWalkingData(), TimeSeriesMetric.getRawMetric(TrackingMetric.WALKINGSTEPS), tags);
-        }
-
-        if(!CollectionUtils.isEmpty(trackingData.getRunningData())) {
-            timeSeriesFacade.addTimeSeriesDataToMetricBuilder(metricBuilder, trackingData.getRunningData(), TimeSeriesMetric.getRawMetric(TrackingMetric.RUNNINGSTEPS), tags);
-        }
-
-        if(!CollectionUtils.isEmpty(trackingData.getSleepingData())) {
-            timeSeriesFacade.addTimeSeriesDataToMetricBuilder(metricBuilder, trackingData.getSleepingData(), TimeSeriesMetric.getRawMetric(TrackingMetric.SLEEPINGSECONDS), tags);
-        }
-
-        if(!CollectionUtils.isEmpty(trackingData.getRestingData())) {
-            timeSeriesFacade.addTimeSeriesDataToMetricBuilder(metricBuilder, trackingData.getRestingData(), TimeSeriesMetric.getRawMetric(TrackingMetric.RESTINGSECONDS), tags);
+        for(TrackingMetric trackingMetric : TrackingMetric.getAllTrackingMetrics()) {
+            Map<Long, Long> dataPoints = trackingData.getDataForMetric(trackingMetric);
+            if(!CollectionUtils.isEmpty(dataPoints)) {
+                timeSeriesFacade.addTimeSeriesDataToMetricBuilder(metricBuilder, dataPoints, TimeSeriesMetric.getRawMetric(trackingMetric), tags);
+            }
         }
 
         timeSeriesFacade.insertData(metricBuilder);
@@ -172,14 +173,6 @@ public class TrackingDataService implements AsyncTrackingDataInserter {
         updateAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, TimeUnit.WEEKS);
         updateAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, TimeUnit.DAYS);
         updateAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, TimeUnit.HOURS);
-
-        // Store the raw data for this metric
-
-        //TimeSeriesMetric rawTimeSeriesMetric = TimeSeriesMetric.getRawMetric(trackingMetric);
-        //MetricBuilder metricBuilder = MetricBuilder.getInstance();
-        //timeSeriesFacade.addTimeSeriesDataToMetricBuilder(metricBuilder, unaggregatedData, rawTimeSeriesMetric, tags);
-        //timeSeriesFacade.insertData(metricBuilder);
-        //timeSeriesFacade.insertDataForSingleSeries(unaggregatedData, rawTimeSeriesMetric, tags);
     }
 
     /**

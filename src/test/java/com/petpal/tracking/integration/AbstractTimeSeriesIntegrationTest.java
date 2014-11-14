@@ -15,7 +15,6 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -118,7 +117,8 @@ public abstract class AbstractTimeSeriesIntegrationTest {
             long start = System.currentTimeMillis();
             ResponseEntity<Map<TestTrackingMetric, Map<Long, Long>>> response =
                     restTemplate.exchange(url, HttpMethod.GET, entity,
-                            new ParameterizedTypeReference<Map<TestTrackingMetric, Map<Long, Long>>>() {},
+                            new ParameterizedTypeReference<Map<TestTrackingMetric, Map<Long, Long>>>() {
+                            },
                             trackingDeviceId,
                             utcBegin,
                             resultBucketSize.toString(),

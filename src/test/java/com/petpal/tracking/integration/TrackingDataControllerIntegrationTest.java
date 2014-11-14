@@ -82,7 +82,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         long timeStamp2 = BucketCalculator.getCalendar(2014, Calendar.JULY, 2, 0, 0, 0, timeZonePDT).getTimeInMillis();
         dataPoints.put(timeStamp2, 2L);
 
-        List<TestTrackingMetric> allMetrics = TestTrackingData.getAllTrackingMetrics();
+        List<TestTrackingMetric> allMetrics = TestTrackingMetric.getAllTrackingMetrics();
 
         BucketCalculator.addDataPointForAllMetrics(testTrackingData, dataPoints);
 
@@ -198,7 +198,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         Assert.assertEquals("Unexpected number of metric types in get response", 4, getResponse1.size());
 
-        for(TestTrackingMetric testTrackingMetric : TestTrackingData.getAllTrackingMetrics()) {
+        for(TestTrackingMetric testTrackingMetric : TestTrackingMetric.getAllTrackingMetrics()) {
 
             Assert.assertEquals("Unexpected number of year buckets types in get response for metric " + testTrackingMetric, 2, getResponse1.get(testTrackingMetric).size());
 
@@ -238,7 +238,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         Assert.assertEquals("Unexpected number of metric types in 2nd get response", 4, getResponse2.size());
 
-        for(TestTrackingMetric testTrackingMetric : TestTrackingData.getAllTrackingMetrics()) {
+        for(TestTrackingMetric testTrackingMetric : TestTrackingMetric.getAllTrackingMetrics()) {
 
             Assert.assertEquals("Unexpected number of year buckets types in 2nd get response for metric " + testTrackingMetric, 2, getResponse2.get(testTrackingMetric).size());
 
@@ -258,17 +258,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
     private long sumValuesFromTrackingData(TestTrackingData testTrackingData, TestTrackingMetric testTrackingMetric) {
 
-        Map<Long, Long> mapToSumValuesFrom = null;
-
-        if(testTrackingMetric == TestTrackingMetric.WALKINGSTEPS) {
-            mapToSumValuesFrom = testTrackingData.getWalkingData();
-        } else if (testTrackingMetric == TestTrackingMetric.RUNNINGSTEPS) {
-            mapToSumValuesFrom = testTrackingData.getRunningData();
-        } else if (testTrackingMetric == TestTrackingMetric.SLEEPINGSECONDS) {
-            mapToSumValuesFrom = testTrackingData.getSleepingData();
-        } else if (testTrackingMetric == TestTrackingMetric.RESTINGSECONDS) {
-            mapToSumValuesFrom = testTrackingData.getRestingData();
-        }
+        Map<Long, Long> mapToSumValuesFrom = testTrackingData.getDataForMetric(testTrackingMetric);
 
         long sum = 0;
 

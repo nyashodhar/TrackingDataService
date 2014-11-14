@@ -75,24 +75,11 @@ public class BucketCalculator {
         return output;
     }
 
-
     public static void addDataPointForAllMetrics(TestTrackingData testTrackingData, Map<Long, Long> dataPoints) {
-
-        for(TestTrackingMetric metric : TestTrackingData.getAllTrackingMetrics()) {
-
-            if(metric == TestTrackingMetric.WALKINGSTEPS) {
-                testTrackingData.setWalkingData(dataPoints);
-            } else if(metric == TestTrackingMetric.RUNNINGSTEPS) {
-                testTrackingData.setRunningData(dataPoints);
-            } else if(metric == TestTrackingMetric.SLEEPINGSECONDS) {
-                testTrackingData.setSleepingData(dataPoints);
-            } else if(metric == TestTrackingMetric.RESTINGSECONDS) {
-                testTrackingData.setRestingData(dataPoints);
-            }
+        for(TestTrackingMetric testTrackingMetric : TestTrackingMetric.getAllTrackingMetrics()) {
+            testTrackingData.setDataForMetric(testTrackingMetric, dataPoints);
         }
     }
-
-
 
     public static TestTrackingData generateRandomTrackingData(
             String trackedEntityId,
@@ -131,7 +118,7 @@ public class BucketCalculator {
         combinedTestTrackingData.setTrackedEntityId(testTrackingData1.getTrackedEntityId());
         combinedTestTrackingData.setTrackingDeviceId(testTrackingData1.getTrackingDeviceId());
 
-        for(TestTrackingMetric testTrackingMetric : TestTrackingData.getAllTrackingMetrics()) {
+        for(TestTrackingMetric testTrackingMetric : TestTrackingMetric.getAllTrackingMetrics()) {
             Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
             dataPoints.putAll(testTrackingData1.getDataForMetric(testTrackingMetric));
             dataPoints.putAll(testTrackingData2.getDataForMetric(testTrackingMetric));

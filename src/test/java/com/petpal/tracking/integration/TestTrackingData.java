@@ -78,15 +78,6 @@ public class TestTrackingData {
         return sb.toString();
     }
 
-    public static List<TestTrackingMetric> getAllTrackingMetrics() {
-        List<TestTrackingMetric> allMetrics = new ArrayList<TestTrackingMetric>();
-        allMetrics.add(TestTrackingMetric.WALKINGSTEPS);
-        allMetrics.add(TestTrackingMetric.RUNNINGSTEPS);
-        allMetrics.add(TestTrackingMetric.SLEEPINGSECONDS);
-        allMetrics.add(TestTrackingMetric.RESTINGSECONDS);
-        return allMetrics;
-    }
-
     public Map<Long, Long> getDataForMetric(TestTrackingMetric testTrackingMetric) {
         if (testTrackingMetric == TestTrackingMetric.WALKINGSTEPS) {
             return getWalkingData();

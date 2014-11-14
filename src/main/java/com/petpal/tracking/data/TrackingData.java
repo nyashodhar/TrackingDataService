@@ -1,7 +1,10 @@
 package com.petpal.tracking.data;
 
+import com.petpal.tracking.service.TrackingMetric;
 import org.springframework.util.CollectionUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -103,6 +106,35 @@ public class TrackingData {
         sb.append('}');
         return sb.toString();
     }
+
+    public Map<Long, Long> getDataForMetric(TrackingMetric testTrackingMetric) {
+        if (testTrackingMetric == TrackingMetric.WALKINGSTEPS) {
+            return getWalkingData();
+        } else if (testTrackingMetric == TrackingMetric.RUNNINGSTEPS) {
+            return getRunningData();
+        } else if (testTrackingMetric == TrackingMetric.SLEEPINGSECONDS) {
+            return getSleepingData();
+        } else if (testTrackingMetric == TrackingMetric.RESTINGSECONDS) {
+            return getRestingData();
+        } else {
+            throw new IllegalArgumentException("Unexpected tracking metric " + testTrackingMetric);
+        }
+    }
+
+    public void setDataForMetric(TrackingMetric testTrackingMetric, Map<Long, Long> dataPoints) {
+        if (testTrackingMetric == TrackingMetric.WALKINGSTEPS) {
+            setWalkingData(dataPoints);
+        } else if (testTrackingMetric == TrackingMetric.RUNNINGSTEPS) {
+            setRunningData(dataPoints);
+        } else if (testTrackingMetric == TrackingMetric.SLEEPINGSECONDS) {
+            setSleepingData(dataPoints);
+        } else if (testTrackingMetric == TrackingMetric.RESTINGSECONDS) {
+            setRestingData(dataPoints);
+        } else {
+            throw new IllegalArgumentException("Unexpected tracking metric " + testTrackingMetric);
+        }
+    }
+
 }
 
 
