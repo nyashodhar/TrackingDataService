@@ -8,7 +8,6 @@ import org.kairosdb.client.builder.TimeUnit;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
@@ -135,25 +134,9 @@ public class BucketAggregationUtilTest {
     @Test
     public void aggregateIntoBucketsForTimeZone_years_with_gap() {
 
-        //
-        // Setup:
-        // DP1: 2 1/2 years ago - 5 steps
-        // DP2: 2 1/2 years - 1 days ago - 6 steps
-        // DP3: Half a year ago - 3 steps
-        //
-
-        Calendar cal1 = Calendar.getInstance();
-        cal1.setTimeZone(timeZonePDT);
-        cal1.add(Calendar.MONTH, -30);
-
-        Calendar cal2 = Calendar.getInstance();
-        cal2.setTimeZone(timeZonePDT);
-        cal2.add(Calendar.DAY_OF_YEAR, 1);
-        cal2.add(Calendar.MONTH, -30);
-
-        Calendar cal3 = Calendar.getInstance();
-        cal3.setTimeZone(timeZonePDT);
-        cal3.add(Calendar.MONTH, -6);
+        Calendar cal1 = BucketCalculator.getCalendar(2012, Calendar.MAY, 1, 0, 0, 0, timeZonePDT);
+        Calendar cal2 = BucketCalculator.getCalendar(2012, Calendar.MAY, 2, 0, 0, 0, timeZonePDT);
+        Calendar cal3 = BucketCalculator.getCalendar(2014, Calendar.JULY, 1, 0, 0, 0, timeZonePDT);
 
         TreeMap<Long, Long> unaggregatedData = new TreeMap<Long, Long>();
         unaggregatedData.put(cal1.getTimeInMillis(), 5L);
@@ -162,12 +145,6 @@ public class BucketAggregationUtilTest {
 
         TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
                 unaggregatedData, timeZonePDT, TimeUnit.YEARS);
-
-        //
-        // The aggregated data should be in 2 buckets
-        // Bucket 1 should start at midnight 3 years ago and have value 11
-        // Bucket 2 should start at midnight 1 year ago and have value 3
-        //
 
         long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.YEARS).getTimeInMillis();
         long bucket2Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.YEARS).getTimeInMillis();
@@ -182,25 +159,9 @@ public class BucketAggregationUtilTest {
     @Test
     public void aggregateIntoBucketsForTimeZone_months_with_gap() {
 
-        //
-        // Setup:
-        // DP1: 2 1/2 months ago - 5 steps
-        // DP2: 2 1/2 months - 1 days ago - 6 steps
-        // DP3: Half a month ago - 3 steps
-        //
-
-        Calendar cal1 = Calendar.getInstance();
-        cal1.setTimeZone(timeZonePDT);
-        cal1.add(Calendar.DATE, -75);
-
-        Calendar cal2 = Calendar.getInstance();
-        cal2.setTimeZone(timeZonePDT);
-        cal2.add(Calendar.DATE, 1);
-        cal2.add(Calendar.DATE, -75);
-
-        Calendar cal3 = Calendar.getInstance();
-        cal3.setTimeZone(timeZonePDT);
-        cal3.add(Calendar.DATE, -15);
+        Calendar cal1 = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 0, 0, 0, timeZonePDT);
+        Calendar cal2 = BucketCalculator.getCalendar(2014, Calendar.MAY, 2, 0, 0, 2, timeZonePDT);
+        Calendar cal3 = BucketCalculator.getCalendar(2014, Calendar.JULY, 1, 0, 0, 0, timeZonePDT);
 
         TreeMap<Long, Long> unaggregatedData = new TreeMap<Long, Long>();
         unaggregatedData.put(cal1.getTimeInMillis(), 5L);
@@ -209,12 +170,6 @@ public class BucketAggregationUtilTest {
 
         TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
                 unaggregatedData, timeZonePDT, TimeUnit.MONTHS);
-
-        //
-        // The aggregated data should be in 2 buckets
-        // Bucket 1 should start at midnight 3 months ago and have value 11
-        // Bucket 2 should start at midnight 1 month ago and have value 3
-        //
 
         long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.MONTHS).getTimeInMillis();
         long bucket2Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.MONTHS).getTimeInMillis();
@@ -278,25 +233,9 @@ public class BucketAggregationUtilTest {
     @Test
     public void aggregateIntoBucketsForTimeZone_days_with_gap() {
 
-        //
-        // Setup:
-        // DP1: 2 1/2 days ago - 5 steps
-        // DP2: 2 1/2 days - 1 hour ago - 6 steps
-        // DP3: Half a day ago - 3 steps
-        //
-
-        Calendar cal1 = Calendar.getInstance();
-        cal1.setTimeZone(timeZonePDT);
-        cal1.add(Calendar.HOUR, -60);
-
-        Calendar cal2 = Calendar.getInstance();
-        cal2.setTimeZone(timeZonePDT);
-        cal2.add(Calendar.HOUR, 1);
-        cal2.add(Calendar.HOUR, -60);
-
-        Calendar cal3 = Calendar.getInstance();
-        cal3.setTimeZone(timeZonePDT);
-        cal3.add(Calendar.HOUR, -12);
+        Calendar cal1 = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 0, 0, 1, timeZonePDT);
+        Calendar cal2 = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 0, 0, 2, timeZonePDT);
+        Calendar cal3 = BucketCalculator.getCalendar(2014, Calendar.MAY, 3, 0, 0, 0, timeZonePDT);
 
         TreeMap<Long, Long> unaggregatedData = new TreeMap<Long, Long>();
         unaggregatedData.put(cal1.getTimeInMillis(), 5L);
@@ -305,12 +244,6 @@ public class BucketAggregationUtilTest {
 
         TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
                 unaggregatedData, timeZonePDT, TimeUnit.DAYS);
-
-        //
-        // The aggregated data should be in 2 buckets
-        // Bucket 1 should start at midnight 3 days ago and have value 11
-        // Bucket 2 should start at midnight 1 days ago and have value 3
-        //
 
         long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.DAYS).getTimeInMillis();
         long bucket2Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.DAYS).getTimeInMillis();
@@ -326,25 +259,9 @@ public class BucketAggregationUtilTest {
     @Test
     public void aggregateIntoBucketsForTimeZone_hours_with_gap() {
 
-        //
-        // Setup:
-        // DP1: 2 1/2 hours ago - 5 steps
-        // DP2: 2 1/2 hours - 1 minute ago - 6 steps
-        // DP3: Half an hour ago - 3 steps
-        //
-
-        Calendar cal1 = Calendar.getInstance();
-        cal1.setTimeZone(timeZonePDT);
-        cal1.add(Calendar.MINUTE, -150);
-
-        Calendar cal2 = Calendar.getInstance();
-        cal2.setTimeZone(timeZonePDT);
-        cal2.add(Calendar.MINUTE, 1);
-        cal2.add(Calendar.MINUTE, -150);
-
-        Calendar cal3 = Calendar.getInstance();
-        cal3.setTimeZone(timeZonePDT);
-        cal3.add(Calendar.MINUTE, -30);
+        Calendar cal1 = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 1, 2, 0, timeZonePDT);
+        Calendar cal2 = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 1, 3, 0, timeZonePDT);
+        Calendar cal3 = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 3, 0, 0, timeZonePDT);
 
         TreeMap<Long, Long> unaggregatedData = new TreeMap<Long, Long>();
         unaggregatedData.put(cal1.getTimeInMillis(), 5L);
@@ -353,12 +270,6 @@ public class BucketAggregationUtilTest {
 
         TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
                 unaggregatedData, timeZonePDT, TimeUnit.HOURS);
-
-        //
-        // The aggregated data should be in 2 buckets
-        // Bucket 1 should start at midnight 3 hours ago and have value 11
-        // Bucket 2 should start at midnight 1 hours ago and have value 3
-        //
 
         long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.HOURS).getTimeInMillis();
         long bucket2Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.HOURS).getTimeInMillis();
