@@ -1,5 +1,7 @@
 package com.petpal.tracking.integration;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -74,6 +76,43 @@ public class TestTrackingData {
         sb.append(", restingData=").append(restingData);
         sb.append('}');
         return sb.toString();
+    }
+
+    public static List<TestTrackingMetric> getAllTrackingMetrics() {
+        List<TestTrackingMetric> allMetrics = new ArrayList<TestTrackingMetric>();
+        allMetrics.add(TestTrackingMetric.WALKINGSTEPS);
+        allMetrics.add(TestTrackingMetric.RUNNINGSTEPS);
+        allMetrics.add(TestTrackingMetric.SLEEPINGSECONDS);
+        allMetrics.add(TestTrackingMetric.RESTINGSECONDS);
+        return allMetrics;
+    }
+
+    public Map<Long, Long> getDataForMetric(TestTrackingMetric testTrackingMetric) {
+        if (testTrackingMetric == TestTrackingMetric.WALKINGSTEPS) {
+            return getWalkingData();
+        } else if (testTrackingMetric == TestTrackingMetric.RUNNINGSTEPS) {
+            return getRunningData();
+        } else if (testTrackingMetric == TestTrackingMetric.SLEEPINGSECONDS) {
+            return getSleepingData();
+        } else if (testTrackingMetric == TestTrackingMetric.RESTINGSECONDS) {
+            return getRestingData();
+        } else {
+            throw new IllegalArgumentException("Unexpected test tracking metric " + testTrackingMetric);
+        }
+    }
+
+    public void setDataForMetric(TestTrackingMetric testTrackingMetric, Map<Long, Long> dataPoints) {
+        if (testTrackingMetric == TestTrackingMetric.WALKINGSTEPS) {
+            setWalkingData(dataPoints);
+        } else if (testTrackingMetric == TestTrackingMetric.RUNNINGSTEPS) {
+            setRunningData(dataPoints);
+        } else if (testTrackingMetric == TestTrackingMetric.SLEEPINGSECONDS) {
+            setSleepingData(dataPoints);
+        } else if (testTrackingMetric == TestTrackingMetric.RESTINGSECONDS) {
+            setRestingData(dataPoints);
+        } else {
+            throw new IllegalArgumentException("Unexpected test tracking metric " + testTrackingMetric);
+        }
     }
 
 

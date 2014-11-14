@@ -1,5 +1,7 @@
 package com.petpal.tracking.data;
 
+import org.springframework.util.CollectionUtils;
+
 import java.util.Map;
 
 /**
@@ -76,13 +78,28 @@ public class TrackingData {
 
     @Override
     public String toString() {
+
         final StringBuilder sb = new StringBuilder("TrackingData{");
+
         sb.append("trackedEntityId='").append(trackedEntityId).append('\'');
         sb.append(", trackingDeviceId='").append(trackingDeviceId).append('\'');
-        sb.append(", walkingDataPoints=").append(walkingData.size());
-        sb.append(", runningDataPoints=").append(runningData.size());
-        sb.append(", sleepingDataPoints=").append(sleepingData.size());
-        sb.append(", restingDataPoints=").append(restingData.size());
+
+        if(CollectionUtils.isEmpty(getWalkingData())) {
+            sb.append(", walkingDataPoints=").append(walkingData.size());
+        }
+
+        if(CollectionUtils.isEmpty(getRunningData())) {
+            sb.append(", runningDataPoints=").append(runningData.size());
+        }
+
+        if(CollectionUtils.isEmpty(getSleepingData())) {
+            sb.append(", sleepingDataPoints=").append(sleepingData.size());
+        }
+
+        if(CollectionUtils.isEmpty(getRestingData())) {
+            sb.append(", restingDataPoints=").append(restingData.size());
+        }
+
         sb.append('}');
         return sb.toString();
     }

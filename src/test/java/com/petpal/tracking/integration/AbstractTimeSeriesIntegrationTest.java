@@ -58,17 +58,17 @@ public abstract class AbstractTimeSeriesIntegrationTest {
             try {
                 Thread.sleep(KAIROS_WRITE_DELAY);
             } catch(InterruptedException e) {
-                // Swallow
+                logger.error("postMetrics(): Unexpected interrupted exception", e);
             }
 
             return response;
         } catch(RestClientException e) {
             if(e instanceof HttpServerErrorException) {
-                System.out.println("** postMetrics(): Unexpected server error: " + ((HttpServerErrorException) e).getStatusCode());
+                logger.error("postMetrics(): Unexpected server error: " + ((HttpServerErrorException) e).getStatusCode(), e);
             } else if(e instanceof HttpClientErrorException) {
-                System.out.println("** postMetrics(): Unexpected client error: " + ((HttpClientErrorException) e).getStatusCode());
+                logger.error("postMetrics(): Unexpected client error: " + ((HttpClientErrorException) e).getStatusCode(), e);
             } else {
-                System.out.println("** postMetrics(): Unexpected error: " + ((HttpClientErrorException) e).getStatusCode());
+                logger.error("postMetrics(): Unexpected error: " + ((HttpClientErrorException) e).getStatusCode(), e);
             }
             throw e;
         }
@@ -114,7 +114,8 @@ public abstract class AbstractTimeSeriesIntegrationTest {
         //
 
         try {
-            System.out.println("*** getMetrics(): doing GET");
+            logger.info("Doing GET for metrics " + url);
+            long start = System.currentTimeMillis();
             ResponseEntity<Map<TestTrackingMetric, Map<Long, Long>>> response =
                     restTemplate.exchange(url, HttpMethod.GET, entity,
                             new ParameterizedTypeReference<Map<TestTrackingMetric, Map<Long, Long>>>() {},
@@ -125,15 +126,17 @@ public abstract class AbstractTimeSeriesIntegrationTest {
                             utcEnd,
                             trackingMetricsToCommaSeparated(trackingMetrics),
                             verboseResponse);
-            System.out.println("** getMetrics(): response = " + response.getBody());
+            long end = System.currentTimeMillis();
+
+            logger.info("Metric response received in " + (end - start) + "ms. Code: " + response.getStatusCode() + ", body: " + response.getBody());
             return response.getBody();
         } catch(RestClientException e) {
             if(e instanceof HttpServerErrorException) {
-                System.out.println("** getMetrics(): Unexpected server error: " + ((HttpServerErrorException) e).getStatusCode());
+                logger.error("getMetrics(): Unexpected server error: " + ((HttpServerErrorException) e).getStatusCode(), e);
             } else if(e instanceof HttpClientErrorException) {
-                System.out.println("** getMetrics(): Unexpected client error: " + ((HttpClientErrorException) e).getStatusCode());
+                logger.error("getMetrics(): Unexpected client error: " + ((HttpClientErrorException) e).getStatusCode(), e);
             } else {
-                System.out.println("** getMetrics(): Unexpected error: " + ((HttpClientErrorException) e).getStatusCode());
+                logger.error("getMetrics(): Unexpected error: " + ((HttpClientErrorException) e).getStatusCode(), e);
             }
             throw e;
         }
@@ -155,15 +158,6 @@ public abstract class AbstractTimeSeriesIntegrationTest {
         return stringBuilder.toString();
     }
 
-    protected List<TestTrackingMetric> getAllTrackingMetrics() {
-        List<TestTrackingMetric> allMetrics = new ArrayList<TestTrackingMetric>();
-        allMetrics.add(TestTrackingMetric.WALKINGSTEPS);
-        allMetrics.add(TestTrackingMetric.RUNNINGSTEPS);
-        allMetrics.add(TestTrackingMetric.SLEEPINGSECONDS);
-        allMetrics.add(TestTrackingMetric.RESTINGSECONDS);
-        return allMetrics;
-    }
-
     protected static String createTrackedEntityId() {
         return UUID.randomUUID().toString();
     }
@@ -171,6 +165,5 @@ public abstract class AbstractTimeSeriesIntegrationTest {
     protected static String createTrackingDeviceId() {
         return UUID.randomUUID().toString();
     }
-
 
 }

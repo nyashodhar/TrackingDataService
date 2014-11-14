@@ -7,7 +7,6 @@ import org.kairosdb.client.builder.TimeUnit;
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
@@ -77,9 +76,9 @@ public class BucketCalculator {
     }
 
 
-    public static void addDataPointForMetrics(TestTrackingData testTrackingData, List<TestTrackingMetric> metrics, Map<Long, Long> dataPoints) {
+    public static void addDataPointForAllMetrics(TestTrackingData testTrackingData, Map<Long, Long> dataPoints) {
 
-        for(TestTrackingMetric metric : metrics) {
+        for(TestTrackingMetric metric : TestTrackingData.getAllTrackingMetrics()) {
 
             if(metric == TestTrackingMetric.WALKINGSTEPS) {
                 testTrackingData.setWalkingData(dataPoints);
@@ -99,11 +98,12 @@ public class BucketCalculator {
             String trackedEntityId,
             String trackingDeviceId,
             Calendar start,
-            Calendar end,
-            int maxWalkingStepsPerMinute,
-            int maxRunningStepsPerMinute,
-            int maxSleepSecondsPerMinute,
-            int maxRestSecondsPerMinute) {
+            Calendar end) {
+
+        int maxWalkingStepsPerMinute = 60;
+        int maxRunningStepsPerMinute = 120;
+        int maxSleepSecondsPerMinute = 50;
+        int maxRestSecondsPerMinute = 50;
 
         TestTrackingData testTrackingData = new TestTrackingData();
         testTrackingData.setTrackedEntityId(trackedEntityId);
@@ -113,6 +113,32 @@ public class BucketCalculator {
         testTrackingData.setSleepingData(generateMinuteBucketRandomData(start, end, maxSleepSecondsPerMinute));
         testTrackingData.setRestingData(generateMinuteBucketRandomData(start, end, maxRestSecondsPerMinute));
         return testTrackingData;
+    }
+
+    public static TestTrackingData combineTrackingData(
+            TestTrackingData testTrackingData1,
+            TestTrackingData testTrackingData2) {
+
+        if(!testTrackingData1.getTrackedEntityId().equals(testTrackingData2.getTrackedEntityId())) {
+            throw new IllegalArgumentException("Tracked entity id must match");
+        }
+
+        if(!testTrackingData1.getTrackingDeviceId().equals(testTrackingData2.getTrackingDeviceId())) {
+            throw new IllegalArgumentException("Tracked device id must match");
+        }
+
+        TestTrackingData combinedTestTrackingData = new TestTrackingData();
+        combinedTestTrackingData.setTrackedEntityId(testTrackingData1.getTrackedEntityId());
+        combinedTestTrackingData.setTrackingDeviceId(testTrackingData1.getTrackingDeviceId());
+
+        for(TestTrackingMetric testTrackingMetric : TestTrackingData.getAllTrackingMetrics()) {
+            Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
+            dataPoints.putAll(testTrackingData1.getDataForMetric(testTrackingMetric));
+            dataPoints.putAll(testTrackingData2.getDataForMetric(testTrackingMetric));
+            combinedTestTrackingData.setDataForMetric(testTrackingMetric, dataPoints);
+        }
+
+        return combinedTestTrackingData;
     }
 
     public static TreeMap<Long, Long> generateMinuteBucketRandomData(Calendar start, Calendar end, int maxRandomValue) {
