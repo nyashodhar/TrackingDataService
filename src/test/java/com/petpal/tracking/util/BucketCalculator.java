@@ -135,7 +135,7 @@ public class BucketCalculator {
             cursor = cursor + 60L*1000L;
         }
 
-        logger.info("generateMinuteBucketRandomData(): start = " + start + "end = " + end + ", # of datapoints = " + timeData.size());
+        logger.debug("generateMinuteBucketRandomData(): start = " + start + "end = " + end + ", # of datapoints = " + timeData.size());
 
         return timeData;
     }

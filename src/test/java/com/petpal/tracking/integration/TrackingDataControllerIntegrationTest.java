@@ -2,14 +2,17 @@ package com.petpal.tracking.integration;
 
 import com.petpal.tracking.TrackingDataServiceConfiguration;
 import com.petpal.tracking.util.BucketCalculator;
+import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.kairosdb.client.builder.TimeUnit;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.IntegrationTest;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
@@ -35,7 +38,13 @@ import java.util.TreeMap;
 @IntegrationTest({"server.port:0","management.port:0"})   // Will start the server on a random port
 public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesIntegrationTest {
 
+    private Logger logger = Logger.getLogger(this.getClass());
+
     private TimeZone timeZonePDT;
+
+    @Autowired
+    private ThreadPoolTaskExecutor threadPoolTaskExecutor;
+
 
     @Before
     public void setUp() {
@@ -54,7 +63,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         BucketCalculator.printUTCForCalendar(2014, Calendar.AUGUST, 1, 0, 0, 0, timeZonePDT);
     }
 
-    //@Test
+    @Test
     public void test_get_metrics_boundary_test_empty_bucket_excluded() {
 
         String trackedEntityId = createTrackedEntityId();
@@ -85,6 +94,8 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         System.out.println("********* test_get_metrics_boundary_test_empty_bucket_excluded(): testTrackingData = " + testTrackingData);
 
         ResponseEntity<String> postResponse = postMetrics(testTrackingData);
+
+        blockUntilAsyncThreadIdleInServer();
 
         Map<TestTrackingMetric, Map<Long, Long>> getResponse = getMetrics(
                 trackingDeviceId,
@@ -172,8 +183,8 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         //String trackedEntityId = createTrackedEntityId();
         //String trackingDeviceId = createTrackingDeviceId();
 
-        String trackedEntityId = "myentity3";
-        String trackingDeviceId = "mydevice3";
+        String trackedEntityId = "myentity4";
+        String trackingDeviceId = "mydevice4";
 
         TestTrackingData testTrackingData = BucketCalculator.generateRandomTrackingData(
                 trackedEntityId,
@@ -186,6 +197,8 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
                 50);
 
         ResponseEntity<String> responseData = postMetrics(testTrackingData);
+
+        blockUntilAsyncThreadIdleInServer();
     }
 
     //
@@ -196,6 +209,30 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         Map<Long, Long> bucketsForMetric = metricResponse.get(testTrackingMetric);
         Assert.assertNotNull(bucketsForMetric);
         Assert.assertEquals(bucketValue, bucketsForMetric.get(bucketKey));
+    }
+
+    private void blockUntilAsyncThreadIdleInServer() {
+        // Block until the server has no active threads in the async thread pool executor.
+        boolean threadsNotDone = true;
+        while(threadsNotDone) {
+            threadsNotDone = (threadPoolTaskExecutor.getActiveCount() > 0);
+            if(threadsNotDone) {
+                logger.debug("Threads not done: sleep 1 sec.");
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                logger.debug("All threads done!");
+                try {
+                    Thread.sleep(KAIROS_WRITE_DELAY);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
     }
 
 }

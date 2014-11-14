@@ -1,11 +1,14 @@
 package com.petpal.tracking.service;
 
 import com.petpal.tracking.data.TrackingData;
+import com.petpal.tracking.service.async.TrackingDataInsertionWorker;
 import com.petpal.tracking.service.metrics.TimeSeriesMetric;
 import com.petpal.tracking.service.tag.TimeSeriesTag;
 import org.apache.log4j.Logger;
+import org.kairosdb.client.builder.MetricBuilder;
 import org.kairosdb.client.builder.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -19,7 +22,7 @@ import java.util.TimeZone;
  * Created by per on 10/28/14.
  */
 @Component
-public class TrackingDataService {
+public class TrackingDataService implements AsyncTrackingDataInserter {
 
     private Logger logger = Logger.getLogger(this.getClass());
 
@@ -28,6 +31,9 @@ public class TrackingDataService {
 
     @Autowired
     private TimeSeriesFacade timeSeriesFacade;
+
+    @Autowired
+    private ThreadPoolTaskExecutor threadPoolTaskExecutor;
 
     /**
      * Query data for multiple API level metrics for a given time range and time horizon
@@ -105,12 +111,41 @@ public class TrackingDataService {
 
         TimeZone timeZonePDT = TimeZone.getTimeZone("America/Los_Angeles");
 
-        storeDataForMetric(TrackingMetric.WALKINGSTEPS, trackingData.getWalkingData(), tags, timeZonePDT);
-        storeDataForMetric(TrackingMetric.RUNNINGSTEPS, trackingData.getRunningData(), tags, timeZonePDT);
-        storeDataForMetric(TrackingMetric.SLEEPINGSECONDS, trackingData.getSleepingData(), tags, timeZonePDT);
-        storeDataForMetric(TrackingMetric.RESTINGSECONDS, trackingData.getRestingData(), tags, timeZonePDT);
+        threadPoolTaskExecutor.execute(new TrackingDataInsertionWorker(this, trackingData, tags, timeZonePDT));
 
-        logger.info("storeTrackingData(): tracking data storage completed.");
+        logger.info("Tracking data prepared for worker thread.");
+    }
+
+    public void asyncTrackingDataInsert(
+            TrackingData trackingData, Map<TimeSeriesTag, String> tags, TimeZone timeZone) {
+        storeRawMetrics(trackingData, tags);
+        updateAggregatedSeriesForMetric(TrackingMetric.WALKINGSTEPS, trackingData.getWalkingData(), tags, timeZone);
+        updateAggregatedSeriesForMetric(TrackingMetric.RUNNINGSTEPS, trackingData.getRunningData(), tags, timeZone);
+        updateAggregatedSeriesForMetric(TrackingMetric.SLEEPINGSECONDS, trackingData.getSleepingData(), tags, timeZone);
+        updateAggregatedSeriesForMetric(TrackingMetric.RESTINGSECONDS, trackingData.getRestingData(), tags, timeZone);
+    }
+
+    private void storeRawMetrics(TrackingData trackingData, Map<TimeSeriesTag, String> tags) {
+
+        MetricBuilder metricBuilder = MetricBuilder.getInstance();
+
+        if(!CollectionUtils.isEmpty(trackingData.getWalkingData())) {
+            timeSeriesFacade.addTimeSeriesDataToMetricBuilder(metricBuilder, trackingData.getWalkingData(), TimeSeriesMetric.getRawMetric(TrackingMetric.WALKINGSTEPS), tags);
+        }
+
+        if(!CollectionUtils.isEmpty(trackingData.getRunningData())) {
+            timeSeriesFacade.addTimeSeriesDataToMetricBuilder(metricBuilder, trackingData.getRunningData(), TimeSeriesMetric.getRawMetric(TrackingMetric.RUNNINGSTEPS), tags);
+        }
+
+        if(!CollectionUtils.isEmpty(trackingData.getSleepingData())) {
+            timeSeriesFacade.addTimeSeriesDataToMetricBuilder(metricBuilder, trackingData.getSleepingData(), TimeSeriesMetric.getRawMetric(TrackingMetric.SLEEPINGSECONDS), tags);
+        }
+
+        if(!CollectionUtils.isEmpty(trackingData.getRestingData())) {
+            timeSeriesFacade.addTimeSeriesDataToMetricBuilder(metricBuilder, trackingData.getRestingData(), TimeSeriesMetric.getRawMetric(TrackingMetric.RESTINGSECONDS), tags);
+        }
+
+        timeSeriesFacade.insertData(metricBuilder);
     }
 
 
@@ -122,7 +157,7 @@ public class TrackingDataService {
      * @param tags the tags to use for the new data
      * @param timeZone the timezone to do the bucket aggregation relative to.
      */
-    protected void storeDataForMetric(TrackingMetric trackingMetric, Map<Long, Long> unaggregatedData, Map<TimeSeriesTag, String> tags, TimeZone timeZone) {
+    protected void updateAggregatedSeriesForMetric(TrackingMetric trackingMetric, Map<Long, Long> unaggregatedData, Map<TimeSeriesTag, String> tags, TimeZone timeZone) {
 
         if(CollectionUtils.isEmpty(unaggregatedData)) {
             logger.info("storeDataForMetric(): No unaggregated data found for metric " +
@@ -140,8 +175,11 @@ public class TrackingDataService {
 
         // Store the raw data for this metric
 
-        TimeSeriesMetric rawTimeSeriesMetric = TimeSeriesMetric.getRawMetric(trackingMetric);
-        timeSeriesFacade.insertDataForSeries(unaggregatedData, rawTimeSeriesMetric, tags);
+        //TimeSeriesMetric rawTimeSeriesMetric = TimeSeriesMetric.getRawMetric(trackingMetric);
+        //MetricBuilder metricBuilder = MetricBuilder.getInstance();
+        //timeSeriesFacade.addTimeSeriesDataToMetricBuilder(metricBuilder, unaggregatedData, rawTimeSeriesMetric, tags);
+        //timeSeriesFacade.insertData(metricBuilder);
+        //timeSeriesFacade.insertDataForSingleSeries(unaggregatedData, rawTimeSeriesMetric, tags);
     }
 
     /**
@@ -181,7 +219,10 @@ public class TrackingDataService {
                 mergeExistingDataPointsIntoNew(aggregatedData, existingDataPoints);
 
         // Persist the updated data in the time series
-        timeSeriesFacade.insertDataForSeries(updatedAggregatedData, timeSeriesMetric, tags);
+
+        MetricBuilder metricBuilder = MetricBuilder.getInstance();
+        timeSeriesFacade.addTimeSeriesDataToMetricBuilder(metricBuilder, updatedAggregatedData, timeSeriesMetric, tags);
+        timeSeriesFacade.insertData(metricBuilder);
     }
 
 }

@@ -136,13 +136,52 @@ public class TimeSeriesFacade {
 
     /**
      * Persists data for a time series
-     * @param timeStampValueMap
-     * @param timeSeriesMetric
-     * @param tags
+     * @param metricBuilder
      * @return a metric builder with data than can be passed to the kairos db
      * client to be persisted.
      */
-    public void insertDataForSeries(Map<Long, Long> timeStampValueMap, TimeSeriesMetric timeSeriesMetric, Map<TimeSeriesTag, String> tags) {
+    public void insertData(MetricBuilder metricBuilder) {
+
+        if(metricBuilder == null) {
+            throw new IllegalArgumentException("No metric builder provided");
+        }
+
+        if(metricBuilder.getMetrics().isEmpty()) {
+            throw new IllegalArgumentException("The metric builder has no metrics!");
+        }
+
+        StringBuilder msg = new StringBuilder();
+
+        for(Metric metric : metricBuilder.getMetrics()) {
+            if(msg.length() > 0) {
+                msg.append(", ");
+            }
+            msg.append(metric.getName() + " " + metric.getDataPoints().size() + " data points");
+        }
+
+        logger.info("Inserting data for series: " + msg.toString());
+
+        long start = System.currentTimeMillis();
+        Response response = KairosClientUtil.pushMetrics(metricBuilder, kairosRestClient);
+        long end = System.currentTimeMillis();
+
+        logger.info("Data insertion completed in " + (end - start) + "ms, response status = " + response.getStatusCode());
+
+        if(response.getStatusCode() != 204) {
+            throw new IllegalStateException("Error response " + response.getStatusCode() +
+                    " when inserting data (" + msg + "), errors: " + response.getErrors());
+        }
+    }
+
+
+    public void addTimeSeriesDataToMetricBuilder(MetricBuilder metricBuilder,
+        Map<Long, Long> timeStampValueMap,
+        TimeSeriesMetric timeSeriesMetric,
+        Map<TimeSeriesTag, String> tags) {
+
+        if(metricBuilder == null) {
+            throw new IllegalArgumentException("No metric builder provided");
+        }
 
         if(timeSeriesMetric == null) {
             throw new IllegalArgumentException("No time series metric provided");
@@ -156,8 +195,6 @@ public class TimeSeriesFacade {
             throw new IllegalArgumentException("Can't assemble metric builder for metric " + timeSeriesMetric + ", no data provided");
         }
 
-        MetricBuilder metricBuilder = MetricBuilder.getInstance();
-
         Metric metric = metricBuilder.addMetric(timeSeriesMetric.toString());
         for(TimeSeriesTag tag : tags.keySet()) {
             metric.addTag(tag.toString(), tags.get(tag));
@@ -168,16 +205,7 @@ public class TimeSeriesFacade {
             metric.addDataPoint(timeStamp, metricValue);
         }
 
-        logger.info("MetricBuilder prepared for time series metric " + timeSeriesMetric + ": " + timeStampValueMap.size() + " data points, tags = " + tags);
-
-        Response response = KairosClientUtil.pushMetrics(metricBuilder, kairosRestClient);
-        logger.info("Data inserted for series " + timeSeriesMetric + ", data points = " +
-                timeStampValueMap.size() + ", response.getStatusCode() = " + response.getStatusCode());
-
-        if(response.getStatusCode() != 204) {
-            throw new IllegalStateException("Error response " + response.getStatusCode() +
-                    " when inserting data for series " + timeSeriesMetric + ", errors: " + response.getErrors());
-        }
+        logger.info("Metric " + timeSeriesMetric + " prepped: " + timeStampValueMap.size() + " data points, tags = " + tags);
     }
 
 
