@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.TimeZone;
 
 /**
+ * This class is used to dispatch the work to insert uploaded metrics asynchronously.
+ *
  * Created by per on 11/13/14.
  */
 public class TrackingDataInsertionWorker implements Runnable {

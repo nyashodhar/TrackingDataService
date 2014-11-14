@@ -75,14 +75,15 @@ public class TimeSeriesFacade {
 
         // Do the query
         QueryResponse queryResponse = KairosClientUtil.executeQuery(queryBuilder, kairosRestClient);
-        logger.info("querySingleTimeSeries(): Query completed with status code " + queryResponse.getStatusCode());
+        logger.debug("querySingleTimeSeries(): Query completed with status code " +
+                queryResponse.getStatusCode() + " for series " + timeSeriesMetric);
 
         // Extract the result for response
         Map<TimeSeriesMetric, Map<Long, Long>> resultsByMetric = getResultFromResponse(queryResponse);
         QueryLoggingUtil.printMetricsResults(resultsByMetric);
 
         // Adjust the bucket boundaries (and insert explicit empty buckets is response is to be verbose)
-        logger.info("querySingleTimeSeries(): Doing result adjustment..");
+        logger.debug("querySingleTimeSeries(): Doing result adjustment for series " + timeSeriesMetric);
         bucketAggregationUtil.adjustBucketBoundaries(resultsByMetric, utcBegin, utcEnd, resultBucketSize, verboseResponse);
         QueryLoggingUtil.printMetricsResults(resultsByMetric);
 
