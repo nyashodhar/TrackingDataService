@@ -11,6 +11,9 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 
 /**
+ * Wrap some methods in the kairos rest client to prevent them from throwing
+ * checked exceptions.
+ *
  * Created by per on 10/30/14.
  */
 public class KairosClientUtil {
@@ -52,30 +55,4 @@ public class KairosClientUtil {
             throw new RuntimeException("Unable to get long value from data point, dataPoint.getValue() = " + dataPoint.getValue());
         }
     }
-
-
-    /*
-    private HttpClient createHttpClient(String host, String port) {
-
-        String kairosDBUrl = "http://" + host + ":" + port;
-
-        try {
-            return new HttpClient(kairosDBUrl);
-        } catch(MalformedURLException e) {
-            throw new RuntimeException("Unable to create HttpClient, kairosDBUrl = " + kairosDBUrl);
-        }
-    }
-    */
-
-    /*
-    private void shutdownHttpClient(HttpClient httpClient) {
-        try {
-            httpClient.shutdown();
-        } catch(IOException e) {
-            throw new RuntimeException("Unable to shut down HttpClient, kairosDBHost=" + kairosDBHost + ", kairosDBPort=" + kairosDBPort, e);
-        }
-    }
-    */
-
-
 }
