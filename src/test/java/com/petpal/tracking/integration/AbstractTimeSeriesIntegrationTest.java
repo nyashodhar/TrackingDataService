@@ -15,6 +15,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -152,6 +153,15 @@ public abstract class AbstractTimeSeriesIntegrationTest {
             stringBuilder.append(testTrackingMetric.toString());
         }
         return stringBuilder.toString();
+    }
+
+    protected List<TestTrackingMetric> getAllTrackingMetrics() {
+        List<TestTrackingMetric> allMetrics = new ArrayList<TestTrackingMetric>();
+        allMetrics.add(TestTrackingMetric.WALKINGSTEPS);
+        allMetrics.add(TestTrackingMetric.RUNNINGSTEPS);
+        allMetrics.add(TestTrackingMetric.SLEEPINGSECONDS);
+        allMetrics.add(TestTrackingMetric.RESTINGSECONDS);
+        return allMetrics;
     }
 
     protected static String createTrackedEntityId() {

@@ -16,7 +16,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
@@ -83,13 +82,9 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         long timeStamp2 = BucketCalculator.getCalendar(2014, Calendar.JULY, 2, 0, 0, 0, timeZonePDT).getTimeInMillis();
         dataPoints.put(timeStamp2, 2L);
 
-        List<TestTrackingMetric> allMetrics = new ArrayList<TestTrackingMetric>();
-        allMetrics.add(TestTrackingMetric.WALKINGSTEPS);
-        allMetrics.add(TestTrackingMetric.RUNNINGSTEPS);
-        allMetrics.add(TestTrackingMetric.SLEEPINGSECONDS);
-        allMetrics.add(TestTrackingMetric.RESTINGSECONDS);
+        List<TestTrackingMetric> allMetrics = getAllTrackingMetrics();
 
-        BucketCalculator.addDataPointForMetrics(testTrackingData, allMetrics, dataPoints);
+        BucketCalculator.addDataPointForMetrics(testTrackingData, getAllTrackingMetrics(), dataPoints);
 
         System.out.println("********* test_get_metrics_boundary_test_empty_bucket_excluded(): testTrackingData = " + testTrackingData);
 
@@ -155,13 +150,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         long timeStamp1 = BucketCalculator.getCalendar(2014, Calendar.MAY, 29, 0, 0, 0, timeZonePDT).getTimeInMillis();
         dataPoints.put(timeStamp1, 4L);
 
-        List<TestTrackingMetric> allMetrics = new ArrayList<TestTrackingMetric>();
-        allMetrics.add(TestTrackingMetric.WALKINGSTEPS);
-        allMetrics.add(TestTrackingMetric.RUNNINGSTEPS);
-        allMetrics.add(TestTrackingMetric.SLEEPINGSECONDS);
-        allMetrics.add(TestTrackingMetric.RESTINGSECONDS);
-
-        BucketCalculator.addDataPointForMetrics(testTrackingData, allMetrics, dataPoints);
+        BucketCalculator.addDataPointForMetrics(testTrackingData, getAllTrackingMetrics(), dataPoints);
 
         ResponseEntity<String> responseData = postMetrics(testTrackingData);
 
@@ -180,11 +169,11 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
     @Test
     public void test_createTrackingData() {
 
-        //String trackedEntityId = createTrackedEntityId();
-        //String trackingDeviceId = createTrackingDeviceId();
+        String trackedEntityId = createTrackedEntityId();
+        String trackingDeviceId = createTrackingDeviceId();
 
-        String trackedEntityId = "myentity4";
-        String trackingDeviceId = "mydevice4";
+        //String trackedEntityId = "myentity6";
+        //String trackingDeviceId = "mydevice6";
 
         TestTrackingData testTrackingData = BucketCalculator.generateRandomTrackingData(
                 trackedEntityId,
@@ -199,16 +188,66 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         ResponseEntity<String> responseData = postMetrics(testTrackingData);
 
         blockUntilAsyncThreadIdleInServer();
+
+        Map<TestTrackingMetric, Map<Long, Long>> getResponse = getMetrics(
+                trackingDeviceId,
+                BucketCalculator.getCalendar(2014, Calendar.JANUARY, 1, 0, 0, 0, timeZonePDT).getTimeInMillis(),
+                null,
+                TimeUnit.YEARS,
+                1,
+                null,
+                null);
+
+        long expectedYearWalkingSteps = sumValuesFromTrackingData(testTrackingData, TestTrackingMetric.WALKINGSTEPS);
+        verifyValueForMetric(TestTrackingMetric.WALKINGSTEPS, BucketCalculator.getCalendar(2014, Calendar.JANUARY, 1, 0, 0, 0, timeZonePDT).getTimeInMillis(), expectedYearWalkingSteps, getResponse);
+
+        long expectedRunningSteps = sumValuesFromTrackingData(testTrackingData, TestTrackingMetric.RUNNINGSTEPS);
+        verifyValueForMetric(TestTrackingMetric.RUNNINGSTEPS, BucketCalculator.getCalendar(2014, Calendar.JANUARY, 1, 0, 0, 0, timeZonePDT).getTimeInMillis(), expectedRunningSteps, getResponse);
+
+        long expectedSleepingSeconds = sumValuesFromTrackingData(testTrackingData, TestTrackingMetric.SLEEPINGSECONDS);
+        verifyValueForMetric(TestTrackingMetric.SLEEPINGSECONDS, BucketCalculator.getCalendar(2014, Calendar.JANUARY, 1, 0, 0, 0, timeZonePDT).getTimeInMillis(), expectedSleepingSeconds, getResponse);
+
+        long expectedRestingSeconds = sumValuesFromTrackingData(testTrackingData, TestTrackingMetric.RESTINGSECONDS);
+        verifyValueForMetric(TestTrackingMetric.RESTINGSECONDS, BucketCalculator.getCalendar(2014, Calendar.JANUARY, 1, 0, 0, 0, timeZonePDT).getTimeInMillis(), expectedRestingSeconds, getResponse);
     }
 
     //
     // Utility methods
     //
 
-    private void verifyValueForMetric(TestTrackingMetric testTrackingMetric, Long bucketKey, Long bucketValue, Map<TestTrackingMetric, Map<Long, Long>> metricResponse) {
+    private long sumValuesFromTrackingData(TestTrackingData testTrackingData, TestTrackingMetric testTrackingMetric) {
+
+        Map<Long, Long> mapToSumValuesFrom = null;
+
+        if(testTrackingMetric == TestTrackingMetric.WALKINGSTEPS) {
+            mapToSumValuesFrom = testTrackingData.getWalkingData();
+        } else if (testTrackingMetric == TestTrackingMetric.RUNNINGSTEPS) {
+            mapToSumValuesFrom = testTrackingData.getRunningData();
+        } else if (testTrackingMetric == TestTrackingMetric.SLEEPINGSECONDS) {
+            mapToSumValuesFrom = testTrackingData.getSleepingData();
+        } else if (testTrackingMetric == TestTrackingMetric.RESTINGSECONDS) {
+            mapToSumValuesFrom = testTrackingData.getRestingData();
+        }
+
+        long sum = 0;
+
+        for(long value : mapToSumValuesFrom.values()) {
+            sum = sum + value;
+        }
+
+        return sum;
+    }
+
+    private void verifyValueForMetric(
+            TestTrackingMetric testTrackingMetric,
+            Long bucketKey,
+            Long expectedBucketValue,
+            Map<TestTrackingMetric,
+            Map<Long, Long>> metricResponse) {
+
         Map<Long, Long> bucketsForMetric = metricResponse.get(testTrackingMetric);
         Assert.assertNotNull(bucketsForMetric);
-        Assert.assertEquals(bucketValue, bucketsForMetric.get(bucketKey));
+        Assert.assertEquals(expectedBucketValue, bucketsForMetric.get(bucketKey));
     }
 
     private void blockUntilAsyncThreadIdleInServer() {
