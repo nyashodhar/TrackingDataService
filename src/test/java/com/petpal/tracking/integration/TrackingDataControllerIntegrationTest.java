@@ -90,7 +90,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         blockUntilAsyncThreadIdleInServer();
 
-        Map<TestTrackingMetric, Map<Long, Long>> getResponse = getMetrics(
+        Map<TestTrackingMetric, Map<Long, Long>> getResponse = getMetricsForDevice(
                 trackingDeviceId,
                 BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 0, 0, 0, timeZonePDT).getTimeInMillis(),
                 null,
@@ -187,7 +187,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         ResponseEntity<String> responseData1 = postMetrics(combinedTestTrackingData1);
         blockUntilAsyncThreadIdleInServer();
 
-        Map<TestTrackingMetric, Map<Long, Long>> getResponse1 = getMetrics(
+        Map<TestTrackingMetric, Map<Long, Long>> getResponse1 = getMetricsForDevice(
                 trackingDeviceId,
                 BucketCalculator.getCalendar(2012, Calendar.JANUARY, 1, 0, 0, 0, timeZonePDT).getTimeInMillis(),
                 null,
@@ -227,7 +227,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         ResponseEntity<String> responseData2 = postMetrics(combinedTestTrackingData2);
         blockUntilAsyncThreadIdleInServer();
 
-        Map<TestTrackingMetric, Map<Long, Long>> getResponse2 = getMetrics(
+        Map<TestTrackingMetric, Map<Long, Long>> getResponse2 = getMetricsForDevice(
                 trackingDeviceId,
                 BucketCalculator.getCalendar(2012, Calendar.JANUARY, 1, 0, 0, 0, timeZonePDT).getTimeInMillis(),
                 null,
@@ -302,7 +302,6 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
                 }
             }
         }
-
     }
 
 }

@@ -73,7 +73,7 @@ public abstract class AbstractTimeSeriesIntegrationTest {
         }
     }
 
-    protected Map<TestTrackingMetric, Map<Long, Long>> getMetrics(
+    protected Map<TestTrackingMetric, Map<Long, Long>> getMetricsForDevice(
             String trackingDeviceId,
             long utcBegin,
             Long utcEnd,
@@ -90,7 +90,7 @@ public abstract class AbstractTimeSeriesIntegrationTest {
 
         HttpEntity<String> entity = new HttpEntity<String>(headers);
 
-        String url = "http://localhost:" + port + "/metrics/absolute/device/{deviceId}?utcBegin={utcBegin}&resultBucketSize={resultBucketSize}&resultBucketMultiplier={resultBucketMultiplier}";
+        String url = "http://localhost:" + port + "/metrics/device/{deviceId}?utcBegin={utcBegin}&resultBucketSize={resultBucketSize}&resultBucketMultiplier={resultBucketMultiplier}";
 
         // Conditionally add optional query/url parameters
 

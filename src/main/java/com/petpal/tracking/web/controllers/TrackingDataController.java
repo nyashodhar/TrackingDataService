@@ -68,10 +68,14 @@ public class TrackingDataController {
 
 
     /**
-     * Get time series data for a specified set of tracking data metrics for a given device id
+     * Get time series data for a specified set of tracking data metrics for a given device id.
      *
-     * Note that this controller uses absolute timing, which allows the client to control the
-     * boundaries of each bucket.
+     * The metrics will be queries from aggregated time timeseries, the aggregated time series
+     * that the actual query will run against is determined by the combination of tracking metrics
+     * and the result buckets specified.
+     *
+     * This API call uses absolute timing and allows the client to control the boundaries of
+     * each bucket.
      *
      * For example, if a call is made to get data from midnight 3 days ago in buckets spanning 1 day,
      * then the first bucket will span 24 hours starting midnight 3 days ago. Bucket 2 will contain data
@@ -80,7 +84,7 @@ public class TrackingDataController {
      * CURL EXAMPLE:
      *  utcBegin: "May 1st 2014 PDT, Midnight" (UTC millis - 1398927600265)
      *  utcEnd: "Oct 31st 2014 PDT, Midnight" (UTC millis - 1414738800266)
-     * curl -v -X GET "http://localhost:9000/metrics/absolute/device/263e6c54-69c9-45f5-853c-b5f4420ceb5e?utcBegin=1398927600265&utcEnd=1414738800266&resultBucketSize=MONTHS&resultBucketMultiplier=1&trackingMetrics=walkingsteps,runningsteps" -H "Accept: application/json" -H "Content-Type: application/json"
+     * curl -v -X GET "http://localhost:9000/metrics/device/263e6c54-69c9-45f5-853c-b5f4420ceb5e?utcBegin=1398927600265&utcEnd=1414738800266&resultBucketSize=MONTHS&resultBucketMultiplier=1&trackingMetrics=walkingsteps,runningsteps" -H "Accept: application/json" -H "Content-Type: application/json"
      *
      * @param deviceId the device id
      * @param utcBegin utc time stamp for the start of the query interval. Can not be null.
@@ -94,9 +98,9 @@ public class TrackingDataController {
      *                       and a sparse response will be sent.
      * @return Tracking data results grouped by metric and in bucket of the specified size.
      */
-    @RequestMapping(value="/metrics/absolute/device/{deviceId}", method=RequestMethod.GET)
-    @ResponseStatus( HttpStatus.OK )
-    public @ResponseBody Map<TrackingMetric, Map<Long, Long>> getMetricsForDeviceAbsoluteTiming(
+    @RequestMapping(value="/metrics/device/{deviceId}", method=RequestMethod.GET)
+    @ResponseStatus(HttpStatus.OK)
+    public @ResponseBody Map<TrackingMetric, Map<Long, Long>> getTrackingMetricsForDevice(
             @PathVariable String deviceId,
             @RequestParam(value="utcBegin", required=true) Long utcBegin,
             @RequestParam(value="utcEnd", required=false) Long utcEnd,
@@ -105,13 +109,13 @@ public class TrackingDataController {
             @RequestParam(value="trackingMetrics", required=false) TrackingMetricsSet trackingMetricsSet,
             @RequestParam(value="verboseResponse", required=false) Boolean verboseResponse) {
 
-        logger.info("getMetricsForDeviceRelativeTiming(): deviceId = " + deviceId);
-        logger.info("getMetricsForDeviceRelativeTiming(): utcBegin = " + utcBegin + " (" + new Date(utcBegin) + ")");
-        logger.info("getMetricsForDeviceRelativeTiming(): utcEnd = " + utcEnd);
-        logger.info("getMetricsForDeviceRelativeTiming(): resultBucketSize = " + resultBucketSize);
-        logger.info("getMetricsForDeviceRelativeTiming(): resultBucketMultiplier = " + resultBucketMultiplier);
-        logger.info("getMetricsForDeviceRelativeTiming(): trackingMetricsSet = " + trackingMetricsSet);
-        logger.info("getMetricsForDeviceRelativeTiming(): verboseResponse = " + verboseResponse);
+        logger.info("getTrackingMetricsForDevice(): deviceId = " + deviceId);
+        logger.info("getTrackingMetricsForDevice(): utcBegin = " + utcBegin + " (" + new Date(utcBegin) + ")");
+        logger.info("getTrackingMetricsForDevice(): utcEnd = " + utcEnd);
+        logger.info("getTrackingMetricsForDevice(): resultBucketSize = " + resultBucketSize);
+        logger.info("getTrackingMetricsForDevice(): resultBucketMultiplier = " + resultBucketMultiplier);
+        logger.info("getTrackingMetricsForDevice(): trackingMetricsSet = " + trackingMetricsSet);
+        logger.info("getTrackingMetricsForDevice(): verboseResponse = " + verboseResponse);
 
         Map<TimeSeriesTag, String> tags = new HashMap<TimeSeriesTag, String>();
         //tags.put(TrackingDataService.TAG_TRACKED_ENTITY, "c45c4cd8-06fd-41be-aa0c-76a5418d3021");
@@ -124,10 +128,7 @@ public class TrackingDataController {
 
         List<TrackingMetric> trackingMetricsParam = new ArrayList<TrackingMetric>();
         if(CollectionUtils.isEmpty(trackingMetricsSet)) {
-            trackingMetricsParam.add(TrackingMetric.WALKINGSTEPS);
-            trackingMetricsParam.add(TrackingMetric.RUNNINGSTEPS);
-            trackingMetricsParam.add(TrackingMetric.RESTINGSECONDS);
-            trackingMetricsParam.add(TrackingMetric.SLEEPINGSECONDS);
+            trackingMetricsParam.addAll(TrackingMetric.getAllTrackingMetrics());
         } else {
             trackingMetricsParam.addAll(trackingMetricsSet);
         }
@@ -137,7 +138,7 @@ public class TrackingDataController {
         Map<TrackingMetric, Map<Long, Long>> metricResults = trackingService.getAggregatedTimeSeriesData(
                 tags, trackingMetricsParam, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier, createVerboseResponse);
 
-        logger.info("getMetricsForDeviceAbsoluteTiming(): Results: " + metricResults);
+        logger.info("getTrackingMetricsForDevice(): Results: " + metricResults);
         return metricResults;
     }
 
