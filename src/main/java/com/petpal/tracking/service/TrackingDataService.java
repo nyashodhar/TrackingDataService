@@ -89,20 +89,18 @@ public class TrackingDataService implements AsyncTrackingDataInserter {
     }
 
     /**
-     * Store raw tracking data. The raw data itself is persisted, but at
+     * Store tracking data. The raw data itself is persisted, but at
      * the same time, multiple aggregated time series are updated for each
      * metric. This makes is possible to later query the time series data
      * from those aggregated series, yielding a much fast query.
+     *
+     * @param tags the tags to apply to all the datapoints in the tracking data.
      * @param trackingData the data to be inserted into the time series
      *                     date store.
      */
-    public void storeTrackingData(TrackingData trackingData) {
+    public void storeTrackingData(Map<TimeSeriesTag, String> tags, TrackingData trackingData) {
 
         logger.info("storeTrackingData(): trackingData=" + trackingData);
-
-        Map<TimeSeriesTag, String> tags = new HashMap<TimeSeriesTag, String>();
-        tags.put(TimeSeriesTag.TRACKEDENTITY, trackingData.getTrackedEntityId());
-        tags.put(TimeSeriesTag.TRACKINGDEVICE, trackingData.getTrackingDeviceId());
 
         //
         // TODO: TimeZone should be specified by the client, or if not there should be a better

@@ -1,7 +1,5 @@
 package com.petpal.tracking.integration;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -9,29 +7,10 @@ import java.util.Map;
  */
 public class TestTrackingData {
 
-    private String trackedEntityId;
-    private String trackingDeviceId;
-
     private Map<Long, Long> walkingData;
     private Map<Long, Long> runningData;
     private Map<Long, Long> sleepingData;
     private Map<Long, Long> restingData;
-
-    public String getTrackedEntityId() {
-        return trackedEntityId;
-    }
-
-    public void setTrackedEntityId(String trackedEntityId) {
-        this.trackedEntityId = trackedEntityId;
-    }
-
-    public String getTrackingDeviceId() {
-        return trackingDeviceId;
-    }
-
-    public void setTrackingDeviceId(String trackingDeviceId) {
-        this.trackingDeviceId = trackingDeviceId;
-    }
 
     public Map<Long, Long> getWalkingData() {
         return walkingData;
@@ -68,8 +47,6 @@ public class TestTrackingData {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("TestTrackingData{");
-        sb.append("trackedEntityId='").append(trackedEntityId).append('\'');
-        sb.append(", trackingDeviceId='").append(trackingDeviceId).append('\'');
         sb.append(", walkingData=").append(walkingData);
         sb.append(", runningData=").append(runningData);
         sb.append(", sleepingData=").append(sleepingData);
@@ -105,6 +82,4 @@ public class TestTrackingData {
             throw new IllegalArgumentException("Unexpected test tracking metric " + testTrackingMetric);
         }
     }
-
-
 }

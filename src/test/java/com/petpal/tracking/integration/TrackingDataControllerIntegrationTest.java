@@ -63,14 +63,11 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
     }
 
     @Test
-    public void test_get_metrics_boundary_test_empty_bucket_excluded() {
+    public void test_get_metrics_for_device_boundary_test_empty_bucket_excluded() {
 
-        String trackedEntityId = createTrackedEntityId();
         String trackingDeviceId = createTrackingDeviceId();
 
         TestTrackingData testTrackingData = new TestTrackingData();
-        testTrackingData.setTrackedEntityId(trackedEntityId);
-        testTrackingData.setTrackingDeviceId(trackingDeviceId);
 
         Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
 
@@ -86,7 +83,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         BucketCalculator.addDataPointForAllMetrics(testTrackingData, dataPoints);
 
-        ResponseEntity<String> postResponse = postMetrics(testTrackingData);
+        ResponseEntity<String> postResponse = postMetricsForDevice(trackingDeviceId, testTrackingData);
 
         blockUntilAsyncThreadIdleInServer();
 
@@ -133,12 +130,9 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
     //@Test
     public void metricTest() {
 
-        String trackedEntityId = "tralalala";
         String trackingDeviceId = "blablabla";
 
         TestTrackingData testTrackingData = new TestTrackingData();
-        testTrackingData.setTrackedEntityId(trackedEntityId);
-        testTrackingData.setTrackingDeviceId(trackingDeviceId);
 
         Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
 
@@ -148,7 +142,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         BucketCalculator.addDataPointForAllMetrics(testTrackingData, dataPoints);
 
-        ResponseEntity<String> responseData = postMetrics(testTrackingData);
+        ResponseEntity<String> responseData = postMetricsForDevice(trackingDeviceId, testTrackingData);
 
         //
         // EXAMPLE ON HOW TO QUERY FOR THIS:
@@ -163,9 +157,8 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
 
     @Test
-    public void test_metrics_year_aggregation() {
+    public void test_metrics_for_device_year_aggregation() {
 
-        String trackedEntityId = createTrackedEntityId();
         String trackingDeviceId = createTrackingDeviceId();
 
         //
@@ -173,18 +166,16 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         //
 
         TestTrackingData testTrackingData1 = BucketCalculator.generateRandomTrackingData(
-                trackedEntityId, trackingDeviceId,
                 BucketCalculator.getCalendar(2012, Calendar.MAY, 7, 0, 0, 0, timeZonePDT),
                 BucketCalculator.getCalendar(2012, Calendar.MAY, 20, 0, 0, 0, timeZonePDT));
 
         TestTrackingData testTrackingData2 = BucketCalculator.generateRandomTrackingData(
-                trackedEntityId, trackingDeviceId,
                 BucketCalculator.getCalendar(2014, Calendar.FEBRUARY, 2, 0, 0, 0, timeZonePDT),
                 BucketCalculator.getCalendar(2014, Calendar.MARCH, 3, 0, 0, 0, timeZonePDT));
 
         TestTrackingData combinedTestTrackingData1 = BucketCalculator.combineTrackingData(testTrackingData1, testTrackingData2);
 
-        ResponseEntity<String> responseData1 = postMetrics(combinedTestTrackingData1);
+        ResponseEntity<String> responseData1 = postMetricsForDevice(trackingDeviceId, combinedTestTrackingData1);
         blockUntilAsyncThreadIdleInServer();
 
         Map<TestTrackingMetric, Map<Long, Long>> getResponse1 = getMetricsForDevice(
@@ -214,17 +205,15 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         //
 
         TestTrackingData testTrackingData3 = BucketCalculator.generateRandomTrackingData(
-                trackedEntityId, trackingDeviceId,
                 BucketCalculator.getCalendar(2012, Calendar.MAY, 22, 0, 0, 0, timeZonePDT),
                 BucketCalculator.getCalendar(2012, Calendar.MAY, 27, 0, 0, 0, timeZonePDT));
 
         TestTrackingData testTrackingData4 = BucketCalculator.generateRandomTrackingData(
-                trackedEntityId, trackingDeviceId,
                 BucketCalculator.getCalendar(2014, Calendar.AUGUST, 9, 0, 0, 0, timeZonePDT),
                 BucketCalculator.getCalendar(2014, Calendar.AUGUST, 23, 0, 0, 0, timeZonePDT));
 
         TestTrackingData combinedTestTrackingData2 = BucketCalculator.combineTrackingData(testTrackingData3, testTrackingData4);
-        ResponseEntity<String> responseData2 = postMetrics(combinedTestTrackingData2);
+        ResponseEntity<String> responseData2 = postMetricsForDevice(trackingDeviceId, combinedTestTrackingData2);
         blockUntilAsyncThreadIdleInServer();
 
         Map<TestTrackingMetric, Map<Long, Long>> getResponse2 = getMetricsForDevice(

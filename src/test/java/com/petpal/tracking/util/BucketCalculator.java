@@ -82,8 +82,6 @@ public class BucketCalculator {
     }
 
     public static TestTrackingData generateRandomTrackingData(
-            String trackedEntityId,
-            String trackingDeviceId,
             Calendar start,
             Calendar end) {
 
@@ -93,8 +91,6 @@ public class BucketCalculator {
         int maxRestSecondsPerMinute = 50;
 
         TestTrackingData testTrackingData = new TestTrackingData();
-        testTrackingData.setTrackedEntityId(trackedEntityId);
-        testTrackingData.setTrackingDeviceId(trackingDeviceId);
         testTrackingData.setWalkingData(generateMinuteBucketRandomData(start, end, maxWalkingStepsPerMinute));
         testTrackingData.setRunningData(generateMinuteBucketRandomData(start, end, maxRunningStepsPerMinute));
         testTrackingData.setSleepingData(generateMinuteBucketRandomData(start, end, maxSleepSecondsPerMinute));
@@ -106,17 +102,7 @@ public class BucketCalculator {
             TestTrackingData testTrackingData1,
             TestTrackingData testTrackingData2) {
 
-        if(!testTrackingData1.getTrackedEntityId().equals(testTrackingData2.getTrackedEntityId())) {
-            throw new IllegalArgumentException("Tracked entity id must match");
-        }
-
-        if(!testTrackingData1.getTrackingDeviceId().equals(testTrackingData2.getTrackingDeviceId())) {
-            throw new IllegalArgumentException("Tracked device id must match");
-        }
-
         TestTrackingData combinedTestTrackingData = new TestTrackingData();
-        combinedTestTrackingData.setTrackedEntityId(testTrackingData1.getTrackedEntityId());
-        combinedTestTrackingData.setTrackingDeviceId(testTrackingData1.getTrackingDeviceId());
 
         for(TestTrackingMetric testTrackingMetric : TestTrackingMetric.getAllTrackingMetrics()) {
             Map<Long, Long> dataPoints = new TreeMap<Long, Long>();

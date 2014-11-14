@@ -3,8 +3,6 @@ package com.petpal.tracking.data;
 import com.petpal.tracking.service.TrackingMetric;
 import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,29 +21,10 @@ public class TrackingData {
     // curl -v -X POST localhost:9000/tracking -H "Accept: application/json" -H "Content-Type: application/json" -d '{"walkingData":{"23423424523523":123,"23423424523700":125}}'
     //
 
-    private String trackedEntityId;
-    private String trackingDeviceId;
-
     private Map<Long, Long> walkingData;
     private Map<Long, Long> runningData;
     private Map<Long, Long> sleepingData;
     private Map<Long, Long> restingData;
-
-    public String getTrackedEntityId() {
-        return trackedEntityId;
-    }
-
-    public void setTrackedEntityId(String trackedEntityId) {
-        this.trackedEntityId = trackedEntityId;
-    }
-
-    public String getTrackingDeviceId() {
-        return trackingDeviceId;
-    }
-
-    public void setTrackingDeviceId(String trackingDeviceId) {
-        this.trackingDeviceId = trackingDeviceId;
-    }
 
     public Map<Long, Long> getWalkingData() {
         return walkingData;
@@ -84,9 +63,6 @@ public class TrackingData {
 
         final StringBuilder sb = new StringBuilder("TrackingData{");
 
-        sb.append("trackedEntityId='").append(trackedEntityId).append('\'');
-        sb.append(", trackingDeviceId='").append(trackingDeviceId).append('\'');
-
         if(CollectionUtils.isEmpty(getWalkingData())) {
             sb.append(", walkingDataPoints=").append(walkingData.size());
         }
@@ -120,21 +96,4 @@ public class TrackingData {
             throw new IllegalArgumentException("Unexpected tracking metric " + testTrackingMetric);
         }
     }
-
-    public void setDataForMetric(TrackingMetric testTrackingMetric, Map<Long, Long> dataPoints) {
-        if (testTrackingMetric == TrackingMetric.WALKINGSTEPS) {
-            setWalkingData(dataPoints);
-        } else if (testTrackingMetric == TrackingMetric.RUNNINGSTEPS) {
-            setRunningData(dataPoints);
-        } else if (testTrackingMetric == TrackingMetric.SLEEPINGSECONDS) {
-            setSleepingData(dataPoints);
-        } else if (testTrackingMetric == TrackingMetric.RESTINGSECONDS) {
-            setRestingData(dataPoints);
-        } else {
-            throw new IllegalArgumentException("Unexpected tracking metric " + testTrackingMetric);
-        }
-    }
-
 }
-
-

@@ -45,25 +45,25 @@ public class TrackingDataController {
     @Autowired
     private TrackingDataService trackingService;
 
-    @RequestMapping(value="/metric", method= RequestMethod.GET)
-    public @ResponseBody
-    String getMetric(@RequestParam(value="name", required=false, defaultValue="Stranger") String metricName) {
-        return "getMetric() org.petpal.data.hello";
-    }
-
     /**
-     * Store metrics in the time series database.
+     * Store metrics in the time series database for a given device.
      *
      * CURL EXAMPLE:
-     * curl -v -X POST localhost:9000/tracking -H "Accept: application/json" -H "Content-Type: application/json" -d '{"walkingData":{"23423424523523":123,"23423424523700":125}}'
+     * curl -v -X POST localhost:9000/tracking/device/lkjslfjssdddss -H "Accept: application/json" -H "Content-Type: application/json" -d '{"walkingData":{"23423424523523":123,"23423424523700":125}}'
      */
-    @RequestMapping(value="/tracking", method=RequestMethod.POST)
-    @ResponseStatus( HttpStatus.CREATED )
-    public @ResponseBody String saveTrackingData(@RequestBody TrackingData trackingData) {
-        System.out.println("saveTrackingData(): Received tracking data " + trackingData);
+    @RequestMapping(value="/tracking/device/{deviceId}", method=RequestMethod.POST)
+    @ResponseStatus( HttpStatus.NO_CONTENT )
+    public void saveTrackingDataForDevice(
+            @PathVariable String deviceId,
+            @RequestBody TrackingData trackingData) {
 
-        trackingService.storeTrackingData(trackingData);
-        return "saveTrackingData() org.petpal.data.hello";
+        logger.info("saveTrackingDataForDevice(): deviceId: " + deviceId);
+        logger.info("saveTrackingDataForDevice(): tracking data: " + trackingData);
+
+        Map<TimeSeriesTag, String> tags = new HashMap<TimeSeriesTag, String>();
+        tags.put(TimeSeriesTag.TRACKINGDEVICE, deviceId);
+
+        trackingService.storeTrackingData(tags, trackingData);
     }
 
 
@@ -118,7 +118,6 @@ public class TrackingDataController {
         logger.info("getTrackingMetricsForDevice(): verboseResponse = " + verboseResponse);
 
         Map<TimeSeriesTag, String> tags = new HashMap<TimeSeriesTag, String>();
-        //tags.put(TrackingDataService.TAG_TRACKED_ENTITY, "c45c4cd8-06fd-41be-aa0c-76a5418d3021");
         tags.put(TimeSeriesTag.TRACKINGDEVICE, deviceId);
 
         //
