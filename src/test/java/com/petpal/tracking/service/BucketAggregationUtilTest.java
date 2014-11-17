@@ -31,6 +31,56 @@ public class BucketAggregationUtilTest {
     }
 
     //
+    // shiftData()
+    //
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testShiftData_null_input() {
+        bucketAggregationUtil.shiftData(null, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testShiftData_empty_input() {
+        bucketAggregationUtil.shiftData(new HashMap<Long, Long>(), true);
+    }
+
+    @Test
+    public void testShiftData_forward() {
+
+        Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
+        dataPoints.put(System.currentTimeMillis() - 10000L, 5L);
+        dataPoints.put(System.currentTimeMillis() - 20000L, 5L);
+
+        Map<Long, Long> shiftedDataPoints = bucketAggregationUtil.shiftData(dataPoints, true);
+
+        Assert.assertEquals(2, shiftedDataPoints.size());
+
+        for(long timestamp : dataPoints.keySet()) {
+            long expectedNewTimeStamp = timestamp + 48L*60L*60L*1000L;
+            Assert.assertEquals(shiftedDataPoints.get(expectedNewTimeStamp),  dataPoints.get(timestamp));
+        }
+    }
+
+
+    @Test
+    public void testShiftData_backward() {
+
+        Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
+        dataPoints.put(System.currentTimeMillis() - 10000L, 5L);
+        dataPoints.put(System.currentTimeMillis() - 20000L, 5L);
+
+        Map<Long, Long> shiftedDataPoints = bucketAggregationUtil.shiftData(dataPoints, false);
+
+        Assert.assertEquals(2, shiftedDataPoints.size());
+
+        for(long timestamp : dataPoints.keySet()) {
+            long expectedNewTimeStamp = timestamp - 48L*60L*60L*1000L;
+            Assert.assertEquals(shiftedDataPoints.get(expectedNewTimeStamp),  dataPoints.get(timestamp));
+        }
+    }
+
+
+    //
     // mergeExistingDataPointsIntoNew()
     //
 

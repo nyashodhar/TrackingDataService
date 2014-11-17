@@ -25,6 +25,8 @@ import java.util.TreeMap;
 @Component
 public class BucketAggregationUtil {
 
+    private final long FORTY_EIGHT_HOURS = 48L*60L*60L*1000L;
+
     private Logger logger = Logger.getLogger(this.getClass());
 
     /**
@@ -62,6 +64,34 @@ public class BucketAggregationUtil {
         }
 
         return updatedDataPoints;
+    }
+
+
+    /**
+     * Shifts all the timestamps in a data point map 48 hours forward or backward
+     * @param dataPoints
+     * @param forward
+     * @return a map of datapoints shifted 48 hours in the direction specified
+     * by the 'forward' parameter.
+     */
+    public Map<Long, Long> shiftData(Map<Long, Long> dataPoints, boolean forward) {
+
+        if(CollectionUtils.isEmpty(dataPoints)) {
+            throw new IllegalArgumentException("Datapoints now specified");
+        }
+
+        Map<Long, Long> shiftedData = new TreeMap();
+        for(long ts : dataPoints.keySet()) {
+            long newTimeStamp;
+            if(forward) {
+                newTimeStamp = ts + FORTY_EIGHT_HOURS;
+            } else {
+                newTimeStamp = ts - FORTY_EIGHT_HOURS;
+            }
+            shiftedData.put(newTimeStamp, dataPoints.get(ts));
+        }
+
+        return shiftedData;
     }
 
 
