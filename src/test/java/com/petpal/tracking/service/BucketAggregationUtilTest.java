@@ -23,11 +23,13 @@ public class BucketAggregationUtilTest {
 
     // Some class variables
     private TimeZone timeZonePDT;
+    private TimeZone timeZoneUTC;
 
     @Before
     public void setup() {
         bucketAggregationUtil = new BucketAggregationUtil();
         timeZonePDT = TimeZone.getTimeZone("America/Los_Angeles");
+        timeZoneUTC = TimeZone.getTimeZone("UTC");
     }
 
     //
@@ -452,6 +454,192 @@ public class BucketAggregationUtilTest {
 
         Assert.assertEquals((calExpected.getTimeInMillis()-1L), bucketEndTime);
     }
+
+    //
+    // determineStartOfUTCShiftedBucket()
+    //
+
+    @Test
+    public void test_determineStartOfUTCShiftedBucket_year_PDT() {
+
+        long now = System.currentTimeMillis();
+
+        Calendar nowPDT = Calendar.getInstance();
+        nowPDT.setTimeZone(timeZonePDT);
+        nowPDT.setTimeInMillis(now);
+
+        long timestamp = bucketAggregationUtil.determineStartOfUTCShiftedBucket(now, timeZonePDT, TimeUnit.YEARS);
+
+        // Expect the determined bucket to start on Jan 1, 00:00:00:000 relative to UTC
+
+        Calendar bucketStartCal = Calendar.getInstance();
+        bucketStartCal.clear();
+        bucketStartCal.setTimeZone(timeZoneUTC);
+        bucketStartCal.setTimeInMillis(timestamp);
+
+        Assert.assertEquals(nowPDT.get(Calendar.YEAR), bucketStartCal.get(Calendar.YEAR));
+        Assert.assertEquals(Calendar.JANUARY, bucketStartCal.get(Calendar.MONTH));
+        Assert.assertEquals(1, bucketStartCal.get(Calendar.DAY_OF_MONTH));
+        Assert.assertEquals(0, bucketStartCal.get(Calendar.HOUR_OF_DAY));
+        Assert.assertEquals(0, bucketStartCal.get(Calendar.MINUTE));
+        Assert.assertEquals(0, bucketStartCal.get(Calendar.SECOND));
+        Assert.assertEquals(0, bucketStartCal.get(Calendar.MILLISECOND));
+    }
+
+
+    @Test
+    public void test_determineStartOfUTCShiftedBucket_month_PDT() {
+
+        long now = System.currentTimeMillis();
+
+        Calendar nowPDT = Calendar.getInstance();
+        nowPDT.setTimeZone(timeZonePDT);
+        nowPDT.setTimeInMillis(now);
+
+        long initialBucketStart = bucketAggregationUtil.determineStartOfUTCShiftedBucket(now, timeZonePDT, TimeUnit.MONTHS);
+
+        // Expect the determined bucket to start the first of the month, 00:00:00:000 relative to UTC timezone
+
+        Calendar bucketStartCal = Calendar.getInstance();
+        bucketStartCal.clear();
+        bucketStartCal.setTimeZone(timeZoneUTC);
+        bucketStartCal.setTimeInMillis(initialBucketStart);
+
+        Assert.assertEquals(nowPDT.get(Calendar.YEAR), bucketStartCal.get(Calendar.YEAR));
+        Assert.assertEquals(nowPDT.get(Calendar.MONTH), bucketStartCal.get(Calendar.MONTH));
+        Assert.assertEquals(1, bucketStartCal.get(Calendar.DAY_OF_MONTH));
+        Assert.assertEquals(0, bucketStartCal.get(Calendar.HOUR_OF_DAY));
+        Assert.assertEquals(0, bucketStartCal.get(Calendar.MINUTE));
+        Assert.assertEquals(0, bucketStartCal.get(Calendar.SECOND));
+        Assert.assertEquals(0, bucketStartCal.get(Calendar.MILLISECOND));
+    }
+
+    @Test
+    public void test_determineStartOfUTCShiftedBucket_week_PDT() {
+
+        long now = System.currentTimeMillis();
+
+        Calendar nowPDT = Calendar.getInstance();
+        nowPDT.setTimeZone(timeZonePDT);
+        nowPDT.setTimeInMillis(now);
+
+        long initialBucketStart = bucketAggregationUtil.determineStartOfUTCShiftedBucket(now, timeZonePDT, TimeUnit.WEEKS);
+
+        // Expect the determined bucket to start the first day of week of given timestamp, 00:00:00:000 relative to UTC
+
+        Calendar bucketStartCal = Calendar.getInstance();
+        bucketStartCal.clear();
+        bucketStartCal.setTimeZone(timeZoneUTC);
+        bucketStartCal.setTimeInMillis(initialBucketStart);
+
+        Assert.assertEquals(nowPDT.get(Calendar.YEAR), bucketStartCal.get(Calendar.YEAR));
+        Assert.assertEquals(nowPDT.get(Calendar.MONTH), bucketStartCal.get(Calendar.MONTH));
+        Assert.assertEquals(nowPDT.get(Calendar.WEEK_OF_YEAR), bucketStartCal.get(Calendar.WEEK_OF_YEAR));
+        Assert.assertEquals(1, bucketStartCal.get(Calendar.DAY_OF_WEEK));
+        Assert.assertEquals(0, bucketStartCal.get(Calendar.HOUR_OF_DAY));
+        Assert.assertEquals(0, bucketStartCal.get(Calendar.MINUTE));
+        Assert.assertEquals(0, bucketStartCal.get(Calendar.SECOND));
+        Assert.assertEquals(0, bucketStartCal.get(Calendar.MILLISECOND));
+    }
+
+    @Test
+    public void test_determineStartOfUTCShiftedBucket_day_PDT() {
+
+        long now = System.currentTimeMillis();
+
+        Calendar nowPDT = Calendar.getInstance();
+        nowPDT.setTimeZone(timeZonePDT);
+        nowPDT.setTimeInMillis(now);
+
+        long initialBucketStart = bucketAggregationUtil.determineStartOfUTCShiftedBucket(now, timeZonePDT, TimeUnit.DAYS);
+
+        // Expect the determined bucket to start 00:00:00:000 on the same day as the given timestamp relative to UTC
+
+        Calendar bucketStartCal = Calendar.getInstance();
+        bucketStartCal.clear();
+        bucketStartCal.setTimeZone(timeZoneUTC);
+        bucketStartCal.setTimeInMillis(initialBucketStart);
+
+        Assert.assertEquals(nowPDT.get(Calendar.YEAR), bucketStartCal.get(Calendar.YEAR));
+        Assert.assertEquals(nowPDT.get(Calendar.MONTH), bucketStartCal.get(Calendar.MONTH));
+        Assert.assertEquals(nowPDT.get(Calendar.DAY_OF_MONTH), bucketStartCal.get(Calendar.DAY_OF_MONTH));
+        Assert.assertEquals(0, bucketStartCal.get(Calendar.HOUR_OF_DAY));
+        Assert.assertEquals(0, bucketStartCal.get(Calendar.MINUTE));
+        Assert.assertEquals(0, bucketStartCal.get(Calendar.SECOND));
+        Assert.assertEquals(0, bucketStartCal.get(Calendar.MILLISECOND));
+    }
+
+    @Test
+    public void test_determineStartOfUTCShiftedBucket_hour_PDT() {
+
+        long now = System.currentTimeMillis();
+
+        Calendar nowPDT = Calendar.getInstance();
+        nowPDT.setTimeZone(timeZonePDT);
+        nowPDT.setTimeInMillis(now);
+
+        long initialBucketStart = bucketAggregationUtil.determineStartOfUTCShiftedBucket(now, timeZonePDT, TimeUnit.HOURS);
+
+        // Expect the determined bucket to start XX:00:00:000 where XX is the hour in the given timestamp relative to our timezone
+
+        Calendar bucketStartCal = Calendar.getInstance();
+        bucketStartCal.clear();
+        bucketStartCal.setTimeZone(timeZoneUTC);
+        bucketStartCal.setTimeInMillis(initialBucketStart);
+
+        Assert.assertEquals(nowPDT.get(Calendar.YEAR), bucketStartCal.get(Calendar.YEAR));
+        Assert.assertEquals(nowPDT.get(Calendar.MONTH), bucketStartCal.get(Calendar.MONTH));
+        Assert.assertEquals(nowPDT.get(Calendar.DAY_OF_MONTH), bucketStartCal.get(Calendar.DAY_OF_MONTH));
+        Assert.assertEquals(nowPDT.get(Calendar.HOUR_OF_DAY), bucketStartCal.get(Calendar.HOUR_OF_DAY));
+        Assert.assertEquals(0, bucketStartCal.get(Calendar.MINUTE));
+        Assert.assertEquals(0, bucketStartCal.get(Calendar.SECOND));
+        Assert.assertEquals(0, bucketStartCal.get(Calendar.MILLISECOND));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_determineStartOfUTCShiftedBucket_minute_not_allowed() {
+        Calendar now = Calendar.getInstance();
+        now.setTimeZone(timeZonePDT);
+        bucketAggregationUtil.determineStartOfUTCShiftedBucket(now.getTimeInMillis(), now.getTimeZone(), TimeUnit.MINUTES);
+    }
+
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_determineStartOfUTCShiftedBucket_seconds_not_allowed() {
+        Calendar now = Calendar.getInstance();
+        now.setTimeZone(timeZonePDT);
+        bucketAggregationUtil.determineStartOfUTCShiftedBucket(now.getTimeInMillis(), now.getTimeZone(), TimeUnit.SECONDS);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_determineStartOfUTCShiftedBucket_millis_not_allowed() {
+        Calendar now = Calendar.getInstance();
+        now.setTimeZone(timeZonePDT);
+        bucketAggregationUtil.determineStartOfUTCShiftedBucket(now.getTimeInMillis(), now.getTimeZone(), TimeUnit.MILLISECONDS);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_determineStartOfUTCShiftedBucket_missing_timestamp() {
+        Calendar now = Calendar.getInstance();
+        now.setTimeZone(timeZonePDT);
+        bucketAggregationUtil.determineStartOfUTCShiftedBucket(null, now.getTimeZone(), TimeUnit.HOURS);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_determineStartOfUTCShiftedBucket_missing_timezone() {
+        Calendar now = Calendar.getInstance();
+        now.setTimeZone(timeZonePDT);
+        bucketAggregationUtil.determineStartOfUTCShiftedBucket(now.getTimeInMillis(), null, TimeUnit.HOURS);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_determineStartOfUTCShiftedBucket_missing_timeunit() {
+        Calendar now = Calendar.getInstance();
+        now.setTimeZone(timeZonePDT);
+        bucketAggregationUtil.determineStartOfUTCShiftedBucket(now.getTimeInMillis(), now.getTimeZone(), null);
+    }
+
+
 
     //
     // determineInitialBucket()
