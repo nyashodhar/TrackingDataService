@@ -97,7 +97,8 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
                 TimeUnit.MONTHS,
                 null,
                 null,
-                false);
+                false,
+                timeZonePST);
 
         // There should be 4 metrics in the response, since we didn't itemize metrics
 
@@ -191,7 +192,8 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
                 TimeUnit.YEARS,
                 null,
                 null,
-                false);
+                false,
+                timeZonePST);
 
         Assert.assertEquals("Unexpected number of metric types in get response", 4, getResponse1.size());
 
@@ -233,7 +235,8 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
                 TimeUnit.YEARS,
                 null,
                 null,
-                false);
+                false,
+                timeZonePST);
 
         Assert.assertEquals("Unexpected number of metric types in 2nd get response", 4, getResponse2.size());
 

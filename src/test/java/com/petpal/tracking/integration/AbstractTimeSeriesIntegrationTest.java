@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.UUID;
 
 /**
@@ -85,7 +86,8 @@ public abstract class AbstractTimeSeriesIntegrationTest {
             TimeUnit resultBucketSize,
             Integer bucketsToFetch,
             List<TestTrackingMetric> trackingMetrics,
-            Boolean verboseResponse) {
+            Boolean verboseResponse,
+            TimeZone aggregationTimeZone) {
 
         RestTemplate restTemplate = new RestTemplate();
 
@@ -137,6 +139,11 @@ public abstract class AbstractTimeSeriesIntegrationTest {
         if(verboseResponse != null) {
             url = url + "&verboseResponse={verboseResponse}";
             urlArgs.put("verboseResponse", verboseResponse);
+        }
+
+        if(aggregationTimeZone != null) {
+            url = url + "&aggregationTimeZone={aggregationTimeZone}";
+            urlArgs.put("aggregationTimeZone", aggregationTimeZone.getID());
         }
 
         //

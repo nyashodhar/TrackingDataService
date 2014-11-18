@@ -12,6 +12,7 @@ import org.apache.log4j.Logger;
 import org.kairosdb.client.builder.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.CollectionUtils;
@@ -44,6 +45,9 @@ import java.util.TimeZone;
 public class TrackingDataController {
 
     private Logger logger = Logger.getLogger(this.getClass());
+
+    @Value("${trackingService.defaultAggregatorTimeZoneID}")
+    private String defaultAggregationTimeZoneID;
 
     @Autowired
     @Qualifier("trackingDataService")
@@ -115,7 +119,8 @@ public class TrackingDataController {
             @RequestParam(value="bucketsToFetch", required=false) Integer bucketsToFetch,
             //@RequestParam(value="resultBucketMultiplier", required=true) Integer resultBucketMultiplier,
             @RequestParam(value="trackingMetrics", required=false) TrackingMetricsSet trackingMetricsSet,
-            @RequestParam(value="verboseResponse", required=false) Boolean verboseResponse) {
+            @RequestParam(value="verboseResponse", required=false) Boolean verboseResponse,
+            @RequestParam(value="aggregationTimeZone", required=false) TimeZone aggregationTimeZone) {
 
         logger.info("getAggregatedMetricsForDevice(): deviceId = " + deviceId);
         logger.info("getAggregatedMetricsForDevice(): startYear = " + startYear);
@@ -127,21 +132,22 @@ public class TrackingDataController {
         logger.info("getAggregatedMetricsForDevice(): bucketsToFetch = " + bucketsToFetch);
         logger.info("getAggregatedMetricsForDevice(): trackingMetricsSet = " + trackingMetricsSet);
         logger.info("getAggregatedMetricsForDevice(): verboseResponse = " + verboseResponse);
+        logger.info("getAggregatedMetricsForDevice(): aggregationTimeZone = " + aggregationTimeZone);
 
         Map<TimeSeriesTag, String> tags = new HashMap<TimeSeriesTag, String>();
         tags.put(TimeSeriesTag.TRACKINGDEVICE, deviceId);
 
         //
-        // TODO: TimeZone should be specified by the client, or if not there should be a better
-        // way to determine the default timezone. The timezone is needed to perform a reverse shift
-        // of the aggregated data. When the data was originally stored, it was stored into buckets
-        // series whose timestamps are relative to the UTZ timezone. This is necessary to make the
-        // bucket boundaries deterministic in the case users should be able to change their timezones.
-        // At that point we would not be able to query for their aggregated data anymore unless
-        // the bucket timestamps were deterministic based on shift to timezone.
+        // The aggregation timezone is needed to perform a reverse shift of the aggregated data.
+        // When the aggregated data was originally stored, it was stored into buckets
+        // series whose timestamps are shifted relative to the UTZ timezone. This is necessary to make the
+        // bucket boundaries deterministic in the case users change their timezones.
+        // At that point we would not be able to query for their aggregated data anymore.
         //
 
-        TimeZone aggregationTimeZone = TimeZone.getTimeZone("PST");
+        if(aggregationTimeZone == null) {
+            aggregationTimeZone = TimeZone.getTimeZone(defaultAggregationTimeZoneID);
+        }
 
         Long utcBegin = calculateUTCBegin(startYear, startMonth, startWeek, startDay, startHour, resultBucketSize, aggregationTimeZone);
         Long utcEnd = calculateUTCEnd(utcBegin, resultBucketSize, bucketsToFetch, aggregationTimeZone);
