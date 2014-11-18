@@ -220,11 +220,11 @@ public class BucketAggregationUtil {
      * - Aggregate the data normally
      * - For each bucket in the aggregated data, shift the bucket start to the UTC relative start of the bucket
      *
-     * For example, let's say the aggregation gives the following bucket
+     * For example, let's say the aggregation gives the following bucket for aggregation timezone PST
      *
      *   [ts1, 5]
      *
-     * A) Find out what year ts1 belongs to in PDT, let's say it's 2014.
+     * A) Find out what year ts1 belongs to in PST, let's say it's 2014.
      * B) Find the UTC timestamp for Jan 1, 2014, 00:00:00 relative to the UTC timezone, call it ts2
      * C) Use ts2 as the bucket into which to add the value 5.
      *
@@ -285,7 +285,7 @@ public class BucketAggregationUtil {
      * For buckets that are larger than minute-size, the boundaries of the buckets
      * become timezone dependent.
      *
-     * For example, if the client has timezone PDT, and
+     * For example, if the client has timezone PST, and
      * would like to see buckets grouped into
      *
      *   bucket 1: [00:00:00 may 1, 23:59:59 may 1]
@@ -295,8 +295,8 @@ public class BucketAggregationUtil {
      * can be stored without an aggregation being done at query time. To do that, we
      * have to aggregate the buckets as follows:
      *
-     *   bucket 1: UTC timestamp for 00:00:00 may 1 in PDT timezone
-     *   bucket 2: UTC timestamp for 00:00:00 may 2 in PDT timezone
+     *   bucket 1: UTC timestamp for 00:00:00 may 1 in PST timezone
+     *   bucket 2: UTC timestamp for 00:00:00 may 2 in PST timezone
      *
      * @param unaggregatedData the data to aggregate
      * @param timeZone the timezone used to calculate time ranges

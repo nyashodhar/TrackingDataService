@@ -107,9 +107,9 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
         // way to determine the default timezone to aggregate relative to.
         //
 
-        TimeZone timeZonePDT = TimeZone.getTimeZone("America/Los_Angeles");
+        TimeZone aggregationTimeZone = TimeZone.getTimeZone("PST");
 
-        threadPoolTaskExecutor.execute(new TrackingDataInsertionWorker(this, trackingData, tags, timeZonePDT));
+        threadPoolTaskExecutor.execute(new TrackingDataInsertionWorker(this, trackingData, tags, aggregationTimeZone));
 
         logger.info("Tracking data prepared for worker thread.");
     }

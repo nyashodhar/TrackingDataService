@@ -39,7 +39,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
     private Logger logger = Logger.getLogger(this.getClass());
 
-    private TimeZone timeZonePDT;
+    private TimeZone timeZonePST;
 
     @Autowired
     private ThreadPoolTaskExecutor threadPoolTaskExecutor;
@@ -48,18 +48,18 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
     @Before
     public void setUp() {
         logger.info("TrackingDataControllerIntegrationTest.setup(): port = " + port);
-        timeZonePDT = TimeZone.getTimeZone("America/Los_Angeles");
+        timeZonePST = TimeZone.getTimeZone("PST");
     }
 
     //@Test
     public void test_timeZonePrintingStuff() {
 
-        BucketCalculator.printUTCForCalendar(2014, Calendar.MAY, 29, 0, 0, 0, timeZonePDT);
-        BucketCalculator.printUTCForCalendar(2014, Calendar.JUNE, 2, 0, 0, 0, timeZonePDT);
-        BucketCalculator.printUTCForCalendar(2014, Calendar.JULY, 2, 0, 0, 0, timeZonePDT);
-        BucketCalculator.printUTCForCalendar(2014, Calendar.MAY, 1, 0, 0, 0, timeZonePDT);
-        BucketCalculator.printUTCForCalendar(2014, Calendar.JULY, 1, 0, 0, 0, timeZonePDT);
-        BucketCalculator.printUTCForCalendar(2014, Calendar.AUGUST, 1, 0, 0, 0, timeZonePDT);
+        BucketCalculator.printUTCForCalendar(2014, Calendar.MAY, 29, 0, 0, 0, timeZonePST);
+        BucketCalculator.printUTCForCalendar(2014, Calendar.JUNE, 2, 0, 0, 0, timeZonePST);
+        BucketCalculator.printUTCForCalendar(2014, Calendar.JULY, 2, 0, 0, 0, timeZonePST);
+        BucketCalculator.printUTCForCalendar(2014, Calendar.MAY, 1, 0, 0, 0, timeZonePST);
+        BucketCalculator.printUTCForCalendar(2014, Calendar.JULY, 1, 0, 0, 0, timeZonePST);
+        BucketCalculator.printUTCForCalendar(2014, Calendar.AUGUST, 1, 0, 0, 0, timeZonePST);
     }
 
     @Test
@@ -71,12 +71,12 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
 
-        // Data point 1: May 29th, 2014, PDT - 1401346800488
-        long timeStamp1 = BucketCalculator.getCalendar(2014, Calendar.MAY, 29, 0, 0, 0, timeZonePDT).getTimeInMillis();
+        // Data point 1: May 29th, 2014, PST - 1401346800488
+        long timeStamp1 = BucketCalculator.getCalendar(2014, Calendar.MAY, 29, 0, 0, 0, timeZonePST).getTimeInMillis();
         dataPoints.put(timeStamp1, 3L);
 
-        // Data point 2: July 2nd, 2014, PDT - 1404284400598
-        long timeStamp2 = BucketCalculator.getCalendar(2014, Calendar.JULY, 2, 0, 0, 0, timeZonePDT).getTimeInMillis();
+        // Data point 2: July 2nd, 2014, PST - 1404284400598
+        long timeStamp2 = BucketCalculator.getCalendar(2014, Calendar.JULY, 2, 0, 0, 0, timeZonePST).getTimeInMillis();
         dataPoints.put(timeStamp2, 2L);
 
         List<TestTrackingMetric> allMetrics = TestTrackingMetric.getAllTrackingMetrics();
@@ -104,11 +104,11 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         Assert.assertEquals(4, getResponse.size());
 
         //
-        // Bucket one should start at May 1, 2014 PDT
+        // Bucket one should start at May 1, 2014 PST
         // Bucket one should have a value of 3 for each metric
         //
 
-        long bucketKey = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 0, 0, 0, timeZonePDT).getTimeInMillis();
+        long bucketKey = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 0, 0, 0, timeZonePST).getTimeInMillis();
         for(TestTrackingMetric metric : allMetrics) {
             verifyValueForMetric(metric, bucketKey, 3L, getResponse);
         }
@@ -119,11 +119,11 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         //
 
         //
-        // Bucket two should start at July 1, 2014 PDT
+        // Bucket two should start at July 1, 2014 PST
         // Bucket two should have a value of 2 for each metric
         //
 
-        bucketKey = BucketCalculator.getCalendar(2014, Calendar.JULY, 1, 0, 0, 0, timeZonePDT).getTimeInMillis();
+        bucketKey = BucketCalculator.getCalendar(2014, Calendar.JULY, 1, 0, 0, 0, timeZonePST).getTimeInMillis();
         for(TestTrackingMetric metric : allMetrics) {
             verifyValueForMetric(metric, bucketKey, 2L, getResponse);
         }
@@ -139,8 +139,8 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
 
-        // Data point 1: May 29th, 2014, PDT
-        long timeStamp1 = BucketCalculator.getCalendar(2014, Calendar.MAY, 29, 0, 0, 0, timeZonePDT).getTimeInMillis();
+        // Data point 1: May 29th, 2014, PST
+        long timeStamp1 = BucketCalculator.getCalendar(2014, Calendar.MAY, 29, 0, 0, 0, timeZonePST).getTimeInMillis();
         dataPoints.put(timeStamp1, 4L);
 
         BucketCalculator.addDataPointForAllMetrics(testTrackingData, dataPoints);
@@ -169,12 +169,12 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         //
 
         TestTrackingData testTrackingData1 = BucketCalculator.generateRandomTrackingData(
-                BucketCalculator.getCalendar(2012, Calendar.MAY, 7, 0, 0, 0, timeZonePDT),
-                BucketCalculator.getCalendar(2012, Calendar.MAY, 20, 0, 0, 0, timeZonePDT));
+                BucketCalculator.getCalendar(2012, Calendar.MAY, 7, 0, 0, 0, timeZonePST),
+                BucketCalculator.getCalendar(2012, Calendar.MAY, 20, 0, 0, 0, timeZonePST));
 
         TestTrackingData testTrackingData2 = BucketCalculator.generateRandomTrackingData(
-                BucketCalculator.getCalendar(2014, Calendar.FEBRUARY, 2, 0, 0, 0, timeZonePDT),
-                BucketCalculator.getCalendar(2014, Calendar.MARCH, 3, 0, 0, 0, timeZonePDT));
+                BucketCalculator.getCalendar(2014, Calendar.FEBRUARY, 2, 0, 0, 0, timeZonePST),
+                BucketCalculator.getCalendar(2014, Calendar.MARCH, 3, 0, 0, 0, timeZonePST));
 
         TestTrackingData combinedTestTrackingData1 = BucketCalculator.combineTrackingData(testTrackingData1, testTrackingData2);
 
@@ -200,10 +200,10 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
             Assert.assertEquals("Unexpected number of year buckets types in get response for metric " + testTrackingMetric, 2, getResponse1.get(testTrackingMetric).size());
 
             long firstYearExpectedValue = sumValuesFromTrackingData(testTrackingData1, testTrackingMetric);
-            verifyValueForMetric(testTrackingMetric, BucketCalculator.getCalendar(2012, Calendar.JANUARY, 1, 0, 0, 0, timeZonePDT).getTimeInMillis(), firstYearExpectedValue, getResponse1);
+            verifyValueForMetric(testTrackingMetric, BucketCalculator.getCalendar(2012, Calendar.JANUARY, 1, 0, 0, 0, timeZonePST).getTimeInMillis(), firstYearExpectedValue, getResponse1);
 
             long secondYearExpectedValue = sumValuesFromTrackingData(testTrackingData2, testTrackingMetric);
-            verifyValueForMetric(testTrackingMetric, BucketCalculator.getCalendar(2014, Calendar.JANUARY, 1, 0, 0, 0, timeZonePDT).getTimeInMillis(), secondYearExpectedValue, getResponse1);
+            verifyValueForMetric(testTrackingMetric, BucketCalculator.getCalendar(2014, Calendar.JANUARY, 1, 0, 0, 0, timeZonePST).getTimeInMillis(), secondYearExpectedValue, getResponse1);
         }
 
         //
@@ -211,12 +211,12 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         //
 
         TestTrackingData testTrackingData3 = BucketCalculator.generateRandomTrackingData(
-                BucketCalculator.getCalendar(2012, Calendar.MAY, 22, 0, 0, 0, timeZonePDT),
-                BucketCalculator.getCalendar(2012, Calendar.MAY, 27, 0, 0, 0, timeZonePDT));
+                BucketCalculator.getCalendar(2012, Calendar.MAY, 22, 0, 0, 0, timeZonePST),
+                BucketCalculator.getCalendar(2012, Calendar.MAY, 27, 0, 0, 0, timeZonePST));
 
         TestTrackingData testTrackingData4 = BucketCalculator.generateRandomTrackingData(
-                BucketCalculator.getCalendar(2014, Calendar.AUGUST, 9, 0, 0, 0, timeZonePDT),
-                BucketCalculator.getCalendar(2014, Calendar.AUGUST, 23, 0, 0, 0, timeZonePDT));
+                BucketCalculator.getCalendar(2014, Calendar.AUGUST, 9, 0, 0, 0, timeZonePST),
+                BucketCalculator.getCalendar(2014, Calendar.AUGUST, 23, 0, 0, 0, timeZonePST));
 
         TestTrackingData combinedTestTrackingData2 = BucketCalculator.combineTrackingData(testTrackingData3, testTrackingData4);
         ResponseEntity<String> responseData2 = postMetricsForDevice(trackingDeviceId, combinedTestTrackingData2);
@@ -243,11 +243,11 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
             long firstYearExpectedValue = sumValuesFromTrackingData(testTrackingData1, testTrackingMetric);
             firstYearExpectedValue = firstYearExpectedValue + sumValuesFromTrackingData(testTrackingData3, testTrackingMetric);
-            verifyValueForMetric(testTrackingMetric, BucketCalculator.getCalendar(2012, Calendar.JANUARY, 1, 0, 0, 0, timeZonePDT).getTimeInMillis(), firstYearExpectedValue, getResponse2);
+            verifyValueForMetric(testTrackingMetric, BucketCalculator.getCalendar(2012, Calendar.JANUARY, 1, 0, 0, 0, timeZonePST).getTimeInMillis(), firstYearExpectedValue, getResponse2);
 
             long secondYearExpectedValue = sumValuesFromTrackingData(testTrackingData2, testTrackingMetric);
             secondYearExpectedValue = secondYearExpectedValue + sumValuesFromTrackingData(testTrackingData4, testTrackingMetric);
-            verifyValueForMetric(testTrackingMetric, BucketCalculator.getCalendar(2014, Calendar.JANUARY, 1, 0, 0, 0, timeZonePDT).getTimeInMillis(), secondYearExpectedValue, getResponse2);
+            verifyValueForMetric(testTrackingMetric, BucketCalculator.getCalendar(2014, Calendar.JANUARY, 1, 0, 0, 0, timeZonePST).getTimeInMillis(), secondYearExpectedValue, getResponse2);
         }
     }
 

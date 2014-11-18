@@ -141,10 +141,10 @@ public class TrackingDataController {
         // the bucket timestamps were deterministic based on shift to timezone.
         //
 
-        TimeZone timeZone = TimeZone.getTimeZone("America/Los_Angeles");
+        TimeZone aggregationTimeZone = TimeZone.getTimeZone("PST");
 
-        Long utcBegin = calculateUTCBegin(startYear, startMonth, startWeek, startDay, startHour, resultBucketSize, timeZone);
-        Long utcEnd = calculateUTCEnd(utcBegin, resultBucketSize, bucketsToFetch, timeZone);
+        Long utcBegin = calculateUTCBegin(startYear, startMonth, startWeek, startDay, startHour, resultBucketSize, aggregationTimeZone);
+        Long utcEnd = calculateUTCEnd(utcBegin, resultBucketSize, bucketsToFetch, aggregationTimeZone);
 
         //
         // If the request is itemizing the metrics to query for, only pass those along.
@@ -161,7 +161,7 @@ public class TrackingDataController {
         boolean createVerboseResponse = (verboseResponse == null) ? false : verboseResponse;
 
         Map<TrackingMetric, Map<Long, Long>> metricResults = trackingDataService.getAggregatedTimeSeries(
-                tags, trackingMetricsParam, utcBegin, utcEnd, resultBucketSize, timeZone, 1, createVerboseResponse);
+                tags, trackingMetricsParam, utcBegin, utcEnd, resultBucketSize, aggregationTimeZone, 1, createVerboseResponse);
 
         logger.info("getTrackingMetricsForDevice(): Results: " + metricResults);
         return metricResults;
