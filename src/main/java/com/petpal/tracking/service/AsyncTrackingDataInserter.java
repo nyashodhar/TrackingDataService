@@ -12,6 +12,13 @@ import java.util.TimeZone;
  */
 public interface AsyncTrackingDataInserter {
 
+    /**
+     * This method implements the AsyncTrackingDataInserter interface and is called asynchronously
+     * when tracking data is inserted into the tracking service.
+     * @param trackingData
+     * @param tags
+     * @param timeZone
+     */
     public void asyncTrackingDataInsert(
             TrackingData trackingData, Map<TimeSeriesTag, String> tags, TimeZone timeZone);
 }

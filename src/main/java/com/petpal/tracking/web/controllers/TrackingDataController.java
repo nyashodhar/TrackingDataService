@@ -11,6 +11,7 @@ import com.petpal.tracking.web.editors.TrackingMetricsSetEditor;
 import org.apache.log4j.Logger;
 import org.kairosdb.client.builder.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.CollectionUtils;
@@ -45,7 +46,8 @@ public class TrackingDataController {
     private Logger logger = Logger.getLogger(this.getClass());
 
     @Autowired
-    private TrackingDataService trackingService;
+    @Qualifier("trackingDataService")
+    private TrackingDataService trackingDataService;
 
     @Autowired
     private BucketAggregationUtil bucketAggregationUtil;
@@ -68,7 +70,7 @@ public class TrackingDataController {
         Map<TimeSeriesTag, String> tags = new HashMap<TimeSeriesTag, String>();
         tags.put(TimeSeriesTag.TRACKINGDEVICE, deviceId);
 
-        trackingService.storeTrackingData(tags, trackingData);
+        trackingDataService.storeTrackingData(tags, trackingData);
     }
 
 
@@ -158,7 +160,7 @@ public class TrackingDataController {
 
         boolean createVerboseResponse = (verboseResponse == null) ? false : verboseResponse;
 
-        Map<TrackingMetric, Map<Long, Long>> metricResults = trackingService.getAggregatedTimeSeries(
+        Map<TrackingMetric, Map<Long, Long>> metricResults = trackingDataService.getAggregatedTimeSeries(
                 tags, trackingMetricsParam, utcBegin, utcEnd, resultBucketSize, timeZone, 1, createVerboseResponse);
 
         logger.info("getTrackingMetricsForDevice(): Results: " + metricResults);
