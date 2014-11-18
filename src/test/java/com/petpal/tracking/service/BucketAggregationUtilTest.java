@@ -33,27 +33,27 @@ public class BucketAggregationUtilTest {
     }
 
     //
-    // shiftData()
+    // applyFortyEightHourShift()
     //
 
     @Test(expected = IllegalArgumentException.class)
-    public void testShiftData_null_input() {
-        bucketAggregationUtil.shiftData(null, true);
+    public void testApplyFortyEightHourShift_null_input() {
+        bucketAggregationUtil.applyFortyEightHourShift(null, true);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testShiftData_empty_input() {
-        bucketAggregationUtil.shiftData(new HashMap<Long, Long>(), true);
+    public void testApplyFortyEightHourShift_empty_input() {
+        bucketAggregationUtil.applyFortyEightHourShift(new HashMap<Long, Long>(), true);
     }
 
     @Test
-    public void testShiftData_forward() {
+    public void testApplyFortyEightHourShift_forward() {
 
         Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
         dataPoints.put(System.currentTimeMillis() - 10000L, 5L);
         dataPoints.put(System.currentTimeMillis() - 20000L, 5L);
 
-        Map<Long, Long> shiftedDataPoints = bucketAggregationUtil.shiftData(dataPoints, true);
+        Map<Long, Long> shiftedDataPoints = bucketAggregationUtil.applyFortyEightHourShift(dataPoints, true);
 
         Assert.assertEquals(2, shiftedDataPoints.size());
 
@@ -65,13 +65,13 @@ public class BucketAggregationUtilTest {
 
 
     @Test
-    public void testShiftData_backward() {
+    public void testApplyFortyEightHourShift_backward() {
 
         Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
         dataPoints.put(System.currentTimeMillis() - 10000L, 5L);
         dataPoints.put(System.currentTimeMillis() - 20000L, 5L);
 
-        Map<Long, Long> shiftedDataPoints = bucketAggregationUtil.shiftData(dataPoints, false);
+        Map<Long, Long> shiftedDataPoints = bucketAggregationUtil.applyFortyEightHourShift(dataPoints, false);
 
         Assert.assertEquals(2, shiftedDataPoints.size());
 
@@ -456,11 +456,11 @@ public class BucketAggregationUtilTest {
     }
 
     //
-    // determineStartOfUTCShiftedBucket()
+    // getShiftedTimeStamp()
     //
 
     @Test
-    public void test_determineStartOfUTCShiftedBucket_year_PDT() {
+    public void test_getShiftedTimeStamp_year_PDT() {
 
         long now = System.currentTimeMillis();
 
@@ -468,7 +468,7 @@ public class BucketAggregationUtilTest {
         nowPDT.setTimeZone(timeZonePDT);
         nowPDT.setTimeInMillis(now);
 
-        long timestamp = bucketAggregationUtil.determineStartOfUTCShiftedBucket(now, timeZonePDT, TimeUnit.YEARS);
+        long timestamp = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePDT, timeZoneUTC, TimeUnit.YEARS);
 
         // Expect the determined bucket to start on Jan 1, 00:00:00:000 relative to UTC
 
@@ -488,7 +488,7 @@ public class BucketAggregationUtilTest {
 
 
     @Test
-    public void test_determineStartOfUTCShiftedBucket_month_PDT() {
+    public void test_getShiftedTimeStamp_month_PDT() {
 
         long now = System.currentTimeMillis();
 
@@ -496,7 +496,7 @@ public class BucketAggregationUtilTest {
         nowPDT.setTimeZone(timeZonePDT);
         nowPDT.setTimeInMillis(now);
 
-        long initialBucketStart = bucketAggregationUtil.determineStartOfUTCShiftedBucket(now, timeZonePDT, TimeUnit.MONTHS);
+        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePDT, timeZoneUTC, TimeUnit.MONTHS);
 
         // Expect the determined bucket to start the first of the month, 00:00:00:000 relative to UTC timezone
 
@@ -515,7 +515,7 @@ public class BucketAggregationUtilTest {
     }
 
     @Test
-    public void test_determineStartOfUTCShiftedBucket_week_PDT() {
+    public void test_getShiftedTimeStamp_week_PDT() {
 
         long now = System.currentTimeMillis();
 
@@ -523,7 +523,7 @@ public class BucketAggregationUtilTest {
         nowPDT.setTimeZone(timeZonePDT);
         nowPDT.setTimeInMillis(now);
 
-        long initialBucketStart = bucketAggregationUtil.determineStartOfUTCShiftedBucket(now, timeZonePDT, TimeUnit.WEEKS);
+        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePDT, timeZoneUTC, TimeUnit.WEEKS);
 
         // Expect the determined bucket to start the first day of week of given timestamp, 00:00:00:000 relative to UTC
 
@@ -543,7 +543,7 @@ public class BucketAggregationUtilTest {
     }
 
     @Test
-    public void test_determineStartOfUTCShiftedBucket_day_PDT() {
+    public void test_getShiftedTimeStamp_day_PDT() {
 
         long now = System.currentTimeMillis();
 
@@ -551,7 +551,7 @@ public class BucketAggregationUtilTest {
         nowPDT.setTimeZone(timeZonePDT);
         nowPDT.setTimeInMillis(now);
 
-        long initialBucketStart = bucketAggregationUtil.determineStartOfUTCShiftedBucket(now, timeZonePDT, TimeUnit.DAYS);
+        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePDT, timeZoneUTC, TimeUnit.DAYS);
 
         // Expect the determined bucket to start 00:00:00:000 on the same day as the given timestamp relative to UTC
 
@@ -570,7 +570,7 @@ public class BucketAggregationUtilTest {
     }
 
     @Test
-    public void test_determineStartOfUTCShiftedBucket_hour_PDT() {
+    public void test_getShiftedTimeStamp_hour_PDT() {
 
         long now = System.currentTimeMillis();
 
@@ -578,7 +578,7 @@ public class BucketAggregationUtilTest {
         nowPDT.setTimeZone(timeZonePDT);
         nowPDT.setTimeInMillis(now);
 
-        long initialBucketStart = bucketAggregationUtil.determineStartOfUTCShiftedBucket(now, timeZonePDT, TimeUnit.HOURS);
+        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePDT, timeZoneUTC, TimeUnit.HOURS);
 
         // Expect the determined bucket to start XX:00:00:000 where XX is the hour in the given timestamp relative to our timezone
 
@@ -597,46 +597,53 @@ public class BucketAggregationUtilTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_determineStartOfUTCShiftedBucket_minute_not_allowed() {
+    public void test_getShiftedTimeStamp_minute_not_allowed() {
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePDT);
-        bucketAggregationUtil.determineStartOfUTCShiftedBucket(now.getTimeInMillis(), now.getTimeZone(), TimeUnit.MINUTES);
+        bucketAggregationUtil.getShiftedTimeStamp(now.getTimeInMillis(), now.getTimeZone(), timeZoneUTC, TimeUnit.MINUTES);
     }
 
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_determineStartOfUTCShiftedBucket_seconds_not_allowed() {
+    public void test_getShiftedTimeStamp_seconds_not_allowed() {
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePDT);
-        bucketAggregationUtil.determineStartOfUTCShiftedBucket(now.getTimeInMillis(), now.getTimeZone(), TimeUnit.SECONDS);
+        bucketAggregationUtil.getShiftedTimeStamp(now.getTimeInMillis(), now.getTimeZone(), timeZoneUTC, TimeUnit.SECONDS);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_determineStartOfUTCShiftedBucket_millis_not_allowed() {
+    public void test_getShiftedTimeStamp_millis_not_allowed() {
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePDT);
-        bucketAggregationUtil.determineStartOfUTCShiftedBucket(now.getTimeInMillis(), now.getTimeZone(), TimeUnit.MILLISECONDS);
+        bucketAggregationUtil.getShiftedTimeStamp(now.getTimeInMillis(), now.getTimeZone(), timeZoneUTC, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_determineStartOfUTCShiftedBucket_missing_timestamp() {
+    public void test_getShiftedTimeStamp_missing_timestamp() {
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePDT);
-        bucketAggregationUtil.determineStartOfUTCShiftedBucket(null, now.getTimeZone(), TimeUnit.HOURS);
+        bucketAggregationUtil.getShiftedTimeStamp(null, now.getTimeZone(), timeZoneUTC, TimeUnit.HOURS);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_determineStartOfUTCShiftedBucket_missing_timezone() {
+    public void test_getShiftedTimeStamp_missing_timezone1() {
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePDT);
-        bucketAggregationUtil.determineStartOfUTCShiftedBucket(now.getTimeInMillis(), null, TimeUnit.HOURS);
+        bucketAggregationUtil.getShiftedTimeStamp(now.getTimeInMillis(), null, timeZoneUTC, TimeUnit.HOURS);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_determineStartOfUTCShiftedBucket_missing_timeunit() {
+    public void test_getShiftedTimeStamp_missing_timezone2() {
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePDT);
-        bucketAggregationUtil.determineStartOfUTCShiftedBucket(now.getTimeInMillis(), now.getTimeZone(), null);
+        bucketAggregationUtil.getShiftedTimeStamp(now.getTimeInMillis(), timeZonePDT, null, TimeUnit.HOURS);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_getShiftedTimeStamp_missing_timeunit() {
+        Calendar now = Calendar.getInstance();
+        now.setTimeZone(timeZonePDT);
+        bucketAggregationUtil.getShiftedTimeStamp(now.getTimeInMillis(), now.getTimeZone(), timeZoneUTC, null);
     }
 
 

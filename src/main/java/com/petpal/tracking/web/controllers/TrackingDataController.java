@@ -1,6 +1,7 @@
 package com.petpal.tracking.web.controllers;
 
 import com.petpal.tracking.data.TrackingData;
+import com.petpal.tracking.service.BucketAggregationUtil;
 import com.petpal.tracking.service.TrackingDataService;
 import com.petpal.tracking.service.TrackingMetric;
 import com.petpal.tracking.service.tag.TimeSeriesTag;
@@ -24,10 +25,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 
 /**
@@ -43,6 +46,9 @@ public class TrackingDataController {
 
     @Autowired
     private TrackingDataService trackingService;
+
+    @Autowired
+    private BucketAggregationUtil bucketAggregationUtil;
 
     /**
      * Store metrics in the time series database for a given device.
@@ -80,16 +86,13 @@ public class TrackingDataController {
      * then the first bucket will span 24 hours starting midnight 3 days ago. Bucket 2 will contain data
      * spanning 24 hrs from midnight two days ago, etc.
      *
-     * CURL EXAMPLE:
-     *  utcBegin: "May 1st 2014 PDT, Midnight" (UTC millis - 1398927600265)
-     *  utcEnd: "Oct 31st 2014 PDT, Midnight" (UTC millis - 1414738800266)
-     * curl -v -X GET "http://localhost:9000/metrics/device/263e6c54-69c9-45f5-853c-b5f4420ceb5e?utcBegin=1398927600265&utcEnd=1414738800266&resultBucketSize=MONTHS&resultBucketMultiplier=1&trackingMetrics=walkingsteps,runningsteps" -H "Accept: application/json" -H "Content-Type: application/json"
-     *
      * @param deviceId the device id
-     * @param utcBegin utc time stamp for the start of the query interval. Can not be null.
-     * @param utcBegin utc time stamp for the end of the query interval. If not, the end will be 'now'.
+     * @param startYear
+     * @param startMonth
+     * @param startWeek
+     * @param startDay
+     * @param startHour
      * @param resultBucketSize the time unit used to determine bucket size for result.
-     * @param resultBucketMultiplier multiplier for bucket size for result.
      * @param trackingMetricsSet the metrics the clients wants to query for. If null, all known
      *                           metrics will be queries for.
      * @param verboseResponse if set to true, the response will include buckets for which
@@ -99,25 +102,47 @@ public class TrackingDataController {
      */
     @RequestMapping(value="/metrics/device/{deviceId}", method=RequestMethod.GET)
     @ResponseStatus(HttpStatus.OK)
-    public @ResponseBody Map<TrackingMetric, Map<Long, Long>> getTrackingMetricsForDevice(
+    public @ResponseBody Map<TrackingMetric, Map<Long, Long>> getAggregatedMetricsForDevice(
             @PathVariable String deviceId,
-            @RequestParam(value="utcBegin", required=true) Long utcBegin,
-            @RequestParam(value="utcEnd", required=false) Long utcEnd,
+            @RequestParam(value="startYear", required=true) Integer startYear,
+            @RequestParam(value="startMonth", required=false) Integer startMonth,
+            @RequestParam(value="startWeek", required=false) Integer startWeek,
+            @RequestParam(value="startDay", required=false) Integer startDay,
+            @RequestParam(value="startHour", required=false) Integer startHour,
             @RequestParam(value="resultBucketSize", required=true) TimeUnit resultBucketSize,
-            @RequestParam(value="resultBucketMultiplier", required=true) Integer resultBucketMultiplier,
+            @RequestParam(value="bucketsToFetch", required=false) Integer bucketsToFetch,
+            //@RequestParam(value="resultBucketMultiplier", required=true) Integer resultBucketMultiplier,
             @RequestParam(value="trackingMetrics", required=false) TrackingMetricsSet trackingMetricsSet,
             @RequestParam(value="verboseResponse", required=false) Boolean verboseResponse) {
 
-        logger.info("getTrackingMetricsForDevice(): deviceId = " + deviceId);
-        logger.info("getTrackingMetricsForDevice(): utcBegin = " + utcBegin + " (" + new Date(utcBegin) + ")");
-        logger.info("getTrackingMetricsForDevice(): utcEnd = " + utcEnd);
-        logger.info("getTrackingMetricsForDevice(): resultBucketSize = " + resultBucketSize);
-        logger.info("getTrackingMetricsForDevice(): resultBucketMultiplier = " + resultBucketMultiplier);
-        logger.info("getTrackingMetricsForDevice(): trackingMetricsSet = " + trackingMetricsSet);
-        logger.info("getTrackingMetricsForDevice(): verboseResponse = " + verboseResponse);
+        logger.info("getAggregatedMetricsForDevice(): deviceId = " + deviceId);
+        logger.info("getAggregatedMetricsForDevice(): startYear = " + startYear);
+        logger.info("getAggregatedMetricsForDevice(): startMonth = " + startMonth);
+        logger.info("getAggregatedMetricsForDevice(): startWeek = " + startWeek);
+        logger.info("getAggregatedMetricsForDevice(): startDay = " + startDay);
+        logger.info("getAggregatedMetricsForDevice(): startHour = " + startHour);
+        logger.info("getAggregatedMetricsForDevice(): resultBucketSize = " + resultBucketSize);
+        logger.info("getAggregatedMetricsForDevice(): bucketsToFetch = " + bucketsToFetch);
+        logger.info("getAggregatedMetricsForDevice(): trackingMetricsSet = " + trackingMetricsSet);
+        logger.info("getAggregatedMetricsForDevice(): verboseResponse = " + verboseResponse);
 
         Map<TimeSeriesTag, String> tags = new HashMap<TimeSeriesTag, String>();
         tags.put(TimeSeriesTag.TRACKINGDEVICE, deviceId);
+
+        //
+        // TODO: TimeZone should be specified by the client, or if not there should be a better
+        // way to determine the default timezone. The timezone is needed to perform a reverse shift
+        // of the aggregated data. When the data was originally stored, it was stored into buckets
+        // series whose timestamps are relative to the UTZ timezone. This is necessary to make the
+        // bucket boundaries deterministic in the case users should be able to change their timezones.
+        // At that point we would not be able to query for their aggregated data anymore unless
+        // the bucket timestamps were deterministic based on shift to timezone.
+        //
+
+        TimeZone timeZone = TimeZone.getTimeZone("America/Los_Angeles");
+
+        Long utcBegin = calculateUTCBegin(startYear, startMonth, startWeek, startDay, startHour, resultBucketSize, timeZone);
+        Long utcEnd = calculateUTCEnd(utcBegin, resultBucketSize, bucketsToFetch, timeZone);
 
         //
         // If the request is itemizing the metrics to query for, only pass those along.
@@ -133,13 +158,214 @@ public class TrackingDataController {
 
         boolean createVerboseResponse = (verboseResponse == null) ? false : verboseResponse;
 
-        Map<TrackingMetric, Map<Long, Long>> metricResults = trackingService.getAggregatedTimeSeriesData(
-                tags, trackingMetricsParam, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier, createVerboseResponse);
+        Map<TrackingMetric, Map<Long, Long>> metricResults = trackingService.getAggregatedTimeSeries(
+                tags, trackingMetricsParam, utcBegin, utcEnd, resultBucketSize, timeZone, 1, createVerboseResponse);
 
         logger.info("getTrackingMetricsForDevice(): Results: " + metricResults);
         return metricResults;
     }
 
+
+    protected Long calculateUTCEnd(Long utcBegin, TimeUnit bucketSize, Integer bucketsToFetch, TimeZone timeZone) {
+
+        if(utcBegin == null) {
+            throw new IllegalArgumentException("utcBegin not specified");
+        }
+
+        if(bucketSize == null) {
+            throw new IllegalArgumentException("Bucket size not specified");
+        }
+
+        if(bucketsToFetch == null || bucketsToFetch.intValue() <= 0) {
+            logger.info("Invalid value " + bucketsToFetch + " for buckets to fetch, " +
+                    "returning null to use 'now' as default range end");
+            return null;
+        }
+
+        Long currentBegin = utcBegin;
+        Long currentEnd = null;
+
+        for(int i=0; i<bucketsToFetch; i++) {
+            currentEnd = bucketAggregationUtil.getBucketEndTime(currentBegin, bucketSize, timeZone);
+            currentBegin = currentEnd + 1L;
+        }
+
+        long now = System.currentTimeMillis();
+        if(currentEnd >= now) {
+            logger.info("The calculated endtime (" + currentEnd + ") >= now (" +
+                    now + "), returning null to use 'now' as the default range end.");
+            return null;
+        }
+
+        if(currentEnd == null) {
+            throw new IllegalStateException("Current end calculated as null, this should never happen");
+        }
+
+        return currentEnd;
+    }
+
+    protected Long calculateUTCBegin(
+            Integer startYear,
+            Integer startMonth,
+            Integer startWeek,
+            Integer startDay,
+            Integer startHour,
+            TimeUnit bucketSize,
+            TimeZone timeZone) {
+
+        validateAggregatedQueryParams(startYear, startMonth, startWeek, startDay, startHour, bucketSize);
+
+        Calendar cal = Calendar.getInstance();
+        cal.clear();
+        cal.setTimeZone(timeZone);
+
+        if(bucketSize == TimeUnit.YEARS) {
+            cal.set(startYear, 1, 1, 0, 0, 0);
+        } else if(bucketSize == TimeUnit.MONTHS) {
+            cal.set(startYear, startMonth, 1, 0, 0, 0);
+        } else if(bucketSize == TimeUnit.WEEKS) {
+            // Start at Jan 1, 00:00:00 of the specified year, then fast forward the required number of weeks
+            cal.set(startYear, 1, 1, 0, 0, 0);
+            cal.add(Calendar.WEEK_OF_YEAR, startWeek);
+        } else if(bucketSize == TimeUnit.DAYS) {
+            cal.set(startYear, startMonth, startDay, 0, 0, 0);
+        } else if(bucketSize == TimeUnit.HOURS) {
+            cal.set(startYear, startMonth, startDay, startHour, 0, 0);
+        }
+
+        return cal.getTimeInMillis();
+    }
+
+    protected void validateAggregatedQueryParams(
+            Integer startYear,
+            Integer startMonth,
+            Integer startWeek,
+            Integer startDay,
+            Integer startHour,
+            TimeUnit bucketSize) {
+
+        if(startYear < 2012 || startYear > 2100) {
+            throw new IllegalArgumentException("Invalid value " + startYear + " for start year");
+        }
+
+        if(startMonth != null) {
+            if(startMonth < 0 || startMonth > 11) {
+                throw new IllegalArgumentException("Invalid value " + startMonth + " for start month");
+            }
+        }
+
+        if(startWeek != null) {
+            if(startWeek < 1 || startWeek > 52) {
+                throw new IllegalArgumentException("Invalid value " + startWeek + " for start week");
+            }
+        }
+
+        if(startDay != null) {
+            if(startDay < 1 || startDay > 31) {
+                throw new IllegalArgumentException("Invalid value " + startDay + " for start day");
+            }
+        }
+
+        if(startHour != null) {
+            if(startHour < 0 || startHour > 23) {
+                throw new IllegalArgumentException("Invalid value " + startHour + " for start hour");
+            }
+        }
+
+        if (bucketSize == TimeUnit.YEARS) {
+
+            if(startMonth != null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startMonth is specified");
+            }
+
+            if(startWeek != null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startWeek is specified");
+            }
+
+            if(startDay != null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startDay is specified");
+            }
+
+            if(startHour != null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startHour is specified");
+            }
+
+        } else if (bucketSize == TimeUnit.MONTHS) {
+
+            if(startMonth == null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startMonth is not specified");
+            }
+
+            if(startWeek != null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startWeek is specified");
+            }
+
+            if(startDay != null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startDay is specified");
+            }
+
+            if(startHour != null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startHour is specified");
+            }
+
+        } else if (bucketSize == TimeUnit.WEEKS) {
+
+            if(startWeek == null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but no startWeek is specified");
+            }
+
+            if(startMonth != null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startMonth is specified");
+            }
+
+            if(startDay != null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startDay is specified");
+            }
+
+            if(startHour != null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startHour is specified");
+            }
+
+        } else if (bucketSize == TimeUnit.DAYS) {
+
+            if(startMonth == null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startMonth is not specified");
+            }
+
+            if(startWeek != null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startWeek is specified");
+            }
+
+            if(startDay == null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but no startDay is specified");
+            }
+
+            if(startHour != null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startHour is specified");
+            }
+
+
+        } else if (bucketSize == TimeUnit.HOURS) {
+
+            if(startMonth == null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startMonth is not specified");
+            }
+
+            if(startWeek != null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startWeek is specified");
+            }
+
+            if(startDay == null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but no startDay is specified");
+            }
+
+            if(startHour == null) {
+                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but no startHour is specified");
+            }
+        } else {
+            throw new IllegalArgumentException("Invalid time unit " + bucketSize);
+        }
+    }
 
     @InitBinder
     public void initBinder(WebDataBinder binder) {

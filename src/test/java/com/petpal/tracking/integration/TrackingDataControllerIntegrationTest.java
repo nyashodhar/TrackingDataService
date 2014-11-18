@@ -87,14 +87,17 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         blockUntilAsyncThreadIdleInServer();
 
-        Map<TestTrackingMetric, Map<Long, Long>> getResponse = getMetricsForDevice(
+        Map<TestTrackingMetric, Map<Long, Long>> getResponse = getAggregatedMetricsForDevice(
                 trackingDeviceId,
-                BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 0, 0, 0, timeZonePDT).getTimeInMillis(),
+                2014,
+                Calendar.MAY,
+                null,
+                null,
                 null,
                 TimeUnit.MONTHS,
-                1,
                 null,
-                null);
+                null,
+                false);
 
         // There should be 4 metrics in the response, since we didn't itemize metrics
 
@@ -116,7 +119,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         //
 
         //
-        // Bucket two should start at May 1, 2014 PDT
+        // Bucket two should start at July 1, 2014 PDT
         // Bucket two should have a value of 2 for each metric
         //
 
@@ -178,14 +181,17 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         ResponseEntity<String> responseData1 = postMetricsForDevice(trackingDeviceId, combinedTestTrackingData1);
         blockUntilAsyncThreadIdleInServer();
 
-        Map<TestTrackingMetric, Map<Long, Long>> getResponse1 = getMetricsForDevice(
+        Map<TestTrackingMetric, Map<Long, Long>> getResponse1 = getAggregatedMetricsForDevice(
                 trackingDeviceId,
-                BucketCalculator.getCalendar(2012, Calendar.JANUARY, 1, 0, 0, 0, timeZonePDT).getTimeInMillis(),
+                2012,
+                null,
+                null,
+                null,
                 null,
                 TimeUnit.YEARS,
-                1,
                 null,
-                null);
+                null,
+                false);
 
         Assert.assertEquals("Unexpected number of metric types in get response", 4, getResponse1.size());
 
@@ -216,14 +222,18 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         ResponseEntity<String> responseData2 = postMetricsForDevice(trackingDeviceId, combinedTestTrackingData2);
         blockUntilAsyncThreadIdleInServer();
 
-        Map<TestTrackingMetric, Map<Long, Long>> getResponse2 = getMetricsForDevice(
+
+        Map<TestTrackingMetric, Map<Long, Long>> getResponse2 = getAggregatedMetricsForDevice(
                 trackingDeviceId,
-                BucketCalculator.getCalendar(2012, Calendar.JANUARY, 1, 0, 0, 0, timeZonePDT).getTimeInMillis(),
+                2012,
+                null,
+                null,
+                null,
                 null,
                 TimeUnit.YEARS,
-                1,
                 null,
-                null);
+                null,
+                false);
 
         Assert.assertEquals("Unexpected number of metric types in 2nd get response", 4, getResponse2.size());
 

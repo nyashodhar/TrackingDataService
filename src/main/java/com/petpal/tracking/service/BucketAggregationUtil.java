@@ -75,7 +75,7 @@ public class BucketAggregationUtil {
      * @return a map of datapoints shifted 48 hours in the direction specified
      * by the 'forward' parameter.
      */
-    public Map<Long, Long> shiftData(Map<Long, Long> dataPoints, boolean forward) {
+    protected Map<Long, Long> applyFortyEightHourShift(Map<Long, Long> dataPoints, boolean forward) {
 
         if(CollectionUtils.isEmpty(dataPoints)) {
             throw new IllegalArgumentException("Datapoints not specified");
@@ -83,17 +83,130 @@ public class BucketAggregationUtil {
 
         Map<Long, Long> shiftedData = new TreeMap();
         for(long ts : dataPoints.keySet()) {
-            long newTimeStamp;
-            if(forward) {
-                newTimeStamp = ts + FORTY_EIGHT_HOURS;
-            } else {
-                newTimeStamp = ts - FORTY_EIGHT_HOURS;
-            }
+            long newTimeStamp = shiftTimeStamp(ts, FORTY_EIGHT_HOURS, forward);
             shiftedData.put(newTimeStamp, dataPoints.get(ts));
         }
 
         return shiftedData;
     }
+
+
+    /**
+     * Shifts the timestamp 48 hours forward or backward
+     * @param forward
+     * @return a timestamp shifted 48 hours in the direction specified
+     * by the 'forward' parameter.
+     */
+    protected long shiftTimeStamp(long input, long shiftAmount, boolean forward) {
+        long newTimeStamp;
+        if(forward) {
+            newTimeStamp = input + shiftAmount;
+        } else {
+            newTimeStamp = input - shiftAmount;
+        }
+        return newTimeStamp;
+    }
+
+
+    protected Map<Long, Long> shiftTimeSeriesToBoundariesForTimeZone(Map<Long, Long> dataPoints, TimeZone timeZone1, TimeZone timeZone2, TimeUnit bucketSize) {
+        // For each bucket in the aggregated series, into a UTC timezone relative buckets
+
+        TreeMap<Long, Long> shiftedData = new TreeMap<Long, Long>();
+        for(long timeStamp : dataPoints.keySet()) {
+            long utcShiftedBucketTimestamp = getShiftedTimeStamp(timeStamp, timeZone1, timeZone2, bucketSize);
+            shiftedData.put(utcShiftedBucketTimestamp, dataPoints.get(timeStamp));
+        }
+
+        return shiftedData;
+    }
+
+    /**
+     * Given an input bucket boundary relative to an aggregation timezone, shift the timestamp into
+     * UTC and apply the reverse 48 hour shift.
+     * @param inputBucketTimeStamp
+     * @param timeZone
+     * @param bucketSize
+     * @return a UTC shifted timestamp with a reverse 48 hour shift applied.
+     */
+    public long getUTCShiftedBucketTimeStamp(long inputBucketTimeStamp, TimeZone timeZone, TimeUnit bucketSize) {
+        long utcShiftedBucketTimestamp = getShiftedTimeStamp(inputBucketTimeStamp, timeZone, UTC, bucketSize);
+        long forthEightHourShiftedUTCBucketTimestamp = shiftTimeStamp(utcShiftedBucketTimestamp, FORTY_EIGHT_HOURS, false);
+        return forthEightHourShiftedUTCBucketTimestamp;
+    }
+
+
+    /**
+     * Get a shifted timestamp for a boundary of a given bucket size.
+     * @param inputTimeStamp A UTC timestamp
+     * @param timeZone1 the timezone to determine the timeunit from.
+     * @param timeZone2 the timezone to determine the shifted timestamp relative to.
+     * @param bucketSize the length of a bucket, e.g. MONTHS.
+     * @return a timestamp in UTC identifying the boundary of a bucket in the UTC timezome
+     */
+    protected long getShiftedTimeStamp(Long inputTimeStamp, TimeZone timeZone1, TimeZone timeZone2, TimeUnit bucketSize) {
+
+        if(inputTimeStamp == null) {
+            throw new IllegalArgumentException("Timestamp not specified");
+        }
+
+        if(timeZone1 == null) {
+            throw new IllegalArgumentException("Timezone1 not specified");
+        }
+
+        if(timeZone2 == null) {
+            throw new IllegalArgumentException("Timezone2 not specified");
+        }
+
+        if(bucketSize == null) {
+            throw new IllegalArgumentException("Bucketsize not specified");
+        }
+
+        Calendar inputCal = Calendar.getInstance();
+        inputCal.clear();
+        inputCal.setTimeZone(timeZone1);
+        inputCal.setTimeInMillis(inputTimeStamp);
+
+        //
+        // To determine the bucket interval start, reset all the time components that are of
+        // less significance than the desired bucket size time unit
+        //
+
+        Calendar utcShiftedBucketStartCal = Calendar.getInstance();
+        utcShiftedBucketStartCal.clear();
+        utcShiftedBucketStartCal.setTimeZone(timeZone2);
+
+        if (bucketSize == TimeUnit.YEARS) {
+            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
+        } else if (bucketSize == TimeUnit.MONTHS) {
+            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
+            utcShiftedBucketStartCal.set(Calendar.MONTH, inputCal.get(Calendar.MONTH));
+        } else if (bucketSize == TimeUnit.WEEKS) {
+            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
+            utcShiftedBucketStartCal.set(Calendar.WEEK_OF_YEAR, inputCal.get(Calendar.WEEK_OF_YEAR));
+            utcShiftedBucketStartCal.set(Calendar.DAY_OF_WEEK, 1);
+        } else if (bucketSize == TimeUnit.DAYS) {
+            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
+            utcShiftedBucketStartCal.set(Calendar.MONTH, inputCal.get(Calendar.MONTH));
+            utcShiftedBucketStartCal.set(Calendar.DAY_OF_MONTH, inputCal.get(Calendar.DAY_OF_MONTH));
+        } else if (bucketSize == TimeUnit.HOURS) {
+            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
+            utcShiftedBucketStartCal.set(Calendar.MONTH, inputCal.get(Calendar.MONTH));
+            utcShiftedBucketStartCal.set(Calendar.DAY_OF_MONTH, inputCal.get(Calendar.DAY_OF_MONTH));
+            utcShiftedBucketStartCal.set(Calendar.HOUR_OF_DAY, inputCal.get(Calendar.HOUR_OF_DAY));
+        } else if (bucketSize == TimeUnit.MINUTES) {
+            //
+            // Note: TimeUnit MINUTES should not be used here. Pre-aggregation is only needed
+            // applicable for timeunits larger than MINUTES.
+            //
+            throw new IllegalArgumentException("TimeUnit MINUTES not supported for pre-aggregration.");
+        } else {
+            throw new IllegalArgumentException("Unexpected TimeUnit " + bucketSize);
+        }
+
+        return utcShiftedBucketStartCal.getTimeInMillis();
+    }
+
+
 
 
 
@@ -104,11 +217,10 @@ public class BucketAggregationUtil {
      * Determine the start of the first UTC relative bucket (and thereby the entire series)
      * as follows:
      *
-     * - Calculate the position of the current bucketSize/type in the aggregation timezone
-     * - Then calculate the UTC timestamp of the the start of that bucket relative to the UTC timezone
+     * - Aggregate the data normally
+     * - For each bucket in the aggregated data, shift the bucket start to the UTC relative start of the bucket
      *
-     * For example, let's say the aggregation time zone is PDT and the bucket size is year and the following
-     * datapoint is given
+     * For example, let's say the aggregation gives the following bucket
      *
      *   [ts1, 5]
      *
@@ -116,8 +228,9 @@ public class BucketAggregationUtil {
      * B) Find the UTC timestamp for Jan 1, 2014, 00:00:00 relative to the UTC timezone, call it ts2
      * C) Use ts2 as the bucket into which to add the value 5.
      *
-     *   bucket 1: [00:00:00 may 1, 23:59:59 may 1]
-     *   bucket 2: [00:00:00 may 2, 23:59:59 may 2]
+     * In addition to shifting relative to UTC, a forty eight hour reduction is applied to all
+     * timestamps in the utc transformed series before returning to avoid the issue of some timestamps
+     * potentially being in the future after the shift into UTC.
      *
      * @param shiftedUnaggregatedData the data to aggregate
      * @param aggregationTimeZone the timezone used to calculate time ranges
@@ -125,74 +238,44 @@ public class BucketAggregationUtil {
      *
      * @return data aggregated into the specified bucket size for the given time zone.
      */
-    /*
-    public Map<Long, Long> aggregateIntoUTCBuckets(Map<Long, Long> shiftedUnaggregatedData, TimeZone aggregationTimeZone, TimeUnit bucketSize) {
+    public Map<Long, Long> aggregateIntoUTCShiftedBuckets(Map<Long, Long> shiftedUnaggregatedData, TimeZone aggregationTimeZone, TimeUnit bucketSize) {
 
-        if (CollectionUtils.isEmpty(shiftedUnaggregatedData)) {
-            return null;
-        }
+        TreeMap<Long, Long> aggregatedData =
+                aggregateIntoBucketsForTimeZone(shiftedUnaggregatedData, aggregationTimeZone, bucketSize);
 
-        if(aggregationTimeZone == null) {
-            throw new IllegalArgumentException("Timezone not specified for aggregation");
-        }
+        // For each bucket in the aggregated series, into a UTC timezone relative buckets
 
-        if(bucketSize == null) {
-            throw new IllegalArgumentException("Bucket size time unit not specified for aggregation");
-        }
+        Map<Long, Long> utcShiftedAggregatedData = shiftTimeSeriesToBoundariesForTimeZone(aggregatedData, aggregationTimeZone, UTC, bucketSize);
 
         //
-        // TODO: This sorting should be eliminated there. We should just put the data
-        // into treemap on the API/controller level.
+        // Apply a 48hr rewind on all timestamps in the aggregated series to avoid the
+        // 'future data' problem after data has been shifted
         //
 
-        // Ensure the unaggregated data is sorted by timestamp
+        Map<Long, Long> fortyEightHourShiftedUTCAggregatedData = applyFortyEightHourShift(utcShiftedAggregatedData, false);
 
-        TreeMap<Long, Long> sortedUnaggregatedData = new TreeMap<Long, Long>();
-        sortedUnaggregatedData.putAll(shiftedUnaggregatedData);
-
-        long initialBucketStart = determineInitialBucket(sortedUnaggregatedData.keySet().iterator().next(), aggregationTimeZone, bucketSize);
-
-        long currentBucketStart = initialBucketStart;
-        long currentBucketEnd = getBucketEndTime(currentBucketStart, bucketSize, timeZone);
-        TreeMap<Long, Long> aggregatedData = new TreeMap<Long, Long>();
-        aggregatedData.put(currentBucketStart, 0L);
-
-        for(Long timeStamp : sortedUnaggregatedData.keySet()) {
-
-            long value = sortedUnaggregatedData.get(timeStamp);
-
-            while(!(currentBucketStart <= timeStamp && currentBucketEnd >= timeStamp)) {
-                //
-                // The value does not belong in the current bucket, make new buckets
-                // until we hit the timerange to which this value belongs
-                //
-
-                currentBucketStart = currentBucketEnd + 1L;
-                currentBucketEnd = getBucketEndTime(currentBucketStart, bucketSize, timeZone);
-                //aggregatedData.put(currentBucketStart, 0L);
-            }
-
-            //
-            // At this point at least one value will be injected into the current bucket.
-            // Make sure it is created.
-            //
-
-            if(aggregatedData.get(currentBucketStart) == null) {
-                aggregatedData.put(currentBucketStart, 0L);
-            }
-
-            // Add the value to the bucket
-            long newValue = aggregatedData.get(currentBucketStart) + value;
-            aggregatedData.put(currentBucketStart, newValue);
-        }
-
-        return aggregatedData;
-
-
-
-
+        return fortyEightHourShiftedUTCAggregatedData;
     }
-    */
+
+
+    /**
+     * Apply the reverse of the UTC shift operation to a query result. This is done before a result for aggregated
+     * data can be sent back for representation relative to the aggregation time zone.
+     * @param utcRelativeResult
+     * @param aggregationTimeZone
+     * @param bucketSize
+     * @return query result presented relative to the aggregation time zone.
+     */
+    public Map<Long, Long> shiftResultToAggregationTimeZone(Map<Long, Long> utcRelativeResult, TimeZone aggregationTimeZone, TimeUnit bucketSize) {
+
+        // Apply forward 48hr forward shift
+        Map<Long, Long> fortyEightHourUnshiftedData = applyFortyEightHourShift(utcRelativeResult, true);
+
+        // For each bucket in the aggregated series, shift back into the aggregation timezone
+        Map<Long, Long> utcShiftedAggregatedData = shiftTimeSeriesToBoundariesForTimeZone(fortyEightHourUnshiftedData, UTC, aggregationTimeZone, bucketSize);
+
+        return utcShiftedAggregatedData;
+    }
 
 
 
@@ -492,81 +575,13 @@ public class BucketAggregationUtil {
 
 
     /**
-     * Determine the timestamp for the beginning of the UTC-relative bucket into which the data for
-     * a given timestamp would be aggregated.
-     * @param inputTimeStamp A UTC timestamp for which some data is to be aggregated into a bucket
-     * @param timeZone the timezone that the aggregated data is to be represented in.
-     * @param bucketSize the length of a bucket, e.g. MONTHS.
-     * @return a timestamp in UTC identifying the boundary of a bucket in the UTC timezome
-     */
-    protected long determineStartOfUTCShiftedBucket(Long inputTimeStamp, TimeZone timeZone, TimeUnit bucketSize) {
-
-        if(inputTimeStamp == null) {
-            throw new IllegalArgumentException("Timestamp not specified");
-        }
-
-        if(timeZone == null) {
-            throw new IllegalArgumentException("Timezone not specified");
-        }
-
-        if(bucketSize == null) {
-            throw new IllegalArgumentException("Bucketsize not specified");
-        }
-
-        Calendar inputCal = Calendar.getInstance();
-        inputCal.clear();
-        inputCal.setTimeZone(timeZone);
-        inputCal.setTimeInMillis(inputTimeStamp);
-
-        //
-        // To determine the bucket interval start, reset all the time components that are of
-        // less significance than the desired bucket size time unit
-        //
-
-        Calendar utcShiftedBucketStartCal = Calendar.getInstance();
-        utcShiftedBucketStartCal.clear();
-        utcShiftedBucketStartCal.setTimeZone(UTC);
-
-        if (bucketSize == TimeUnit.YEARS) {
-            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
-        } else if (bucketSize == TimeUnit.MONTHS) {
-            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
-            utcShiftedBucketStartCal.set(Calendar.MONTH, inputCal.get(Calendar.MONTH));
-        } else if (bucketSize == TimeUnit.WEEKS) {
-            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
-            utcShiftedBucketStartCal.set(Calendar.WEEK_OF_YEAR, inputCal.get(Calendar.WEEK_OF_YEAR));
-            utcShiftedBucketStartCal.set(Calendar.DAY_OF_WEEK, 1);
-        } else if (bucketSize == TimeUnit.DAYS) {
-            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
-            utcShiftedBucketStartCal.set(Calendar.MONTH, inputCal.get(Calendar.MONTH));
-            utcShiftedBucketStartCal.set(Calendar.DAY_OF_MONTH, inputCal.get(Calendar.DAY_OF_MONTH));
-        } else if (bucketSize == TimeUnit.HOURS) {
-            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
-            utcShiftedBucketStartCal.set(Calendar.MONTH, inputCal.get(Calendar.MONTH));
-            utcShiftedBucketStartCal.set(Calendar.DAY_OF_MONTH, inputCal.get(Calendar.DAY_OF_MONTH));
-            utcShiftedBucketStartCal.set(Calendar.HOUR_OF_DAY, inputCal.get(Calendar.HOUR_OF_DAY));
-        } else if (bucketSize == TimeUnit.MINUTES) {
-            //
-            // Note: TimeUnit MINUTES should not be used here. Pre-aggregation is only needed
-            // applicable for timeunits larger than MINUTES.
-            //
-            throw new IllegalArgumentException("TimeUnit MINUTES not supported for pre-aggregration.");
-        } else {
-            throw new IllegalArgumentException("Unexpected TimeUnit " + bucketSize);
-        }
-
-        return utcShiftedBucketStartCal.getTimeInMillis();
-    }
-
-
-    /**
      * Calculate the end time of a bucket given its start time and bucket size
      * @param bucketStart
      * @param bucketSize
      * @param timeZone
      * @return the end time of a bucket
      */
-    protected long getBucketEndTime(Long bucketStart, TimeUnit bucketSize, TimeZone timeZone) {
+    public long getBucketEndTime(Long bucketStart, TimeUnit bucketSize, TimeZone timeZone) {
 
         if(bucketSize == null) {
             throw new IllegalArgumentException("Bucket size not specified");
