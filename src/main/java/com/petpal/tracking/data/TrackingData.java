@@ -3,7 +3,7 @@ package com.petpal.tracking.data;
 import com.petpal.tracking.service.TrackingMetric;
 import org.springframework.util.CollectionUtils;
 
-import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Created by per on 10/28/14.
@@ -21,40 +21,40 @@ public class TrackingData {
     // curl -v -X POST localhost:9000/tracking -H "Accept: application/json" -H "Content-Type: application/json" -d '{"walkingData":{"23423424523523":123,"23423424523700":125}}'
     //
 
-    private Map<Long, Long> walkingData;
-    private Map<Long, Long> runningData;
-    private Map<Long, Long> sleepingData;
-    private Map<Long, Long> restingData;
+    private TreeMap<Long, Long> walkingData;
+    private TreeMap<Long, Long> runningData;
+    private TreeMap<Long, Long> sleepingData;
+    private TreeMap<Long, Long> restingData;
 
-    public Map<Long, Long> getWalkingData() {
+    public TreeMap<Long, Long> getWalkingData() {
         return walkingData;
     }
 
-    public void setWalkingData(Map<Long, Long> walkingData) {
+    public void setWalkingData(TreeMap<Long, Long> walkingData) {
         this.walkingData = walkingData;
     }
 
-    public Map<Long, Long> getRunningData() {
+    public TreeMap<Long, Long> getRunningData() {
         return runningData;
     }
 
-    public void setRunningData(Map<Long, Long> runningData) {
+    public void setRunningData(TreeMap<Long, Long> runningData) {
         this.runningData = runningData;
     }
 
-    public Map<Long, Long> getSleepingData() {
+    public TreeMap<Long, Long> getSleepingData() {
         return sleepingData;
     }
 
-    public void setSleepingData(Map<Long, Long> sleepingData) {
+    public void setSleepingData(TreeMap<Long, Long> sleepingData) {
         this.sleepingData = sleepingData;
     }
 
-    public Map<Long, Long> getRestingData() {
+    public TreeMap<Long, Long> getRestingData() {
         return restingData;
     }
 
-    public void setRestingData(Map<Long, Long> restingData) {
+    public void setRestingData(TreeMap<Long, Long> restingData) {
         this.restingData = restingData;
     }
 
@@ -72,7 +72,7 @@ public class TrackingData {
                 sb.append(", ");
             }
 
-            Map<Long, Long> dataForMetric = getDataForMetric(trackingMetric);
+            TreeMap<Long, Long> dataForMetric = getDataForMetric(trackingMetric);
             if(!CollectionUtils.isEmpty(dataForMetric)) {
                 sb.append(trackingMetric + " datapoints=").append(dataForMetric.size());
             } else {
@@ -84,7 +84,7 @@ public class TrackingData {
         return sb.toString();
     }
 
-    public Map<Long, Long> getDataForMetric(TrackingMetric trackingMetric) {
+    public TreeMap<Long, Long> getDataForMetric(TrackingMetric trackingMetric) {
         if (trackingMetric == TrackingMetric.WALKINGSTEPS) {
             return getWalkingData();
         } else if (trackingMetric == TrackingMetric.RUNNINGSTEPS) {

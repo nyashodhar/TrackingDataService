@@ -208,9 +208,6 @@ public class BucketAggregationUtil {
 
 
 
-
-
-
     /**
      * Organize tracking data into bucket of the given time unit relative to UTC timezone.
      *
@@ -238,7 +235,7 @@ public class BucketAggregationUtil {
      *
      * @return data aggregated into the specified bucket size for the given time zone.
      */
-    public Map<Long, Long> aggregateIntoUTCShiftedBuckets(Map<Long, Long> shiftedUnaggregatedData, TimeZone aggregationTimeZone, TimeUnit bucketSize) {
+    public Map<Long, Long> aggregateIntoUTCShiftedBuckets(TreeMap<Long, Long> shiftedUnaggregatedData, TimeZone aggregationTimeZone, TimeUnit bucketSize) {
 
         TreeMap<Long, Long> aggregatedData =
                 aggregateIntoBucketsForTimeZone(shiftedUnaggregatedData, aggregationTimeZone, bucketSize);
@@ -304,7 +301,7 @@ public class BucketAggregationUtil {
      *
      * @return data aggregated into the specified bucket size for the given time zone.
      */
-    public TreeMap<Long, Long> aggregateIntoBucketsForTimeZone(Map<Long, Long> unaggregatedData, TimeZone timeZone, TimeUnit bucketSize) {
+    public TreeMap<Long, Long> aggregateIntoBucketsForTimeZone(TreeMap<Long, Long> unaggregatedData, TimeZone timeZone, TimeUnit bucketSize) {
 
         if (CollectionUtils.isEmpty(unaggregatedData)) {
             return null;
@@ -318,11 +315,6 @@ public class BucketAggregationUtil {
             throw new IllegalArgumentException("Bucket size time unit not specified for aggregation");
         }
 
-        // Ensure the unaggregated data is sorted by timestamp
-
-        TreeMap<Long, Long> sortedUnaggregatedData = new TreeMap<Long, Long>();
-        sortedUnaggregatedData.putAll(unaggregatedData);
-
         long initialBucketStart = determineInitialBucket(unaggregatedData.keySet().iterator().next(), timeZone, bucketSize);
 
         long currentBucketStart = initialBucketStart;
@@ -330,9 +322,9 @@ public class BucketAggregationUtil {
         TreeMap<Long, Long> aggregatedData = new TreeMap<Long, Long>();
         aggregatedData.put(currentBucketStart, 0L);
 
-        for(Long timeStamp : sortedUnaggregatedData.keySet()) {
+        for(Long timeStamp : unaggregatedData.keySet()) {
 
-            long value = sortedUnaggregatedData.get(timeStamp);
+            long value = unaggregatedData.get(timeStamp);
 
             while(!(currentBucketStart <= timeStamp && currentBucketEnd >= timeStamp)) {
                 //

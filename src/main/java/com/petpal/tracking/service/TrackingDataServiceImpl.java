@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.TreeMap;
 
 /**
  * Created by per on 10/28/14.
@@ -146,10 +147,10 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
      * @param tags the tags to use for the new data
      * @param timeZone the timezone to do the bucket aggregation relative to.
      */
-    protected void updateAggregatedSeriesForMetric(TrackingMetric trackingMetric, Map<Long, Long> unaggregatedData, Map<TimeSeriesTag, String> tags, TimeZone timeZone) {
+    protected void updateAggregatedSeriesForMetric(TrackingMetric trackingMetric, TreeMap<Long, Long> unaggregatedData, Map<TimeSeriesTag, String> tags, TimeZone timeZone) {
 
         if(CollectionUtils.isEmpty(unaggregatedData)) {
-            logger.info("storeDataForMetric(): No unaggregated data found for metric " +
+            logger.info("updateAggregatedSeriesForMetric(): No unaggregated data found for metric " +
                     trackingMetric + ", returning.");
             return;
         }
@@ -176,7 +177,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
      * @param bucketSize bucket size that is used to identify which time series to update
      *                   with the new data for this metric.s
      */
-    protected void updateUTCShiftedAggregatedTimeSeries(TrackingMetric trackingMetric, Map<Long, Long> unaggregatedData,
+    protected void updateUTCShiftedAggregatedTimeSeries(TrackingMetric trackingMetric, TreeMap<Long, Long> unaggregatedData,
                                               Map<TimeSeriesTag, String> tags, TimeZone timeZone, TimeUnit bucketSize) {
 
         // Aggregate the input into buckets for this aggregated series
