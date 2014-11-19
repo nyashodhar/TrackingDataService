@@ -45,6 +45,7 @@ public interface TrackingDataService {
      * @param tags the tags to apply to all the datapoints in the tracking data.
      * @param trackingData the data to be inserted into the time series
      *                     date store.
+     * @param aggregationTimeZone timezone to aggregate the tracking data for
      */
-    void storeTrackingData(Map<TimeSeriesTag, String> tags, TrackingData trackingData);
+    void storeTrackingData(Map<TimeSeriesTag, String> tags, TrackingData trackingData, TimeZone aggregationTimeZone);
 }

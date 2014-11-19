@@ -83,7 +83,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         BucketCalculator.addDataPointForAllMetrics(testTrackingData, dataPoints);
 
-        ResponseEntity<String> postResponse = postMetricsForDevice(trackingDeviceId, testTrackingData);
+        ResponseEntity<String> postResponse = postMetricsForDevice(trackingDeviceId, testTrackingData, timeZonePST);
 
         blockUntilAsyncThreadIdleInServer();
 
@@ -146,7 +146,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         BucketCalculator.addDataPointForAllMetrics(testTrackingData, dataPoints);
 
-        ResponseEntity<String> responseData = postMetricsForDevice(trackingDeviceId, testTrackingData);
+        ResponseEntity<String> responseData = postMetricsForDevice(trackingDeviceId, testTrackingData, timeZonePST);
 
         //
         // EXAMPLE ON HOW TO QUERY FOR THIS:
@@ -179,7 +179,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         TestTrackingData combinedTestTrackingData1 = BucketCalculator.combineTrackingData(testTrackingData1, testTrackingData2);
 
-        ResponseEntity<String> responseData1 = postMetricsForDevice(trackingDeviceId, combinedTestTrackingData1);
+        ResponseEntity<String> responseData1 = postMetricsForDevice(trackingDeviceId, combinedTestTrackingData1, timeZonePST);
         blockUntilAsyncThreadIdleInServer();
 
         Map<TestTrackingMetric, Map<Long, Long>> getResponse1 = getAggregatedMetricsForDevice(
@@ -221,7 +221,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
                 BucketCalculator.getCalendar(2014, Calendar.AUGUST, 23, 0, 0, 0, timeZonePST));
 
         TestTrackingData combinedTestTrackingData2 = BucketCalculator.combineTrackingData(testTrackingData3, testTrackingData4);
-        ResponseEntity<String> responseData2 = postMetricsForDevice(trackingDeviceId, combinedTestTrackingData2);
+        ResponseEntity<String> responseData2 = postMetricsForDevice(trackingDeviceId, combinedTestTrackingData2, timeZonePST);
         blockUntilAsyncThreadIdleInServer();
 
 

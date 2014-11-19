@@ -34,7 +34,8 @@ public abstract class AbstractTimeSeriesIntegrationTest {
     @Value("${local.server.port}")
     protected int port;
 
-    protected ResponseEntity<String> postMetricsForDevice(String deviceId, TestTrackingData testTrackingData) {
+    protected ResponseEntity<String> postMetricsForDevice(
+            String deviceId, TestTrackingData testTrackingData, TimeZone aggregationTimeZone) {
 
         String json = JSONUtil.convertToString(testTrackingData);
         //System.out.println("*** Tracking data: " + testTrackingData);
@@ -48,6 +49,10 @@ public abstract class AbstractTimeSeriesIntegrationTest {
 
         HttpEntity<String> entity = new HttpEntity<String>(json, headers);
         String url = "http://localhost:" + port + "/tracking/device/" + deviceId;
+
+        if(aggregationTimeZone != null) {
+            url = url + "?aggregationTimeZone=" + aggregationTimeZone.getID();
+        }
 
         try {
             logger.info("postMetrics(): doing post to " + url);

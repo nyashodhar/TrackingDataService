@@ -95,22 +95,12 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
 
 
     /**
-     * @see com.petpal.tracking.service.TrackingDataService#storeTrackingData(java.util.Map, com.petpal.tracking.data.TrackingData)
+     * @see com.petpal.tracking.service.TrackingDataService#storeTrackingData(java.util.Map, com.petpal.tracking.data.TrackingData, java.util.TimeZone)
      */
     @Override
-    public void storeTrackingData(Map<TimeSeriesTag, String> tags, TrackingData trackingData) {
-
+    public void storeTrackingData(Map<TimeSeriesTag, String> tags, TrackingData trackingData, TimeZone aggregationTimeZone) {
         logger.info("storeTrackingData(): trackingData=" + trackingData);
-
-        //
-        // TODO: TimeZone should be specified by the client, or if not there should be a better
-        // way to determine the default timezone to aggregate relative to.
-        //
-
-        TimeZone aggregationTimeZone = TimeZone.getTimeZone("PST");
-
         threadPoolTaskExecutor.execute(new TrackingDataInsertionWorker(this, trackingData, tags, aggregationTimeZone));
-
         logger.info("Tracking data prepared for worker thread.");
     }
 

@@ -58,23 +58,34 @@ public class TrackingDataController {
 
     /**
      * Store metrics in the time series database for a given device.
-     *
-     * CURL EXAMPLE:
-     * curl -v -X POST localhost:9000/tracking/device/lkjslfjssdddss -H "Accept: application/json" -H "Content-Type: application/json" -d '{"walkingData":{"23423424523523":123,"23423424523700":125}}'
+     * @param deviceId identified the device from which the tracking data originates
+     * @param aggregationTimeZone the timezone the data should be aggregated for
+     * @param trackingData the tracking data to be inserted into the tracking data store.
      */
     @RequestMapping(value="/tracking/device/{deviceId}", method=RequestMethod.POST)
     @ResponseStatus( HttpStatus.NO_CONTENT )
     public void saveTrackingDataForDevice(
             @PathVariable String deviceId,
+            @RequestParam(value="aggregationTimeZone", required=false) TimeZone aggregationTimeZone,
             @RequestBody TrackingData trackingData) {
 
         logger.info("saveTrackingDataForDevice(): deviceId: " + deviceId);
+        if(aggregationTimeZone != null) {
+            logger.info("saveTrackingDataForDevice(): aggregationTimeZone = " + aggregationTimeZone.getID());
+        } else {
+            logger.info("saveTrackingDataForDevice(): aggregationTimeZone = " + aggregationTimeZone);
+        }
+
         logger.info("saveTrackingDataForDevice(): tracking data: " + trackingData);
 
         Map<TimeSeriesTag, String> tags = new HashMap<TimeSeriesTag, String>();
         tags.put(TimeSeriesTag.TRACKINGDEVICE, deviceId);
 
-        trackingDataService.storeTrackingData(tags, trackingData);
+        if(aggregationTimeZone == null) {
+            aggregationTimeZone = TimeZone.getTimeZone(defaultAggregationTimeZoneID);
+        }
+
+        trackingDataService.storeTrackingData(tags, trackingData, aggregationTimeZone);
     }
 
 
@@ -132,7 +143,12 @@ public class TrackingDataController {
         logger.info("getAggregatedMetricsForDevice(): bucketsToFetch = " + bucketsToFetch);
         logger.info("getAggregatedMetricsForDevice(): trackingMetricsSet = " + trackingMetricsSet);
         logger.info("getAggregatedMetricsForDevice(): verboseResponse = " + verboseResponse);
-        logger.info("getAggregatedMetricsForDevice(): aggregationTimeZone = " + aggregationTimeZone);
+
+        if(aggregationTimeZone != null) {
+            logger.info("getAggregatedMetricsForDevice(): aggregationTimeZone = " + aggregationTimeZone.getID());
+        } else {
+            logger.info("getAggregatedMetricsForDevice(): aggregationTimeZone = " + aggregationTimeZone);
+        }
 
         Map<TimeSeriesTag, String> tags = new HashMap<TimeSeriesTag, String>();
         tags.put(TimeSeriesTag.TRACKINGDEVICE, deviceId);
@@ -184,7 +200,12 @@ public class TrackingDataController {
             throw new IllegalArgumentException("Bucket size not specified");
         }
 
-        if(bucketsToFetch == null || bucketsToFetch.intValue() <= 0) {
+        if(bucketsToFetch == null) {
+            logger.info("Buckets to fetch not specified, returning null to use 'now' as default range end");
+            return null;
+        }
+
+        if(bucketsToFetch.intValue() <= 0) {
             logger.info("Invalid value " + bucketsToFetch + " for buckets to fetch, " +
                     "returning null to use 'now' as default range end");
             return null;

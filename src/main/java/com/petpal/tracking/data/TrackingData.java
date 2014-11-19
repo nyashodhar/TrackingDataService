@@ -62,38 +62,39 @@ public class TrackingData {
     public String toString() {
 
         final StringBuilder sb = new StringBuilder("TrackingData{");
+        boolean comma = false;
 
-        if(CollectionUtils.isEmpty(getWalkingData())) {
-            sb.append(", walkingDataPoints=").append(walkingData.size());
-        }
+        for(TrackingMetric trackingMetric : TrackingMetric.getAllTrackingMetrics()) {
 
-        if(CollectionUtils.isEmpty(getRunningData())) {
-            sb.append(", runningDataPoints=").append(runningData.size());
-        }
+            if(!comma) {
+                comma = true;
+            } else {
+                sb.append(", ");
+            }
 
-        if(CollectionUtils.isEmpty(getSleepingData())) {
-            sb.append(", sleepingDataPoints=").append(sleepingData.size());
-        }
-
-        if(CollectionUtils.isEmpty(getRestingData())) {
-            sb.append(", restingDataPoints=").append(restingData.size());
+            Map<Long, Long> dataForMetric = getDataForMetric(trackingMetric);
+            if(!CollectionUtils.isEmpty(dataForMetric)) {
+                sb.append(trackingMetric + " datapoints=").append(dataForMetric.size());
+            } else {
+                sb.append(trackingMetric + " datapoints=0");
+            }
         }
 
         sb.append('}');
         return sb.toString();
     }
 
-    public Map<Long, Long> getDataForMetric(TrackingMetric testTrackingMetric) {
-        if (testTrackingMetric == TrackingMetric.WALKINGSTEPS) {
+    public Map<Long, Long> getDataForMetric(TrackingMetric trackingMetric) {
+        if (trackingMetric == TrackingMetric.WALKINGSTEPS) {
             return getWalkingData();
-        } else if (testTrackingMetric == TrackingMetric.RUNNINGSTEPS) {
+        } else if (trackingMetric == TrackingMetric.RUNNINGSTEPS) {
             return getRunningData();
-        } else if (testTrackingMetric == TrackingMetric.SLEEPINGSECONDS) {
+        } else if (trackingMetric == TrackingMetric.SLEEPINGSECONDS) {
             return getSleepingData();
-        } else if (testTrackingMetric == TrackingMetric.RESTINGSECONDS) {
+        } else if (trackingMetric == TrackingMetric.RESTINGSECONDS) {
             return getRestingData();
         } else {
-            throw new IllegalArgumentException("Unexpected tracking metric " + testTrackingMetric);
+            throw new IllegalArgumentException("Unexpected tracking metric " + trackingMetric);
         }
     }
 }
