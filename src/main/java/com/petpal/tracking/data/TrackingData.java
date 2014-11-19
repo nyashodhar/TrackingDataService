@@ -3,7 +3,7 @@ package com.petpal.tracking.data;
 import com.petpal.tracking.service.TrackingMetric;
 import org.springframework.util.CollectionUtils;
 
-import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Created by per on 10/28/14.
@@ -21,40 +21,40 @@ public class TrackingData {
     // curl -v -X POST localhost:9000/tracking -H "Accept: application/json" -H "Content-Type: application/json" -d '{"walkingData":{"23423424523523":123,"23423424523700":125}}'
     //
 
-    private Map<Long, Long> walkingData;
-    private Map<Long, Long> runningData;
-    private Map<Long, Long> sleepingData;
-    private Map<Long, Long> restingData;
+    private TreeMap<Long, Long> walkingData;
+    private TreeMap<Long, Long> runningData;
+    private TreeMap<Long, Long> sleepingData;
+    private TreeMap<Long, Long> restingData;
 
-    public Map<Long, Long> getWalkingData() {
+    public TreeMap<Long, Long> getWalkingData() {
         return walkingData;
     }
 
-    public void setWalkingData(Map<Long, Long> walkingData) {
+    public void setWalkingData(TreeMap<Long, Long> walkingData) {
         this.walkingData = walkingData;
     }
 
-    public Map<Long, Long> getRunningData() {
+    public TreeMap<Long, Long> getRunningData() {
         return runningData;
     }
 
-    public void setRunningData(Map<Long, Long> runningData) {
+    public void setRunningData(TreeMap<Long, Long> runningData) {
         this.runningData = runningData;
     }
 
-    public Map<Long, Long> getSleepingData() {
+    public TreeMap<Long, Long> getSleepingData() {
         return sleepingData;
     }
 
-    public void setSleepingData(Map<Long, Long> sleepingData) {
+    public void setSleepingData(TreeMap<Long, Long> sleepingData) {
         this.sleepingData = sleepingData;
     }
 
-    public Map<Long, Long> getRestingData() {
+    public TreeMap<Long, Long> getRestingData() {
         return restingData;
     }
 
-    public void setRestingData(Map<Long, Long> restingData) {
+    public void setRestingData(TreeMap<Long, Long> restingData) {
         this.restingData = restingData;
     }
 
@@ -62,38 +62,39 @@ public class TrackingData {
     public String toString() {
 
         final StringBuilder sb = new StringBuilder("TrackingData{");
+        boolean comma = false;
 
-        if(CollectionUtils.isEmpty(getWalkingData())) {
-            sb.append(", walkingDataPoints=").append(walkingData.size());
-        }
+        for(TrackingMetric trackingMetric : TrackingMetric.getAllTrackingMetrics()) {
 
-        if(CollectionUtils.isEmpty(getRunningData())) {
-            sb.append(", runningDataPoints=").append(runningData.size());
-        }
+            if(!comma) {
+                comma = true;
+            } else {
+                sb.append(", ");
+            }
 
-        if(CollectionUtils.isEmpty(getSleepingData())) {
-            sb.append(", sleepingDataPoints=").append(sleepingData.size());
-        }
-
-        if(CollectionUtils.isEmpty(getRestingData())) {
-            sb.append(", restingDataPoints=").append(restingData.size());
+            TreeMap<Long, Long> dataForMetric = getDataForMetric(trackingMetric);
+            if(!CollectionUtils.isEmpty(dataForMetric)) {
+                sb.append(trackingMetric + " datapoints=").append(dataForMetric.size());
+            } else {
+                sb.append(trackingMetric + " datapoints=0");
+            }
         }
 
         sb.append('}');
         return sb.toString();
     }
 
-    public Map<Long, Long> getDataForMetric(TrackingMetric testTrackingMetric) {
-        if (testTrackingMetric == TrackingMetric.WALKINGSTEPS) {
+    public TreeMap<Long, Long> getDataForMetric(TrackingMetric trackingMetric) {
+        if (trackingMetric == TrackingMetric.WALKINGSTEPS) {
             return getWalkingData();
-        } else if (testTrackingMetric == TrackingMetric.RUNNINGSTEPS) {
+        } else if (trackingMetric == TrackingMetric.RUNNINGSTEPS) {
             return getRunningData();
-        } else if (testTrackingMetric == TrackingMetric.SLEEPINGSECONDS) {
+        } else if (trackingMetric == TrackingMetric.SLEEPINGSECONDS) {
             return getSleepingData();
-        } else if (testTrackingMetric == TrackingMetric.RESTINGSECONDS) {
+        } else if (trackingMetric == TrackingMetric.RESTINGSECONDS) {
             return getRestingData();
         } else {
-            throw new IllegalArgumentException("Unexpected tracking metric " + testTrackingMetric);
+            throw new IllegalArgumentException("Unexpected tracking metric " + trackingMetric);
         }
     }
 }

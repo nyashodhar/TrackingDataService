@@ -16,8 +16,10 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.UUID;
 
 /**
@@ -32,7 +34,8 @@ public abstract class AbstractTimeSeriesIntegrationTest {
     @Value("${local.server.port}")
     protected int port;
 
-    protected ResponseEntity<String> postMetricsForDevice(String deviceId, TestTrackingData testTrackingData) {
+    protected ResponseEntity<String> postMetricsForDevice(
+            String deviceId, TestTrackingData testTrackingData, TimeZone aggregationTimeZone) {
 
         String json = JSONUtil.convertToString(testTrackingData);
         //System.out.println("*** Tracking data: " + testTrackingData);
@@ -46,6 +49,10 @@ public abstract class AbstractTimeSeriesIntegrationTest {
 
         HttpEntity<String> entity = new HttpEntity<String>(json, headers);
         String url = "http://localhost:" + port + "/tracking/device/" + deviceId;
+
+        if(aggregationTimeZone != null) {
+            url = url + "?aggregationTimeZone=" + aggregationTimeZone.getID();
+        }
 
         try {
             logger.info("postMetrics(): doing post to " + url);
@@ -73,14 +80,19 @@ public abstract class AbstractTimeSeriesIntegrationTest {
         }
     }
 
-    protected Map<TestTrackingMetric, Map<Long, Long>> getMetricsForDevice(
+
+    protected Map<TestTrackingMetric, Map<Long, Long>> getAggregatedMetricsForDevice(
             String trackingDeviceId,
-            long utcBegin,
-            Long utcEnd,
+            Integer startYear,
+            Integer startMonth,
+            Integer startWeek,
+            Integer startDay,
+            Integer startHour,
             TimeUnit resultBucketSize,
-            int resultBucketMultiplier,
+            Integer bucketsToFetch,
             List<TestTrackingMetric> trackingMetrics,
-            Boolean verboseResponse) {
+            Boolean verboseResponse,
+            TimeZone aggregationTimeZone) {
 
         RestTemplate restTemplate = new RestTemplate();
 
@@ -90,53 +102,83 @@ public abstract class AbstractTimeSeriesIntegrationTest {
 
         HttpEntity<String> entity = new HttpEntity<String>(headers);
 
-        String url = "http://localhost:" + port + "/metrics/device/{deviceId}?utcBegin={utcBegin}&resultBucketSize={resultBucketSize}&resultBucketMultiplier={resultBucketMultiplier}";
+        String url = "http://localhost:" + port + "/metrics/device/{deviceId}?startYear={startYear}&resultBucketSize={resultBucketSize}";
 
         // Conditionally add optional query/url parameters
 
-        if(utcEnd != null) {
-            url = url + "&utcEnd={utcEnd}";
+        Map<String, Object> urlArgs = new HashMap<String, Object>();
+        urlArgs.put("deviceId", trackingDeviceId);
+        urlArgs.put("startYear", startYear);
+        urlArgs.put("resultBucketSize", resultBucketSize.toString());
+
+        if(startMonth != null) {
+            url = url + "&startMonth={startMonth}";
+            urlArgs.put("startMonth", startMonth);
+        }
+
+        if(startWeek != null) {
+            url = url + "&startWeek={startWeek}";
+            urlArgs.put("startWeek", startWeek);
+        }
+
+        if(startDay != null) {
+            url = url + "&startDay={startDay}";
+            urlArgs.put("startDay", startDay);
+        }
+
+        if(startHour != null) {
+            url = url + "&startHour={startHour}";
+            urlArgs.put("startHour", startHour);
+        }
+
+        if(bucketsToFetch != null) {
+            url = url + "&bucketsToFetch={bucketsToFetch}";
+            urlArgs.put("bucketsToFetch", bucketsToFetch);
         }
 
         if(trackingMetrics != null) {
             url = url + "&trackingMetrics={trackingMetrics}";
+            urlArgs.put("trackingMetrics", trackingMetricsToCommaSeparated(trackingMetrics));
         }
 
         if(verboseResponse != null) {
             url = url + "&verboseResponse={verboseResponse}";
+            urlArgs.put("verboseResponse", verboseResponse);
+        }
+
+        if(aggregationTimeZone != null) {
+            url = url + "&aggregationTimeZone={aggregationTimeZone}";
+            urlArgs.put("aggregationTimeZone", aggregationTimeZone.getID());
         }
 
         //
         // EXAMPLE:
         //
-        //    curl -v -X GET "http://localhost:9000/metrics/absolute/device/263e6c54-69c9-45f5-853c-b5f4420ceb5i?utcBegin=1398927600141&utcEnd=1406876400141&resultBucketSize=MONTHS&resultBucketMultiplier=1&trackingMetrics=walkingsteps,runningsteps&verboseResponse=true" -H "Accept: application/json" -H "Content-Type: application/json"
+        //    curl -v -X GET "http://localhost:9000/metrics/absolute/device/263e6c54-69c9-45f5-853c-b5f4420ceb5i?startYear=2014&resultBucketSize=YEARS&trackingMetrics=walkingsteps,runningsteps&verboseResponse=true" -H "Accept: application/json" -H "Content-Type: application/json"
         //
+
+        //http://localhost:63549/metrics/device/a555bb6b-62ab-4e70-bf4a-06431fa8b5ec?startYear=2014&resultBucketSize=MONTHS&startMonth=4&startDay=&verboseResponse=4
 
         try {
             logger.info("Doing GET for metrics " + url);
             long start = System.currentTimeMillis();
+
             ResponseEntity<Map<TestTrackingMetric, Map<Long, Long>>> response =
                     restTemplate.exchange(url, HttpMethod.GET, entity,
-                            new ParameterizedTypeReference<Map<TestTrackingMetric, Map<Long, Long>>>() {
-                            },
-                            trackingDeviceId,
-                            utcBegin,
-                            resultBucketSize.toString(),
-                            resultBucketMultiplier,
-                            utcEnd,
-                            trackingMetricsToCommaSeparated(trackingMetrics),
-                            verboseResponse);
+                            new ParameterizedTypeReference<Map<TestTrackingMetric, Map<Long, Long>>>() {},
+                            urlArgs);
+
             long end = System.currentTimeMillis();
 
-            logger.info("Metric response received in " + (end - start) + "ms. Code: " + response.getStatusCode() + ", body: " + response.getBody());
+            logger.info("Aggregated metric response received in " + (end - start) + "ms. Code: " + response.getStatusCode() + ", body: " + response.getBody());
             return response.getBody();
         } catch(RestClientException e) {
             if(e instanceof HttpServerErrorException) {
-                logger.error("getMetrics(): Unexpected server error: " + ((HttpServerErrorException) e).getStatusCode(), e);
+                logger.error("getAggregatedMetricsForDevice(): Unexpected server error: " + ((HttpServerErrorException) e).getStatusCode(), e);
             } else if(e instanceof HttpClientErrorException) {
-                logger.error("getMetrics(): Unexpected client error: " + ((HttpClientErrorException) e).getStatusCode(), e);
+                logger.error("getAggregatedMetricsForDevice(): Unexpected client error: " + ((HttpClientErrorException) e).getStatusCode(), e);
             } else {
-                logger.error("getMetrics(): Unexpected error: " + ((HttpClientErrorException) e).getStatusCode(), e);
+                logger.error("getAggregatedMetricsForDevice(): Unexpected error: " + ((HttpClientErrorException) e).getStatusCode(), e);
             }
             throw e;
         }
