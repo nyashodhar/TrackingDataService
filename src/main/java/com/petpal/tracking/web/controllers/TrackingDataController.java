@@ -70,14 +70,18 @@ public class TrackingDataController {
             @RequestParam(value="aggregationTimeZone", required=false) TimeZone aggregationTimeZone,
             @RequestBody TrackingData trackingData) {
 
-        logger.info("saveTrackingDataForDevice(): deviceId: " + deviceId);
+        StringBuilder str = new StringBuilder();
+        str.append("saveTrackingDataForDevice(): deviceId: ").append(deviceId);
+        str.append(", aggregationTimeZone = ");
+
         if(aggregationTimeZone != null) {
-            logger.info("saveTrackingDataForDevice(): aggregationTimeZone = " + aggregationTimeZone.getID());
+            str.append(aggregationTimeZone.getID());
         } else {
-            logger.info("saveTrackingDataForDevice(): aggregationTimeZone = " + aggregationTimeZone);
+            str.append(aggregationTimeZone);
         }
 
-        logger.info("saveTrackingDataForDevice(): tracking data: " + trackingData);
+        str.append(", trackingData = ").append(trackingData);
+        logger.info(str);
 
         Map<TimeSeriesTag, String> tags = new HashMap<TimeSeriesTag, String>();
         tags.put(TimeSeriesTag.TRACKINGDEVICE, deviceId);
@@ -133,22 +137,26 @@ public class TrackingDataController {
             @RequestParam(value="verboseResponse", required=false) Boolean verboseResponse,
             @RequestParam(value="aggregationTimeZone", required=false) TimeZone aggregationTimeZone) {
 
-        logger.info("getAggregatedMetricsForDevice(): deviceId = " + deviceId);
-        logger.info("getAggregatedMetricsForDevice(): resultBucketSize = " + resultBucketSize);
-        logger.info("getAggregatedMetricsForDevice(): startYear = " + startYear);
-        logger.info("getAggregatedMetricsForDevice(): startMonth = " + startMonth);
-        logger.info("getAggregatedMetricsForDevice(): startWeek = " + startWeek);
-        logger.info("getAggregatedMetricsForDevice(): startDay = " + startDay);
-        logger.info("getAggregatedMetricsForDevice(): startHour = " + startHour);
-        logger.info("getAggregatedMetricsForDevice(): bucketsToFetch = " + bucketsToFetch);
-        logger.info("getAggregatedMetricsForDevice(): trackingMetricsSet = " + trackingMetricsSet);
-        logger.info("getAggregatedMetricsForDevice(): verboseResponse = " + verboseResponse);
+        StringBuilder str = new StringBuilder();
+        str.append("getAggregatedMetricsForDevice(): deviceId = ").append(deviceId);
+        str.append(", resultBucketSize = ").append(resultBucketSize);
+        str.append(", startYear = ").append(startYear);
+        str.append(", startMonth = ").append(startMonth);
+        str.append(", startWeek = ").append(startWeek);
+        str.append(", startDay = ").append(startDay);
+        str.append(", startHour = ").append(startHour);
+        str.append(", bucketsToFetch = ").append(bucketsToFetch);
+        str.append(", trackingMetricsSet = ").append(trackingMetricsSet);
+        str.append(", verboseResponse = ").append(verboseResponse);
+        str.append(", aggregationTimeZone = ");
 
         if(aggregationTimeZone != null) {
-            logger.info("getAggregatedMetricsForDevice(): aggregationTimeZone = " + aggregationTimeZone.getID());
+            str.append(aggregationTimeZone.getID());
         } else {
-            logger.info("getAggregatedMetricsForDevice(): aggregationTimeZone = " + aggregationTimeZone);
+            str.append(aggregationTimeZone);
         }
+
+        logger.info(str);
 
         Map<TimeSeriesTag, String> tags = new HashMap<TimeSeriesTag, String>();
         tags.put(TimeSeriesTag.TRACKINGDEVICE, deviceId);

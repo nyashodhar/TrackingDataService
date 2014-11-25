@@ -5,7 +5,6 @@ import com.petpal.tracking.service.tag.TimeSeriesTag;
 import org.apache.log4j.Logger;
 import org.kairosdb.client.builder.TimeUnit;
 
-import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -24,7 +23,7 @@ public class QueryLoggingUtil {
 
         for(TimeSeriesMetric timeSeriesMetric : metricResults.keySet()) {
 
-            StringBuffer metricResult = new StringBuffer();
+            StringBuilder metricResult = new StringBuilder();
             for(Long timestamp : metricResults.get(timeSeriesMetric).keySet()) {
                 Date date = new Date();
                 date.setTime(timestamp);
@@ -56,7 +55,7 @@ public class QueryLoggingUtil {
                                                TimeUnit resultBucketSize,
                                                int resultBucketMultiplier) {
 
-        StringBuffer intervalDescriptor = new StringBuffer("[" + getUTCFormat(utcBegin) + ",");
+        StringBuilder intervalDescriptor = new StringBuilder("[" + getUTCFormat(utcBegin) + ",");
         if(utcEnd == null) {
             intervalDescriptor.append(" now]");
         } else {
