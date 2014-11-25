@@ -1,6 +1,6 @@
 package com.petpal.tracking.integration;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -14,11 +14,6 @@ public enum  TestTrackingMetric {
     RESTINGSECONDS;
 
     public static List<TestTrackingMetric> getAllTrackingMetrics() {
-        List<TestTrackingMetric> allMetrics = new ArrayList<TestTrackingMetric>();
-        allMetrics.add(TestTrackingMetric.WALKINGSTEPS);
-        allMetrics.add(TestTrackingMetric.RUNNINGSTEPS);
-        allMetrics.add(TestTrackingMetric.SLEEPINGSECONDS);
-        allMetrics.add(TestTrackingMetric.RESTINGSECONDS);
-        return allMetrics;
+        return Arrays.asList(values());
     }
 }
