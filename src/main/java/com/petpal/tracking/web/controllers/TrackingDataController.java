@@ -6,6 +6,7 @@ import com.petpal.tracking.service.TrackingDataService;
 import com.petpal.tracking.service.TrackingMetric;
 import com.petpal.tracking.service.tag.TimeSeriesTag;
 import com.petpal.tracking.web.editors.DateEditor;
+import com.petpal.tracking.web.editors.TimeUnitEditor;
 import com.petpal.tracking.web.editors.TrackingMetricsSet;
 import com.petpal.tracking.web.editors.TrackingMetricsSetEditor;
 import org.apache.log4j.Logger;
@@ -104,42 +105,41 @@ public class TrackingDataController {
      * spanning 24 hrs from midnight two days ago, etc.
      *
      * @param deviceId the device id
+     * @param resultBucketSize the time unit used to determine bucket size for result.
      * @param startYear
      * @param startMonth
      * @param startWeek
      * @param startDay
      * @param startHour
-     * @param resultBucketSize the time unit used to determine bucket size for result.
      * @param trackingMetricsSet the metrics the clients wants to query for. If null, all known
-     *                           metrics will be queries for.
+     *                           metrics will be queried for.
      * @param verboseResponse if set to true, the response will include buckets for which
      *                       values were found for the metric. If null, it will default to 'false'
      *                       and a sparse response will be sent.
      * @return Tracking data results grouped by metric and in bucket of the specified size.
      */
-    @RequestMapping(value="/metrics/device/{deviceId}", method=RequestMethod.GET)
+    @RequestMapping(value="/metrics/device/{deviceId}/aggregate/{resultBucketSize}", method=RequestMethod.GET)
     @ResponseStatus(HttpStatus.OK)
     public @ResponseBody Map<TrackingMetric, Map<Long, Long>> getAggregatedMetricsForDevice(
-            @PathVariable String deviceId,
+            @PathVariable(value="deviceId") String deviceId,
+            @PathVariable(value="resultBucketSize") TimeUnit resultBucketSize,
             @RequestParam(value="startYear", required=true) Integer startYear,
             @RequestParam(value="startMonth", required=false) Integer startMonth,
             @RequestParam(value="startWeek", required=false) Integer startWeek,
             @RequestParam(value="startDay", required=false) Integer startDay,
             @RequestParam(value="startHour", required=false) Integer startHour,
-            @RequestParam(value="resultBucketSize", required=true) TimeUnit resultBucketSize,
             @RequestParam(value="bucketsToFetch", required=false) Integer bucketsToFetch,
-            //@RequestParam(value="resultBucketMultiplier", required=true) Integer resultBucketMultiplier,
             @RequestParam(value="trackingMetrics", required=false) TrackingMetricsSet trackingMetricsSet,
             @RequestParam(value="verboseResponse", required=false) Boolean verboseResponse,
             @RequestParam(value="aggregationTimeZone", required=false) TimeZone aggregationTimeZone) {
 
         logger.info("getAggregatedMetricsForDevice(): deviceId = " + deviceId);
+        logger.info("getAggregatedMetricsForDevice(): resultBucketSize = " + resultBucketSize);
         logger.info("getAggregatedMetricsForDevice(): startYear = " + startYear);
         logger.info("getAggregatedMetricsForDevice(): startMonth = " + startMonth);
         logger.info("getAggregatedMetricsForDevice(): startWeek = " + startWeek);
         logger.info("getAggregatedMetricsForDevice(): startDay = " + startDay);
         logger.info("getAggregatedMetricsForDevice(): startHour = " + startHour);
-        logger.info("getAggregatedMetricsForDevice(): resultBucketSize = " + resultBucketSize);
         logger.info("getAggregatedMetricsForDevice(): bucketsToFetch = " + bucketsToFetch);
         logger.info("getAggregatedMetricsForDevice(): trackingMetricsSet = " + trackingMetricsSet);
         logger.info("getAggregatedMetricsForDevice(): verboseResponse = " + verboseResponse);
@@ -400,6 +400,7 @@ public class TrackingDataController {
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(TrackingMetricsSet.class, new TrackingMetricsSetEditor());
         binder.registerCustomEditor(Date.class, new DateEditor());
+        binder.registerCustomEditor(TimeUnit.class, new TimeUnitEditor());
     }
 
 }

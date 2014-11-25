@@ -89,12 +89,12 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         Map<TestTrackingMetric, Map<Long, Long>> getResponse = getAggregatedMetricsForDevice(
                 trackingDeviceId,
+                TimeUnit.MONTHS,
                 2014,
                 Calendar.MAY,
                 null,
                 null,
                 null,
-                TimeUnit.MONTHS,
                 null,
                 null,
                 false,
@@ -184,12 +184,12 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         Map<TestTrackingMetric, Map<Long, Long>> getResponse1 = getAggregatedMetricsForDevice(
                 trackingDeviceId,
+                TimeUnit.YEARS,
                 2012,
                 null,
                 null,
                 null,
                 null,
-                TimeUnit.YEARS,
                 null,
                 null,
                 false,
@@ -227,12 +227,12 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         Map<TestTrackingMetric, Map<Long, Long>> getResponse2 = getAggregatedMetricsForDevice(
                 trackingDeviceId,
+                TimeUnit.YEARS,
                 2012,
                 null,
                 null,
                 null,
                 null,
-                TimeUnit.YEARS,
                 null,
                 null,
                 false,

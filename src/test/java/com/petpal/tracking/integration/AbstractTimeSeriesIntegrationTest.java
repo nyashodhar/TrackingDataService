@@ -83,12 +83,12 @@ public abstract class AbstractTimeSeriesIntegrationTest {
 
     protected Map<TestTrackingMetric, Map<Long, Long>> getAggregatedMetricsForDevice(
             String trackingDeviceId,
+            TimeUnit resultBucketSize,
             Integer startYear,
             Integer startMonth,
             Integer startWeek,
             Integer startDay,
             Integer startHour,
-            TimeUnit resultBucketSize,
             Integer bucketsToFetch,
             List<TestTrackingMetric> trackingMetrics,
             Boolean verboseResponse,
@@ -102,14 +102,14 @@ public abstract class AbstractTimeSeriesIntegrationTest {
 
         HttpEntity<String> entity = new HttpEntity<String>(headers);
 
-        String url = "http://localhost:" + port + "/metrics/device/{deviceId}?startYear={startYear}&resultBucketSize={resultBucketSize}";
+        String url = "http://localhost:" + port + "/metrics/device/{deviceId}/aggregate/{resultBucketSize}?startYear={startYear}";
 
         // Conditionally add optional query/url parameters
 
         Map<String, Object> urlArgs = new HashMap<String, Object>();
         urlArgs.put("deviceId", trackingDeviceId);
+        urlArgs.put("resultBucketSize", resultBucketSize.toString().toLowerCase());
         urlArgs.put("startYear", startYear);
-        urlArgs.put("resultBucketSize", resultBucketSize.toString());
 
         if(startMonth != null) {
             url = url + "&startMonth={startMonth}";
