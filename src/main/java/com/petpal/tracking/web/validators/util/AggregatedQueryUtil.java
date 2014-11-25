@@ -100,7 +100,7 @@ public class AggregatedQueryUtil {
             Integer startHour,
             TimeUnit bucketSize) {
 
-        if(startYear < 2012 || startYear > 2100) {
+        if(startYear == null || startYear < 1990) {
             throw new IllegalArgumentException("Invalid value " + startYear + " for start year");
         }
 
