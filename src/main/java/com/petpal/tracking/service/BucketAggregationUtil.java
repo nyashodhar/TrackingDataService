@@ -1,6 +1,7 @@
 package com.petpal.tracking.service;
 
 import com.petpal.tracking.service.metrics.TimeSeriesMetric;
+import com.petpal.tracking.service.util.BucketBoundaryUtil;
 import com.petpal.tracking.service.util.QueryLoggingUtil;
 import org.apache.commons.lang.math.LongRange;
 import org.apache.log4j.Logger;
@@ -318,7 +319,7 @@ public class BucketAggregationUtil {
         long initialBucketStart = determineInitialBucket(unaggregatedData.keySet().iterator().next(), timeZone, bucketSize);
 
         long currentBucketStart = initialBucketStart;
-        long currentBucketEnd = getBucketEndTime(currentBucketStart, bucketSize, timeZone);
+        long currentBucketEnd = BucketBoundaryUtil.getBucketEndTime(currentBucketStart, bucketSize, timeZone);
         TreeMap<Long, Long> aggregatedData = new TreeMap<Long, Long>();
         aggregatedData.put(currentBucketStart, 0L);
 
@@ -333,7 +334,7 @@ public class BucketAggregationUtil {
                 //
 
                 currentBucketStart = currentBucketEnd + 1L;
-                currentBucketEnd = getBucketEndTime(currentBucketStart, bucketSize, timeZone);
+                currentBucketEnd = BucketBoundaryUtil.getBucketEndTime(currentBucketStart, bucketSize, timeZone);
                 //aggregatedData.put(currentBucketStart, 0L);
             }
 
@@ -453,7 +454,7 @@ public class BucketAggregationUtil {
             //int calenderUnitToStepForward = getCalendarUnitForTimeUnit(resultBucketSize);
             //cursorCalendar.add(calenderUnitToStepForward, 1);
 
-            long bucketEnd = getBucketEndTime(cursorCalendar.getTimeInMillis(), resultBucketSize, cursorCalendar.getTimeZone());
+            long bucketEnd = BucketBoundaryUtil.getBucketEndTime(cursorCalendar.getTimeInMillis(), resultBucketSize, cursorCalendar.getTimeZone());
             cursorCalendar.setTimeInMillis(bucketEnd+1);
 
             if(cursorCalendar.getTimeInMillis() >= endOfInterval) {
@@ -564,51 +565,6 @@ public class BucketAggregationUtil {
         return bucketStartCal.getTimeInMillis();
     }
 
-
-
-    /**
-     * Calculate the end time of a bucket given its start time and bucket size
-     * @param bucketStart
-     * @param bucketSize
-     * @param timeZone
-     * @return the end time of a bucket
-     */
-    public long getBucketEndTime(Long bucketStart, TimeUnit bucketSize, TimeZone timeZone) {
-
-        if(bucketSize == null) {
-            throw new IllegalArgumentException("Bucket size not specified");
-        }
-
-        if(bucketStart == null) {
-            throw new IllegalArgumentException("Bucket start not specified");
-        }
-
-        Calendar cal = Calendar.getInstance();
-        cal.clear();
-        cal.setTimeZone(timeZone);
-        cal.setTimeInMillis(bucketStart);
-
-        int fieldToStepForward;
-
-        if(bucketSize == TimeUnit.YEARS) {
-            fieldToStepForward = Calendar.YEAR;
-        } else if(bucketSize == TimeUnit.MONTHS) {
-            fieldToStepForward = Calendar.MONTH;
-        } else if(bucketSize == TimeUnit.WEEKS) {
-            fieldToStepForward = Calendar.WEEK_OF_YEAR;
-        } else if(bucketSize == TimeUnit.DAYS) {
-            fieldToStepForward = Calendar.DATE;
-        } else if(bucketSize == TimeUnit.HOURS) {
-            fieldToStepForward = Calendar.HOUR;
-        } else if(bucketSize == TimeUnit.MINUTES) {
-            fieldToStepForward = Calendar.MINUTE;
-        } else {
-            throw new IllegalArgumentException("Unexpected TimeUnit for bucketsize: " + bucketSize);
-        }
-
-        cal.add(fieldToStepForward, 1);
-        return (cal.getTimeInMillis() - 1L);
-    }
 
     private void logTimeStampAdjustments(Map<Long, Long> metricResult, Map<Long, Long> newMetricResult) {
 
