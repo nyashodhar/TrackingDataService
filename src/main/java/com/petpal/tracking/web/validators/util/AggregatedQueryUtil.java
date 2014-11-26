@@ -53,8 +53,8 @@ public class AggregatedQueryUtil {
             throw new IllegalArgumentException("utcBegin not specified");
         }
 
-        if(bucketSize == null) {
-            throw new IllegalArgumentException("Bucket size not specified");
+        if(bucketSize == null || bucketSize == TimeUnit.MILLISECONDS || bucketSize == TimeUnit.SECONDS || bucketSize == TimeUnit.MINUTES) {
+            throw new IllegalArgumentException("Invalid bucket size " + bucketSize);
         }
 
         if(bucketsToFetch == null) {
@@ -63,9 +63,7 @@ public class AggregatedQueryUtil {
         }
 
         if(bucketsToFetch.intValue() <= 0) {
-            logger.info("Invalid value " + bucketsToFetch + " for buckets to fetch, " +
-                    "returning null to use 'now' as default range end");
-            return null;
+            throw new IllegalArgumentException("Invalid value " + bucketsToFetch + " for buckets to fetch");
         }
 
         Long currentBegin = utcBegin;

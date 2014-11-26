@@ -1,19 +1,21 @@
 package com.petpal.tracking.web.controllers;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 
 /**
  * Created by per on 10/28/14.
  */
 
-//@ControllerAdvice
+@ControllerAdvice
 public class ControllerExceptionHandler {
 
+    /*
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(IllegalArgumentException.class)
-    public void handleIllegalArgumentException() {
-        // Nothing to do
+    public ResponseEntity<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException e) {
+        Map<String, String> errors = new HashMap<String, String>();
+        errors.put("error", e.getMessage());
+        return new ResponseEntity(errors, HttpStatus.BAD_REQUEST);
     }
+    */
 }
