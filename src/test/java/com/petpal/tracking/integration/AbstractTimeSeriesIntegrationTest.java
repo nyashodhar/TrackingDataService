@@ -2,12 +2,14 @@ package com.petpal.tracking.integration;
 
 import com.petpal.tracking.util.JSONUtil;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.kairosdb.client.builder.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
@@ -15,6 +17,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -199,6 +202,24 @@ public abstract class AbstractTimeSeriesIntegrationTest {
         }
         return stringBuilder.toString();
     }
+
+
+    protected void check400Response(RestClientException e) {
+        Assert.assertTrue(e instanceof HttpClientErrorException);
+        HttpClientErrorException err = (HttpClientErrorException) e;
+        Assert.assertEquals(err.getStatusCode(), HttpStatus.BAD_REQUEST);
+
+        Map<String, Serializable> mappedJson = JSONUtil.jsonToMap(err.getResponseBodyAsString());
+        Assert.assertEquals(3, mappedJson.size());
+        Assert.assertEquals(mappedJson.get("status").toString(), Integer.toString(HttpStatus.BAD_REQUEST.value()));
+        Assert.assertNotNull(mappedJson.get("error"));
+
+        // Ensure the timestamp is very close to 'now'
+        long timestampInResponse = Long.parseLong(mappedJson.get("timestamp").toString());
+        Assert.assertTrue(System.currentTimeMillis()-3000L < timestampInResponse);
+        Assert.assertTrue(System.currentTimeMillis()+3000L > timestampInResponse);
+    }
+
 
     protected static String createTrackedEntityId() {
         return UUID.randomUUID().toString();
