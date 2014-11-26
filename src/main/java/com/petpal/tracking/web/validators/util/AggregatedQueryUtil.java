@@ -1,6 +1,7 @@
 package com.petpal.tracking.web.validators.util;
 
 import com.petpal.tracking.service.util.BucketBoundaryUtil;
+import com.petpal.tracking.web.errors.InvalidControllerArgumentException;
 import org.apache.log4j.Logger;
 import org.kairosdb.client.builder.TimeUnit;
 
@@ -50,11 +51,11 @@ public class AggregatedQueryUtil {
     public static Long calculateUTCEnd(Long utcBegin, TimeUnit bucketSize, Integer bucketsToFetch, TimeZone timeZone) {
 
         if(utcBegin == null) {
-            throw new IllegalArgumentException("utcBegin not specified");
+            throw new InvalidControllerArgumentException("utcBegin not specified");
         }
 
         if(bucketSize == null || bucketSize == TimeUnit.MILLISECONDS || bucketSize == TimeUnit.SECONDS || bucketSize == TimeUnit.MINUTES) {
-            throw new IllegalArgumentException("Invalid bucket size " + bucketSize);
+            throw new InvalidControllerArgumentException("Invalid bucket size " + bucketSize);
         }
 
         if(bucketsToFetch == null) {
@@ -63,7 +64,7 @@ public class AggregatedQueryUtil {
         }
 
         if(bucketsToFetch.intValue() <= 0) {
-            throw new IllegalArgumentException("Invalid value " + bucketsToFetch + " for buckets to fetch");
+            throw new InvalidControllerArgumentException("Invalid value " + bucketsToFetch + " for buckets to fetch");
         }
 
         Long currentBegin = utcBegin;
@@ -99,125 +100,125 @@ public class AggregatedQueryUtil {
             TimeUnit bucketSize) {
 
         if(startYear == null || startYear < 1990) {
-            throw new IllegalArgumentException("Invalid value " + startYear + " for start year");
+            throw new InvalidControllerArgumentException("Invalid value " + startYear + " for start year");
         }
 
         if(startMonth != null) {
             if(startMonth < 0 || startMonth > 11) {
-                throw new IllegalArgumentException("Invalid value " + startMonth + " for start month");
+                throw new InvalidControllerArgumentException("Invalid value " + startMonth + " for start month");
             }
         }
 
         if(startWeek != null) {
             if(startWeek < 1 || startWeek > 52) {
-                throw new IllegalArgumentException("Invalid value " + startWeek + " for start week");
+                throw new InvalidControllerArgumentException("Invalid value " + startWeek + " for start week");
             }
         }
 
         if(startDay != null) {
             if(startDay < 1 || startDay > 31) {
-                throw new IllegalArgumentException("Invalid value " + startDay + " for start day");
+                throw new InvalidControllerArgumentException("Invalid value " + startDay + " for start day");
             }
         }
 
         if(startHour != null) {
             if(startHour < 0 || startHour > 23) {
-                throw new IllegalArgumentException("Invalid value " + startHour + " for start hour");
+                throw new InvalidControllerArgumentException("Invalid value " + startHour + " for start hour");
             }
         }
 
         if (bucketSize == TimeUnit.YEARS) {
 
             if(startMonth != null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startMonth is specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startMonth is specified");
             }
 
             if(startWeek != null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startWeek is specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startWeek is specified");
             }
 
             if(startDay != null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startDay is specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startDay is specified");
             }
 
             if(startHour != null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startHour is specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startHour is specified");
             }
 
         } else if (bucketSize == TimeUnit.MONTHS) {
 
             if(startMonth == null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startMonth is not specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startMonth is not specified");
             }
 
             if(startWeek != null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startWeek is specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startWeek is specified");
             }
 
             if(startDay != null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startDay is specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startDay is specified");
             }
 
             if(startHour != null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startHour is specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startHour is specified");
             }
 
         } else if (bucketSize == TimeUnit.WEEKS) {
 
             if(startWeek == null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but no startWeek is specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but no startWeek is specified");
             }
 
             if(startMonth != null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startMonth is specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startMonth is specified");
             }
 
             if(startDay != null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startDay is specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startDay is specified");
             }
 
             if(startHour != null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startHour is specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startHour is specified");
             }
 
         } else if (bucketSize == TimeUnit.DAYS) {
 
             if(startMonth == null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startMonth is not specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startMonth is not specified");
             }
 
             if(startWeek != null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startWeek is specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startWeek is specified");
             }
 
             if(startDay == null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but no startDay is specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but no startDay is specified");
             }
 
             if(startHour != null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startHour is specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startHour is specified");
             }
 
 
         } else if (bucketSize == TimeUnit.HOURS) {
 
             if(startMonth == null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startMonth is not specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startMonth is not specified");
             }
 
             if(startWeek != null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but startWeek is specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startWeek is specified");
             }
 
             if(startDay == null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but no startDay is specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but no startDay is specified");
             }
 
             if(startHour == null) {
-                throw new IllegalArgumentException("Bucket size is " + bucketSize + " but no startHour is specified");
+                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but no startHour is specified");
             }
         } else {
-            throw new IllegalArgumentException("Invalid time unit " + bucketSize);
+            throw new InvalidControllerArgumentException("Invalid time unit " + bucketSize);
         }
     }
 

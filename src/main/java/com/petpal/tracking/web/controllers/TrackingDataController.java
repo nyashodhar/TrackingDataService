@@ -1,7 +1,6 @@
 package com.petpal.tracking.web.controllers;
 
 import com.petpal.tracking.data.TrackingData;
-import com.petpal.tracking.service.BucketAggregationUtil;
 import com.petpal.tracking.service.TrackingDataService;
 import com.petpal.tracking.service.TrackingMetric;
 import com.petpal.tracking.service.tag.TimeSeriesTag;
@@ -53,9 +52,6 @@ public class TrackingDataController {
     @Autowired
     @Qualifier("trackingDataService")
     private TrackingDataService trackingDataService;
-
-    @Autowired
-    private BucketAggregationUtil bucketAggregationUtil;
 
     /**
      * Store metrics in the time series database for a given device.
