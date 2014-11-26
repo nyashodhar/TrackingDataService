@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.web.client.RestClientException;
 
 import java.util.Calendar;
 import java.util.List;
@@ -51,19 +52,42 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         timeZonePST = TimeZone.getTimeZone("PST");
     }
 
-    //@Test
-    public void test_timeZonePrintingStuff() {
-
-        BucketCalculator.printUTCForCalendar(2014, Calendar.MAY, 29, 0, 0, 0, timeZonePST);
-        BucketCalculator.printUTCForCalendar(2014, Calendar.JUNE, 2, 0, 0, 0, timeZonePST);
-        BucketCalculator.printUTCForCalendar(2014, Calendar.JULY, 2, 0, 0, 0, timeZonePST);
-        BucketCalculator.printUTCForCalendar(2014, Calendar.MAY, 1, 0, 0, 0, timeZonePST);
-        BucketCalculator.printUTCForCalendar(2014, Calendar.JULY, 1, 0, 0, 0, timeZonePST);
-        BucketCalculator.printUTCForCalendar(2014, Calendar.AUGUST, 1, 0, 0, 0, timeZonePST);
+    @Test
+    public void testGetAggregatedMetricForDevice_invalid_bucket_size_400() {
+        try {
+            TimeUnit invalidTimeUnit = TimeUnit.MILLISECONDS;
+            getAggregatedMetricsForDevice("deviceid", invalidTimeUnit, 2014, 1, null, null, null, 1, null, null, timeZonePST);
+            Assert.fail("Request for metrics with invalid bucket size should have given 400 error");
+        } catch(RestClientException e) {
+            check400Response(e);
+        }
     }
 
     @Test
-    public void test_get_metrics_for_device_boundary_test_empty_bucket_excluded() {
+    public void testGetAggregatedMetricForDevice_start_year_missing_400() {
+        try {
+            Integer startYear = null;
+            getAggregatedMetricsForDevice("deviceid", TimeUnit.YEARS, startYear, null, null, null, null, 1, null, null, timeZonePST);
+            Assert.fail("Request for metrics with missing start year should have given 400 error");
+        } catch(RestClientException e) {
+            check400Response(e);
+        }
+    }
+
+
+    @Test
+    public void testGetAggregatedMetricForDevice_invalid_arg_combo_400() {
+        try {
+            getAggregatedMetricsForDevice("deviceid", TimeUnit.YEARS, 2014, 3, null, null, null, 1, null, null, timeZonePST);
+            Assert.fail("Request for metrics with for year, but month is also specified, should have given 400 error");
+        } catch(RestClientException e) {
+            check400Response(e);
+        }
+    }
+
+
+    @Test
+    public void testGetAggregatedMetricForDevice_boundary_test_empty_bucket_excluded() {
 
         String trackingDeviceId = createTrackingDeviceId();
 
@@ -89,12 +113,12 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         Map<TestTrackingMetric, Map<Long, Long>> getResponse = getAggregatedMetricsForDevice(
                 trackingDeviceId,
+                TimeUnit.MONTHS,
                 2014,
                 Calendar.MAY,
                 null,
                 null,
                 null,
-                TimeUnit.MONTHS,
                 null,
                 null,
                 false,
@@ -131,37 +155,8 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
     }
 
 
-    //@Test
-    public void metricTest() {
-
-        String trackingDeviceId = "blablabla";
-
-        TestTrackingData testTrackingData = new TestTrackingData();
-
-        Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
-
-        // Data point 1: May 29th, 2014, PST
-        long timeStamp1 = BucketCalculator.getCalendar(2014, Calendar.MAY, 29, 0, 0, 0, timeZonePST).getTimeInMillis();
-        dataPoints.put(timeStamp1, 4L);
-
-        BucketCalculator.addDataPointForAllMetrics(testTrackingData, dataPoints);
-
-        ResponseEntity<String> responseData = postMetricsForDevice(trackingDeviceId, testTrackingData, timeZonePST);
-
-        //
-        // EXAMPLE ON HOW TO QUERY FOR THIS:
-        //
-        //   curl -v -X POST http://localhost:8080/api/v1/datapoints/query -H "Content-Type: application/json" -d '{ "start_absolute": 1357023600000, "metrics": [ { "tags": { "TRACKEDENTITY": ["tralalala"] }, "name": "WALKINGSTEPS", "aggregators": [ {"name": "sum", "sampling": {"value": 1,"unit": "days"} } ] } ] }'
-        //
-        // EXAMPLE RESULT:
-        //
-        //   {"queries":[{"sample_size":1,"results":[{"name":"WALKINGSTEPS","group_by":[{"name":"type","type":"number"}],"tags":{"TRACKEDENTITY":["tralalala"],"TRACKINGDEVICE":["blablabla"]},"values":[[1401346800000,3]]}]}]}
-        //
-    }
-
-
     @Test
-    public void test_metrics_for_device_year_aggregation() {
+    public void testGetAggregatedMetricForDevice_year_aggregation() {
 
         String trackingDeviceId = createTrackingDeviceId();
 
@@ -184,12 +179,12 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         Map<TestTrackingMetric, Map<Long, Long>> getResponse1 = getAggregatedMetricsForDevice(
                 trackingDeviceId,
+                TimeUnit.YEARS,
                 2012,
                 null,
                 null,
                 null,
                 null,
-                TimeUnit.YEARS,
                 null,
                 null,
                 false,
@@ -227,12 +222,12 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         Map<TestTrackingMetric, Map<Long, Long>> getResponse2 = getAggregatedMetricsForDevice(
                 trackingDeviceId,
+                TimeUnit.YEARS,
                 2012,
                 null,
                 null,
                 null,
                 null,
-                TimeUnit.YEARS,
                 null,
                 null,
                 false,
@@ -253,6 +248,38 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
             verifyValueForMetric(testTrackingMetric, BucketCalculator.getCalendar(2014, Calendar.JANUARY, 1, 0, 0, 0, timeZonePST).getTimeInMillis(), secondYearExpectedValue, getResponse2);
         }
     }
+
+
+
+    //@Test
+    public void metricTest() {
+
+        String trackingDeviceId = "blablabla";
+
+        TestTrackingData testTrackingData = new TestTrackingData();
+
+        Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
+
+        // Data point 1: May 29th, 2014, PST
+        long timeStamp1 = BucketCalculator.getCalendar(2014, Calendar.MAY, 29, 0, 0, 0, timeZonePST).getTimeInMillis();
+        dataPoints.put(timeStamp1, 4L);
+
+        BucketCalculator.addDataPointForAllMetrics(testTrackingData, dataPoints);
+
+        ResponseEntity<String> responseData = postMetricsForDevice(trackingDeviceId, testTrackingData, timeZonePST);
+
+        //
+        // EXAMPLE ON HOW TO QUERY FOR THIS:
+        //
+        //   curl -v -X POST http://localhost:8080/api/v1/datapoints/query -H "Content-Type: application/json" -d '{ "start_absolute": 1357023600000, "metrics": [ { "tags": { "TRACKEDENTITY": ["tralalala"] }, "name": "WALKINGSTEPS", "aggregators": [ {"name": "sum", "sampling": {"value": 1,"unit": "days"} } ] } ] }'
+        //
+        // EXAMPLE RESULT:
+        //
+        //   {"queries":[{"sample_size":1,"results":[{"name":"WALKINGSTEPS","group_by":[{"name":"type","type":"number"}],"tags":{"TRACKEDENTITY":["tralalala"],"TRACKINGDEVICE":["blablabla"]},"values":[[1401346800000,3]]}]}]}
+        //
+    }
+
+
 
     //
     // Utility methods
