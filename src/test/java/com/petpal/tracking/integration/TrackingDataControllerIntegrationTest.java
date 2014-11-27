@@ -85,6 +85,134 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         }
     }
 
+    @Test
+    public void testDataForSameBucketForDifferentDevices() {
+
+        String trackingDeviceId1 = createTrackingDeviceId();
+        String trackingDeviceId2 = createTrackingDeviceId();
+
+        long timeStamp = BucketCalculator.getCalendar(2014, Calendar.MAY, 29, 0, 0, 0, timeZonePST).getTimeInMillis();
+
+        Map<Long, Long> dataPoints1 = new TreeMap<Long, Long>();
+        dataPoints1.put(timeStamp, 3L);
+
+        List<TestTrackingMetric> allMetrics = TestTrackingMetric.getAllTrackingMetrics();
+
+        TestTrackingData testTrackingData1 = new TestTrackingData();
+        BucketCalculator.addDataPointForAllMetrics(testTrackingData1, dataPoints1);
+
+        ResponseEntity<String> postResponse1 = postMetricsForDevice(trackingDeviceId1, testTrackingData1, timeZonePST);
+
+        blockUntilAsyncThreadIdleInServer();
+
+        Map<TestTrackingMetric, Map<Long, Long>> getResponse1 = getAggregatedMetricsForDevice(
+                trackingDeviceId1, TimeUnit.MONTHS, 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
+
+        // There should be 4 metrics in the response, since we didn't itemize metrics
+        Assert.assertEquals(4, getResponse1.size());
+
+        //
+        // Bucket one should start at May 1, 2014 PST
+        // Bucket one should have a value of 3 for each metric
+        //
+
+        long bucketKey = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 0, 0, 0, timeZonePST).getTimeInMillis();
+        for(TestTrackingMetric metric : allMetrics) {
+            verifyValueForMetric(metric, bucketKey, 3L, getResponse1);
+        }
+
+        // Insert data that will be aggregated into the same bucket for a different device...
+
+        Map<Long, Long> dataPoints2 = new TreeMap<Long, Long>();
+        dataPoints2.put(timeStamp, 7L);
+
+        TestTrackingData testTrackingData2 = new TestTrackingData();
+        BucketCalculator.addDataPointForAllMetrics(testTrackingData2, dataPoints2);
+
+        ResponseEntity<String> postResponse2 = postMetricsForDevice(trackingDeviceId2, testTrackingData2, timeZonePST);
+
+        blockUntilAsyncThreadIdleInServer();
+
+        Map<TestTrackingMetric, Map<Long, Long>> getResponse2 = getAggregatedMetricsForDevice(
+                trackingDeviceId2, TimeUnit.MONTHS, 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
+
+        // There should be 4 metrics in the response, since we didn't itemize metrics
+        Assert.assertEquals(4, getResponse2.size());
+
+        //
+        // Bucket one should start at May 1, 2014 PST
+        // Bucket one should have a value of 7 for each metric
+        //
+
+        //long bucketKey = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 0, 0, 0, timeZonePST).getTimeInMillis();
+        for(TestTrackingMetric metric : allMetrics) {
+            verifyValueForMetric(metric, bucketKey, 7L, getResponse2);
+        }
+
+        // Repeat the query for the data for device1 and check that result is still the same
+
+        getResponse1 = getAggregatedMetricsForDevice(
+                trackingDeviceId1, TimeUnit.MONTHS, 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
+
+        // There should be 4 metrics in the response, since we didn't itemize metrics
+        Assert.assertEquals(4, getResponse1.size());
+
+        //
+        // Bucket one should start at May 1, 2014 PST
+        // Bucket one should have a value of 3 for each metric
+        //
+
+        for(TestTrackingMetric metric : allMetrics) {
+            verifyValueForMetric(metric, bucketKey, 3L, getResponse1);
+        }
+
+        // Add a 2nd value for device1 in the same bucket
+
+        timeStamp = BucketCalculator.getCalendar(2014, Calendar.MAY, 27, 0, 0, 0, timeZonePST).getTimeInMillis();
+
+        Map<Long, Long> dataPoints1_1 = new TreeMap<Long, Long>();
+        dataPoints1_1.put(timeStamp, 11L);
+
+        TestTrackingData testTrackingData1_1 = new TestTrackingData();
+        BucketCalculator.addDataPointForAllMetrics(testTrackingData1_1, dataPoints1_1);
+
+        postMetricsForDevice(trackingDeviceId1, testTrackingData1_1, timeZonePST);
+
+        blockUntilAsyncThreadIdleInServer();
+
+        getResponse1 = getAggregatedMetricsForDevice(
+                trackingDeviceId1, TimeUnit.MONTHS, 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
+
+        // There should be 4 metrics in the response, since we didn't itemize metrics
+        Assert.assertEquals(4, getResponse1.size());
+
+        //
+        // Bucket one should start at May 1, 2014 PST
+        // Bucket one should have a value of 14 for each metric
+        //
+
+        for(TestTrackingMetric metric : allMetrics) {
+            verifyValueForMetric(metric, bucketKey, 14L, getResponse1);
+        }
+
+        // Repeat the query for the data for device2 and check that result is still the same
+
+        getResponse2 = getAggregatedMetricsForDevice(
+                trackingDeviceId2, TimeUnit.MONTHS, 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
+
+        // There should be 4 metrics in the response, since we didn't itemize metrics
+        Assert.assertEquals(4, getResponse2.size());
+
+        //
+        // Bucket one should start at May 1, 2014 PST
+        // Bucket one should have a value of 7 for each metric
+        //
+
+        for(TestTrackingMetric metric : allMetrics) {
+            verifyValueForMetric(metric, bucketKey, 7L, getResponse2);
+        }
+    }
+
 
     @Test
     public void testGetAggregatedMetricForDevice_boundary_test_empty_bucket_excluded() {
