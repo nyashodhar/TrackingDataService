@@ -1,6 +1,5 @@
 package com.petpal.tracking.service;
 
-import com.petpal.tracking.service.metrics.TimeSeriesMetric;
 import com.petpal.tracking.service.util.BucketBoundaryUtil;
 import com.petpal.tracking.service.util.QueryLoggingUtil;
 import org.apache.commons.lang.math.LongRange;

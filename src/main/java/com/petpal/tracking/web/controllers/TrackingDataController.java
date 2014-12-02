@@ -1,7 +1,6 @@
 package com.petpal.tracking.web.controllers;
 
 import com.petpal.tracking.service.TrackingDataService;
-import com.petpal.tracking.service.tag.TimeSeriesTag;
 import com.petpal.tracking.web.editors.DateEditor;
 import com.petpal.tracking.web.editors.TimeUnitEditor;
 import com.petpal.tracking.web.editors.TrackingMetricsSet;
@@ -77,8 +76,8 @@ public class TrackingDataController {
         str.append(", trackingData = ").append(trackingData);
         logger.info(str);
 
-        Map<TimeSeriesTag, String> tags = new HashMap<TimeSeriesTag, String>();
-        tags.put(TimeSeriesTag.TRACKINGDEVICE, deviceId);
+        Map<TrackingTag, String> tags = new HashMap<TrackingTag, String>();
+        tags.put(TrackingTag.TRACKINGDEVICE, deviceId);
 
         if(aggregationTimeZone == null) {
             aggregationTimeZone = TimeZone.getTimeZone(defaultAggregationTimeZoneID);
@@ -152,8 +151,8 @@ public class TrackingDataController {
 
         logger.info(str);
 
-        Map<TimeSeriesTag, String> tags = new HashMap<TimeSeriesTag, String>();
-        tags.put(TimeSeriesTag.TRACKINGDEVICE, deviceId);
+        Map<TrackingTag, String> tags = new HashMap<TrackingTag, String>();
+        tags.put(TrackingTag.TRACKINGDEVICE, deviceId);
 
         //
         // The aggregation timezone is needed to perform a reverse shift of the aggregated data.

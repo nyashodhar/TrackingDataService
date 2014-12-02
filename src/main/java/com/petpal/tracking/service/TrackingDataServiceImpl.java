@@ -1,9 +1,8 @@
 package com.petpal.tracking.service;
 
+import com.petpal.tracking.web.controllers.TrackingTag;
 import com.petpal.tracking.web.controllers.TrackingData;
 import com.petpal.tracking.service.async.TrackingDataInsertionWorker;
-import com.petpal.tracking.service.metrics.TimeSeriesMetric;
-import com.petpal.tracking.service.tag.TimeSeriesTag;
 import com.petpal.tracking.web.controllers.TrackingMetric;
 import org.apache.log4j.Logger;
 import org.kairosdb.client.builder.MetricBuilder;
@@ -42,7 +41,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
      */
     @Override
     public Map<TrackingMetric, Map<Long, Long>> getAggregatedTimeSeries(
-            Map<TimeSeriesTag, String> tags,
+            Map<TrackingTag, String> tags,
             List<TrackingMetric> trackingMetrics,
             Long utcBegin,
             Long utcEnd,
@@ -100,7 +99,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
      * @see com.petpal.tracking.service.TrackingDataService#storeTrackingData(java.util.Map, com.petpal.tracking.web.controllers.TrackingData, java.util.TimeZone)
      */
     @Override
-    public void storeTrackingData(Map<TimeSeriesTag, String> tags, TrackingData trackingData, TimeZone aggregationTimeZone) {
+    public void storeTrackingData(Map<TrackingTag, String> tags, TrackingData trackingData, TimeZone aggregationTimeZone) {
         logger.info("storeTrackingData(): trackingData=" + trackingData);
         threadPoolTaskExecutor.execute(new TrackingDataInsertionWorker(this, trackingData, tags, aggregationTimeZone));
         logger.info("Tracking data prepared for worker thread.");
@@ -114,7 +113,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
      * @param timeZone
      */
     public void asyncTrackingDataInsert(
-            TrackingData trackingData, Map<TimeSeriesTag, String> tags, TimeZone timeZone) {
+            TrackingData trackingData, Map<TrackingTag, String> tags, TimeZone timeZone) {
 
         // Store the raw metrics
         storeRawMetrics(trackingData, tags);
@@ -125,7 +124,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
         }
     }
 
-    private void storeRawMetrics(TrackingData trackingData, Map<TimeSeriesTag, String> tags) {
+    private void storeRawMetrics(TrackingData trackingData, Map<TrackingTag, String> tags) {
 
         MetricBuilder metricBuilder = MetricBuilder.getInstance();
 
@@ -148,7 +147,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
      * @param tags the tags to use for the new data
      * @param timeZone the timezone to do the bucket aggregation relative to.
      */
-    protected void updateAggregatedSeriesForMetric(TrackingMetric trackingMetric, TreeMap<Long, Long> unaggregatedData, Map<TimeSeriesTag, String> tags, TimeZone timeZone) {
+    protected void updateAggregatedSeriesForMetric(TrackingMetric trackingMetric, TreeMap<Long, Long> unaggregatedData, Map<TrackingTag, String> tags, TimeZone timeZone) {
 
         if(CollectionUtils.isEmpty(unaggregatedData)) {
             logger.info("updateAggregatedSeriesForMetric(): No unaggregated data found for metric " +
@@ -179,7 +178,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
      *                   with the new data for this metric.s
      */
     protected void updateUTCShiftedAggregatedTimeSeries(TrackingMetric trackingMetric, TreeMap<Long, Long> unaggregatedData,
-                                              Map<TimeSeriesTag, String> tags, TimeZone timeZone, TimeUnit bucketSize) {
+                                              Map<TrackingTag, String> tags, TimeZone timeZone, TimeUnit bucketSize) {
 
         // Aggregate the input into buckets for this aggregated series
         Map<Long, Long> fortyEightHourShiftedUTCAggregatedData = bucketAggregationUtil.

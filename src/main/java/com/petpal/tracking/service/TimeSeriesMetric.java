@@ -1,4 +1,4 @@
-package com.petpal.tracking.service.metrics;
+package com.petpal.tracking.service;
 
 import com.petpal.tracking.web.controllers.TrackingMetric;
 import org.kairosdb.client.builder.TimeUnit;

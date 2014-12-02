@@ -1,5 +1,6 @@
 package com.petpal.tracking.service.metrics;
 
+import com.petpal.tracking.service.TimeSeriesMetric;
 import com.petpal.tracking.web.controllers.TrackingMetric;
 import org.junit.Assert;
 import org.junit.Test;

@@ -1,7 +1,6 @@
 package com.petpal.tracking.service;
 
-import com.petpal.tracking.service.metrics.TimeSeriesMetric;
-import com.petpal.tracking.service.tag.TimeSeriesTag;
+import com.petpal.tracking.web.controllers.TrackingTag;
 import com.petpal.tracking.service.util.QueryArgumentValidationUtil;
 import com.petpal.tracking.service.util.QueryLoggingUtil;
 import org.apache.log4j.Logger;
@@ -61,7 +60,7 @@ public class TimeSeriesFacade {
      * @return query results for a single time series.
      */
     public Map<Long, Long> querySingleTimeSeries(
-            Map<TimeSeriesTag, String> tags,
+            Map<TrackingTag, String> tags,
             TimeSeriesMetric timeSeriesMetric,
             Long utcBegin,
             Long utcEnd,
@@ -106,7 +105,7 @@ public class TimeSeriesFacade {
      * @return Query result, grouped by the metric for each time series.
      */
     public Map<TimeSeriesMetric, Map<Long, Long>> queryMultipleTimeSeries(
-            Map<TimeSeriesTag, String> tags,
+            Map<TrackingTag, String> tags,
             List<TimeSeriesMetric> timeSeriesMetrics,
             Long utcBegin,
             Long utcEnd,
@@ -178,7 +177,7 @@ public class TimeSeriesFacade {
     public void addTimeSeriesDataToMetricBuilder(MetricBuilder metricBuilder,
         Map<Long, Long> timeStampValueMap,
         TimeSeriesMetric timeSeriesMetric,
-        Map<TimeSeriesTag, String> tags) {
+        Map<TrackingTag, String> tags) {
 
         if(metricBuilder == null) {
             throw new IllegalArgumentException("No metric builder provided");
@@ -197,7 +196,7 @@ public class TimeSeriesFacade {
         }
 
         Metric metric = metricBuilder.addMetric(timeSeriesMetric.toString());
-        for(TimeSeriesTag tag : tags.keySet()) {
+        for(TrackingTag tag : tags.keySet()) {
             metric.addTag(tag.toString(), tags.get(tag));
         }
 
@@ -221,7 +220,7 @@ public class TimeSeriesFacade {
      * @param resultBucketMultiplier
      * @return a query builder ready to be passed to the kairos db client.
      */
-    protected QueryBuilder createQueryForSingleMetric(Map<TimeSeriesTag, String> tags, TimeSeriesMetric timeSeriesMetric, Long utcBegin,
+    protected QueryBuilder createQueryForSingleMetric(Map<TrackingTag, String> tags, TimeSeriesMetric timeSeriesMetric, Long utcBegin,
                                                     Long utcEnd, TimeUnit resultBucketSize, int resultBucketMultiplier) {
 
         // Do some validation of the input parameters
@@ -239,7 +238,7 @@ public class TimeSeriesFacade {
 
         QueryMetric queryMetric = queryBuilder.addMetric(timeSeriesMetric.toString());
         queryMetric.addAggregator(AggregatorFactory.createSumAggregator(resultBucketMultiplier, resultBucketSize));
-        for(TimeSeriesTag tag : tags.keySet()) {
+        for(TrackingTag tag : tags.keySet()) {
             queryMetric.addTag(tag.toString(), tags.get(tag));
         }
 
@@ -258,7 +257,7 @@ public class TimeSeriesFacade {
      * @param resultBucketMultiplier
      * @return a query builder ready to be passed to the kairos db client.
      */
-    protected QueryBuilder createQueryForMultipleMetrics(Map<TimeSeriesTag, String> tags, List<TimeSeriesMetric> timeSeriesMetrics, Long utcBegin,
+    protected QueryBuilder createQueryForMultipleMetrics(Map<TrackingTag, String> tags, List<TimeSeriesMetric> timeSeriesMetrics, Long utcBegin,
         Long utcEnd, TimeUnit resultBucketSize, int resultBucketMultiplier) {
 
         // Do some validation of the input parameters
@@ -277,7 +276,7 @@ public class TimeSeriesFacade {
         for(TimeSeriesMetric timeSeriesMetric : timeSeriesMetrics) {
             QueryMetric queryMetric = queryBuilder.addMetric(timeSeriesMetric.toString());
             queryMetric.addAggregator(AggregatorFactory.createSumAggregator(resultBucketMultiplier, resultBucketSize));
-            for(TimeSeriesTag tag : tags.keySet()) {
+            for(TrackingTag tag : tags.keySet()) {
                 queryMetric.addTag(tag.toString(), tags.get(tag));
             }
         }
