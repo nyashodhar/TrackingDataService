@@ -1,6 +1,6 @@
 package com.petpal.tracking.service.metrics;
 
-import com.petpal.tracking.service.TrackingMetric;
+import com.petpal.tracking.web.controllers.TrackingMetric;
 import org.junit.Assert;
 import org.junit.Test;
 import org.kairosdb.client.builder.TimeUnit;

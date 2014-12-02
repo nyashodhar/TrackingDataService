@@ -1,6 +1,6 @@
 package com.petpal.tracking.service.async;
 
-import com.petpal.tracking.data.TrackingData;
+import com.petpal.tracking.web.controllers.TrackingData;
 import com.petpal.tracking.service.AsyncTrackingDataInserter;
 import com.petpal.tracking.service.tag.TimeSeriesTag;
 import org.apache.log4j.Logger;

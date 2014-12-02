@@ -1,9 +1,10 @@
 package com.petpal.tracking.service;
 
-import com.petpal.tracking.data.TrackingData;
+import com.petpal.tracking.web.controllers.TrackingData;
 import com.petpal.tracking.service.async.TrackingDataInsertionWorker;
 import com.petpal.tracking.service.metrics.TimeSeriesMetric;
 import com.petpal.tracking.service.tag.TimeSeriesTag;
+import com.petpal.tracking.web.controllers.TrackingMetric;
 import org.apache.log4j.Logger;
 import org.kairosdb.client.builder.MetricBuilder;
 import org.kairosdb.client.builder.TimeUnit;
@@ -96,7 +97,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
 
 
     /**
-     * @see com.petpal.tracking.service.TrackingDataService#storeTrackingData(java.util.Map, com.petpal.tracking.data.TrackingData, java.util.TimeZone)
+     * @see com.petpal.tracking.service.TrackingDataService#storeTrackingData(java.util.Map, com.petpal.tracking.web.controllers.TrackingData, java.util.TimeZone)
      */
     @Override
     public void storeTrackingData(Map<TimeSeriesTag, String> tags, TrackingData trackingData, TimeZone aggregationTimeZone) {
@@ -107,7 +108,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
 
     /**
      * Called asynchronously when tracking data is inserted into the tracking service.
-     * @see com.petpal.tracking.service.AsyncTrackingDataInserter#asyncTrackingDataInsert(com.petpal.tracking.data.TrackingData, java.util.Map, java.util.TimeZone)
+     * @see com.petpal.tracking.service.AsyncTrackingDataInserter#asyncTrackingDataInsert(com.petpal.tracking.web.controllers.TrackingData, java.util.Map, java.util.TimeZone)
      * @param trackingData
      * @param tags
      * @param timeZone

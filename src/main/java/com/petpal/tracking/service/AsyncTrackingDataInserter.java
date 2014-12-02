@@ -1,6 +1,6 @@
 package com.petpal.tracking.service;
 
-import com.petpal.tracking.data.TrackingData;
+import com.petpal.tracking.web.controllers.TrackingData;
 import com.petpal.tracking.service.tag.TimeSeriesTag;
 
 import java.util.Map;

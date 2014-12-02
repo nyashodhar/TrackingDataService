@@ -1,8 +1,6 @@
 package com.petpal.tracking.web.controllers;
 
-import com.petpal.tracking.data.TrackingData;
 import com.petpal.tracking.service.TrackingDataService;
-import com.petpal.tracking.service.TrackingMetric;
 import com.petpal.tracking.service.tag.TimeSeriesTag;
 import com.petpal.tracking.web.editors.DateEditor;
 import com.petpal.tracking.web.editors.TimeUnitEditor;

@@ -1,6 +1,5 @@
-package com.petpal.tracking.data;
+package com.petpal.tracking.web.controllers;
 
-import com.petpal.tracking.service.TrackingMetric;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Map;

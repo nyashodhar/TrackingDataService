@@ -1,6 +1,6 @@
 package com.petpal.tracking.web.editors;
 
-import com.petpal.tracking.service.TrackingMetric;
+import com.petpal.tracking.web.controllers.TrackingMetric;
 
 import java.beans.PropertyEditorSupport;
 import java.util.Arrays;

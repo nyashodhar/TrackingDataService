@@ -1,6 +1,6 @@
 package com.petpal.tracking.service.metrics;
 
-import com.petpal.tracking.service.TrackingMetric;
+import com.petpal.tracking.web.controllers.TrackingMetric;
 import org.kairosdb.client.builder.TimeUnit;
 
 import java.util.ArrayList;
