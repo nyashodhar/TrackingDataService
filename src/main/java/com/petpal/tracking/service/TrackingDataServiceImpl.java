@@ -125,7 +125,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
         storeRawMetrics(trackingData, tags);
 
         // Update all the aggregated series
-        for(TrackingMetric trackingMetric : TrackingMetric.getAllTrackingMetrics()) {
+        for(TrackingMetric trackingMetric : trackingData.getData().keySet()) {
             updateAggregatedSeriesForMetric(trackingMetric, trackingData.getDataForMetric(trackingMetric), tags, timeZone);
         }
     }
@@ -134,7 +134,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
 
         MetricBuilder metricBuilder = MetricBuilder.getInstance();
 
-        for(TrackingMetric trackingMetric : TrackingMetric.getAllTrackingMetrics()) {
+        for(TrackingMetric trackingMetric : trackingData.getData().keySet()) {
             Map<Long, Long> dataPoints = trackingData.getDataForMetric(trackingMetric);
             if(!CollectionUtils.isEmpty(dataPoints)) {
                 timeSeriesFacade.addTimeSeriesDataToMetricBuilder(metricBuilder, dataPoints, TimeSeriesMetric.getRawMetric(trackingMetric), tags);

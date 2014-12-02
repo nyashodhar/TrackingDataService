@@ -45,7 +45,7 @@ public class TrackingData {
         return rawData.get(trackingMetric);
     }
 
-    public Map<TrackingMetric, TreeMap<Long, Long>> getRawData() {
+    public Map<TrackingMetric, TreeMap<Long, Long>> getData() {
         return rawData;
     }
 }
