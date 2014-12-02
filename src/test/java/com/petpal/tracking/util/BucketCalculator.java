@@ -118,9 +118,6 @@ public class BucketCalculator {
         return (cal.getTimeInMillis() - 1L);
     }
 
-
-
-
     public static void addDataPointForAllMetrics(TestTrackingData testTrackingData, TreeMap<Long, Long> dataPoints) {
         for(TestTrackingMetric testTrackingMetric : TestTrackingMetric.getAllTrackingMetrics()) {
             testTrackingData.setDataForMetric(testTrackingMetric, dataPoints);

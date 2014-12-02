@@ -31,7 +31,7 @@ public class BucketBoundaryUtilTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testGetBucketEndTime_bucket_size_missing() {
+    public void testGetBucketEndTime_aggregation_level_missing() {
         BucketBoundaryUtil.getBucketEndTime(1L, null, timeZonePST);
     }
 

@@ -1,9 +1,9 @@
 package com.petpal.tracking.service;
 
-import com.petpal.tracking.web.controllers.TrackingTag;
+import com.petpal.tracking.web.controllers.AggregationLevel;
 import com.petpal.tracking.web.controllers.TrackingData;
 import com.petpal.tracking.web.controllers.TrackingMetric;
-import org.kairosdb.client.builder.TimeUnit;
+import com.petpal.tracking.web.controllers.TrackingTag;
 
 import java.util.List;
 import java.util.Map;
@@ -21,7 +21,7 @@ public interface TrackingDataService {
      * @param trackingMetrics
      * @param utcBegin
      * @param utcEnd
-     * @param resultBucketSize
+     * @param aggregationLevel
      * @param aggregationTimeZone
      * @param resultBucketMultiplier
      * @param verboseResponse
@@ -32,7 +32,7 @@ public interface TrackingDataService {
             List<TrackingMetric> trackingMetrics,
             Long utcBegin,
             Long utcEnd,
-            TimeUnit resultBucketSize,
+            AggregationLevel aggregationLevel,
             TimeZone aggregationTimeZone,
             int resultBucketMultiplier,
             boolean verboseResponse);

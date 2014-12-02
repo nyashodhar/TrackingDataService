@@ -1,5 +1,6 @@
 package com.petpal.tracking.service;
 
+import com.petpal.tracking.web.controllers.AggregationLevel;
 import com.petpal.tracking.web.controllers.TrackingTag;
 import com.petpal.tracking.web.controllers.TrackingData;
 import com.petpal.tracking.service.async.TrackingDataInsertionWorker;
@@ -10,6 +11,7 @@ import org.kairosdb.client.builder.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
@@ -37,7 +39,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
     private ThreadPoolTaskExecutor threadPoolTaskExecutor;
 
     /**
-     * @see com.petpal.tracking.service.TrackingDataService#getAggregatedTimeSeries(java.util.Map, java.util.List, Long, Long, org.kairosdb.client.builder.TimeUnit, java.util.TimeZone, int, boolean)
+     * @see com.petpal.tracking.service.TrackingDataService#getAggregatedTimeSeries(java.util.Map, java.util.List, Long, Long, com.petpal.tracking.web.controllers.AggregationLevel, java.util.TimeZone, int, boolean)
      */
     @Override
     public Map<TrackingMetric, Map<Long, Long>> getAggregatedTimeSeries(
@@ -45,18 +47,20 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
             List<TrackingMetric> trackingMetrics,
             Long utcBegin,
             Long utcEnd,
-            TimeUnit resultBucketSize,
+            AggregationLevel aggregationLevel,
             TimeZone aggregationTimeZone,
             int resultBucketMultiplier,
             boolean verboseResponse) {
+
+        Assert.notNull(aggregationLevel, "Aggregation level not specified");
 
         if(CollectionUtils.isEmpty(trackingMetrics)) {
             throw new IllegalArgumentException("No tracking metrics provided");
         }
 
         Long shiftedUTCBegin = bucketAggregationUtil.
-                getUTCShiftedBucketTimeStamp(utcBegin, aggregationTimeZone, resultBucketSize);
-        Long shiftedUTCEnd = (utcEnd == null) ? null : bucketAggregationUtil.getUTCShiftedBucketTimeStamp(utcEnd, aggregationTimeZone, resultBucketSize);;
+                getUTCShiftedBucketTimeStamp(utcBegin, aggregationTimeZone, aggregationLevel);
+        Long shiftedUTCEnd = (utcEnd == null) ? null : bucketAggregationUtil.getUTCShiftedBucketTimeStamp(utcEnd, aggregationTimeZone, aggregationLevel);;
 
         //
         // The 'tracking metric' in the API level corresponds to a different time series level
@@ -69,19 +73,21 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
         List<TimeSeriesMetric> timeSeriesMetrics = new ArrayList<TimeSeriesMetric>();
 
         for(TrackingMetric trackingMetric : trackingMetrics) {
-            TimeSeriesMetric timeSeriesMetric = TimeSeriesMetric.getAggregatedTimeSeriesMetric(trackingMetric, resultBucketSize);
+            TimeSeriesMetric timeSeriesMetric = TimeSeriesMetric.getAggregatedTimeSeriesMetric(trackingMetric, aggregationLevel);
             timeSeriesMetrics.add(timeSeriesMetric);
             metricMap.put(timeSeriesMetric, trackingMetric);
         }
 
+        TimeUnit timeUnitForAggregationLevel = TimeUnit.valueOf(aggregationLevel.toString().toUpperCase());
+
         Map<TimeSeriesMetric, Map<Long, Long>> results = timeSeriesFacade.queryMultipleTimeSeries(
-                tags, timeSeriesMetrics, shiftedUTCBegin, shiftedUTCEnd, resultBucketSize, resultBucketMultiplier, verboseResponse);
+                tags, timeSeriesMetrics, shiftedUTCBegin, shiftedUTCEnd, timeUnitForAggregationLevel, resultBucketMultiplier, verboseResponse);
 
         // Shift result back from the UTC relative result
         Map<TimeSeriesMetric, Map<Long, Long>> unshiftedResults = new HashMap<TimeSeriesMetric, Map<Long, Long>>();
         for(TimeSeriesMetric timeSeriesMetric : results.keySet()) {
             Map<Long, Long> unshiftedResult = bucketAggregationUtil.
-                    shiftResultToAggregationTimeZone(results.get(timeSeriesMetric), aggregationTimeZone, resultBucketSize);
+                    shiftResultToAggregationTimeZone(results.get(timeSeriesMetric), aggregationTimeZone, aggregationLevel);
             unshiftedResults.put(timeSeriesMetric, unshiftedResult);
         }
 
@@ -156,11 +162,11 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
         }
 
         // Update all the aggregated data series for this metric
-        updateUTCShiftedAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, TimeUnit.YEARS);
-        updateUTCShiftedAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, TimeUnit.MONTHS);
-        updateUTCShiftedAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, TimeUnit.WEEKS);
-        updateUTCShiftedAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, TimeUnit.DAYS);
-        updateUTCShiftedAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, TimeUnit.HOURS);
+        updateUTCShiftedAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, AggregationLevel.YEARS);
+        updateUTCShiftedAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, AggregationLevel.MONTHS);
+        updateUTCShiftedAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, AggregationLevel.WEEKS);
+        updateUTCShiftedAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, AggregationLevel.DAYS);
+        updateUTCShiftedAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, AggregationLevel.HOURS);
 
     }
 
@@ -174,15 +180,15 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
      * @param unaggregatedData the new data
      * @param tags the tags to use for the new data
      * @param timeZone the timezone to do the bucket aggregation relative to.
-     * @param bucketSize bucket size that is used to identify which time series to update
-     *                   with the new data for this metric.s
+     * @param aggregationLevel bucket size that is used to identify which time series to update
+     *                   with the new data for this metric.
      */
     protected void updateUTCShiftedAggregatedTimeSeries(TrackingMetric trackingMetric, TreeMap<Long, Long> unaggregatedData,
-                                              Map<TrackingTag, String> tags, TimeZone timeZone, TimeUnit bucketSize) {
+                                              Map<TrackingTag, String> tags, TimeZone timeZone, AggregationLevel aggregationLevel) {
 
         // Aggregate the input into buckets for this aggregated series
         Map<Long, Long> fortyEightHourShiftedUTCAggregatedData = bucketAggregationUtil.
-                aggregateIntoUTCShiftedBuckets(unaggregatedData, timeZone, bucketSize);
+                aggregateIntoUTCShiftedBuckets(unaggregatedData, timeZone, aggregationLevel);
 
         if(CollectionUtils.isEmpty(fortyEightHourShiftedUTCAggregatedData)) {
             logger.info("updateUTCShiftedAggregatedTimeSeries(): No aggregated data found for metric " +
@@ -191,14 +197,16 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
         }
 
         // Query for existing utc shifted aggregated data
-        TimeSeriesMetric timeSeriesMetric = TimeSeriesMetric.getAggregatedTimeSeriesMetric(trackingMetric, bucketSize);
+        TimeSeriesMetric timeSeriesMetric = TimeSeriesMetric.getAggregatedTimeSeriesMetric(trackingMetric, aggregationLevel);
         List<TimeSeriesMetric> timeSeriesMetrics = new ArrayList<TimeSeriesMetric>();
         timeSeriesMetrics.add(timeSeriesMetric);
 
         long startOfFirstBucket = fortyEightHourShiftedUTCAggregatedData.keySet().iterator().next();
 
+        TimeUnit timeUnitForAggregationLevel = TimeUnit.valueOf(aggregationLevel.toString().toUpperCase());
+
         Map<Long, Long> existingDataPoints =
-                timeSeriesFacade.querySingleTimeSeries(tags, timeSeriesMetric, startOfFirstBucket, null, bucketSize, 1, false);
+                timeSeriesFacade.querySingleTimeSeries(tags, timeSeriesMetric, startOfFirstBucket, null, timeUnitForAggregationLevel, 1, false);
 
         // Incorporate the existing values for the contributed data points
         Map<Long, Long> updatedAggregatedData = bucketAggregationUtil.

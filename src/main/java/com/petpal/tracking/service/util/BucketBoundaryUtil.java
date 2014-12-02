@@ -1,6 +1,8 @@
 package com.petpal.tracking.service.util;
 
+import com.petpal.tracking.web.controllers.AggregationLevel;
 import org.kairosdb.client.builder.TimeUnit;
+import org.springframework.util.Assert;
 
 import java.util.Calendar;
 import java.util.TimeZone;
@@ -10,6 +12,22 @@ import java.util.TimeZone;
  */
 public class BucketBoundaryUtil {
 
+
+    /**
+     * Calculate the end time of a bucket given its start time and bucket size
+     * @param bucketStart
+     * @param aggregationLevel
+     * @param timeZone
+     * @return the end time of a bucket
+     */
+    public static long getAggregatedBucketEndTime(Long bucketStart, AggregationLevel aggregationLevel, TimeZone timeZone) {
+        Assert.notNull(aggregationLevel, "Aggregation level not specified");
+        TimeUnit timeUnitForAggregationLevel = TimeUnit.valueOf(aggregationLevel.toString().toUpperCase());
+        return getBucketEndTime(bucketStart, timeUnitForAggregationLevel, timeZone);
+    }
+
+
+
     /**
      * Calculate the end time of a bucket given its start time and bucket size
      * @param bucketStart
@@ -18,13 +36,9 @@ public class BucketBoundaryUtil {
      * @return the end time of a bucket
      */
     public static long getBucketEndTime(Long bucketStart, TimeUnit bucketSize, TimeZone timeZone) {
-        if(bucketSize == null) {
-            throw new IllegalArgumentException("Bucket size not specified");
-        }
 
-        if(bucketStart == null) {
-            throw new IllegalArgumentException("Bucket start not specified");
-        }
+        Assert.notNull(bucketSize, "Bucket size not specified");
+        Assert.notNull(bucketStart, "Bucket start not specified");
 
         Calendar cal = Calendar.getInstance();
         cal.clear();

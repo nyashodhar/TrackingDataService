@@ -1,6 +1,6 @@
-package com.petpal.tracking.service.metrics;
+package com.petpal.tracking.service;
 
-import com.petpal.tracking.service.TimeSeriesMetric;
+import com.petpal.tracking.web.controllers.AggregationLevel;
 import com.petpal.tracking.web.controllers.TrackingMetric;
 import org.junit.Assert;
 import org.junit.Test;
@@ -44,37 +44,32 @@ public class TimeSeriesMetricTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testGetAggregatedTimeSeriesMetric_tracking_metric_null() {
-        TimeSeriesMetric.getAggregatedTimeSeriesMetric(null, TimeUnit.YEARS);
+        TimeSeriesMetric.getAggregatedTimeSeriesMetric(null, AggregationLevel.YEARS);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testGetAggregatedTimeSeriesMetric_time_unit_null() {
+    public void testGetAggregatedTimeSeriesMetric_aggregation_level_null() {
         TimeSeriesMetric.getAggregatedTimeSeriesMetric(TrackingMetric.WALKINGSTEPS, null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void getAggregatedTimeSeriesMetric_invalid_time_unit() {
-        TimeSeriesMetric.getAggregatedTimeSeriesMetric(TrackingMetric.WALKINGSTEPS, TimeUnit.MILLISECONDS);
+    @Test
+    public void getAggregatedTimeSeriesMetric_valid_aggregation_level_walkingsteps() {
+        checkTimeSeriesMetricForAllAggregationLevels(TrackingMetric.WALKINGSTEPS);
     }
 
     @Test
-    public void getAggregatedTimeSeriesMetric_valid_time_unit_walkingsteps() {
-        checkTimeSeriesMetricForAllValidTimeUnits(TrackingMetric.WALKINGSTEPS);
+    public void getAggregatedTimeSeriesMetric_valid_aggregation_level_runningsteps() {
+        checkTimeSeriesMetricForAllAggregationLevels(TrackingMetric.RUNNINGSTEPS);
     }
 
     @Test
-    public void getAggregatedTimeSeriesMetric_valid_time_unit_runningsteps() {
-        checkTimeSeriesMetricForAllValidTimeUnits(TrackingMetric.RUNNINGSTEPS);
+    public void getAggregatedTimeSeriesMetric_valid_aggregation_level_sleepingseconds() {
+        checkTimeSeriesMetricForAllAggregationLevels(TrackingMetric.SLEEPINGSECONDS);
     }
 
     @Test
-    public void getAggregatedTimeSeriesMetric_valid_time_unit_sleepingseconds() {
-        checkTimeSeriesMetricForAllValidTimeUnits(TrackingMetric.SLEEPINGSECONDS);
-    }
-
-    @Test
-    public void getAggregatedTimeSeriesMetric_valid_time_unit_restingseconds() {
-        checkTimeSeriesMetricForAllValidTimeUnits(TrackingMetric.RESTINGSECONDS);
+    public void getAggregatedTimeSeriesMetric_valid_aggregation_level_restingseconds() {
+        checkTimeSeriesMetricForAllAggregationLevels(TrackingMetric.RESTINGSECONDS);
     }
 
     //
@@ -111,11 +106,10 @@ public class TimeSeriesMetricTest {
     }
 
 
-    private void checkTimeSeriesMetricForAllValidTimeUnits(TrackingMetric trackingMetric) {
-        List<TimeUnit> validTimeUnits = getValidTimeUnits();
-        for(TimeUnit timeUnit : validTimeUnits) {
-            TimeSeriesMetric timeSeriesMetric = TimeSeriesMetric.getAggregatedTimeSeriesMetric(trackingMetric, timeUnit);
-            Assert.assertEquals(TimeSeriesMetric.valueOf(trackingMetric.toString() + "_" + timeUnit), timeSeriesMetric);
+    private void checkTimeSeriesMetricForAllAggregationLevels(TrackingMetric trackingMetric) {
+        for(AggregationLevel aggregationLevel : AggregationLevel.getAllAggregationLevels()) {
+            TimeSeriesMetric timeSeriesMetric = TimeSeriesMetric.getAggregatedTimeSeriesMetric(trackingMetric, aggregationLevel);
+            Assert.assertEquals(TimeSeriesMetric.valueOf(trackingMetric.toString() + "_" + aggregationLevel.toString().toUpperCase()), timeSeriesMetric);
         }
     }
 
@@ -126,15 +120,5 @@ public class TimeSeriesMetricTest {
         Assert.assertTrue(aggregatedTrackingMetrics.contains(TimeSeriesMetric.valueOf(trackingMetric.toString() + "_" + TimeUnit.WEEKS.toString())));
         Assert.assertTrue(aggregatedTrackingMetrics.contains(TimeSeriesMetric.valueOf(trackingMetric.toString() + "_" + TimeUnit.DAYS.toString())));
         Assert.assertTrue(aggregatedTrackingMetrics.contains(TimeSeriesMetric.valueOf(trackingMetric.toString() + "_" + TimeUnit.HOURS.toString())));
-    }
-
-    private List<TimeUnit> getValidTimeUnits() {
-        List<TimeUnit> validTimeUnits = new ArrayList<TimeUnit>();
-        validTimeUnits.add(TimeUnit.YEARS);
-        validTimeUnits.add(TimeUnit.MONTHS);
-        validTimeUnits.add(TimeUnit.WEEKS);
-        validTimeUnits.add(TimeUnit.DAYS);
-        validTimeUnits.add(TimeUnit.HOURS);
-        return validTimeUnits;
     }
 }

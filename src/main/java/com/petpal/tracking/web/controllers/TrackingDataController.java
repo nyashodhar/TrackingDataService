@@ -1,13 +1,12 @@
 package com.petpal.tracking.web.controllers;
 
 import com.petpal.tracking.service.TrackingDataService;
+import com.petpal.tracking.web.editors.AggregationLevelEditor;
 import com.petpal.tracking.web.editors.DateEditor;
-import com.petpal.tracking.web.editors.TimeUnitEditor;
 import com.petpal.tracking.web.editors.TrackingMetricsSet;
 import com.petpal.tracking.web.editors.TrackingMetricsSetEditor;
 import com.petpal.tracking.web.validators.util.AggregatedQueryUtil;
 import org.apache.log4j.Logger;
-import org.kairosdb.client.builder.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -102,7 +101,7 @@ public class TrackingDataController {
      * spanning 24 hrs from midnight two days ago, etc.
      *
      * @param deviceId the device id
-     * @param resultBucketSize the time unit used to determine bucket size for result.
+     * @param aggregationLevel the resolution of the aggregated time series to query from.
      * @param startYear
      * @param startMonth
      * @param startWeek
@@ -115,11 +114,11 @@ public class TrackingDataController {
      *                       and a sparse response will be sent.
      * @return Tracking data results grouped by metric and in bucket of the specified size.
      */
-    @RequestMapping(value="/metrics/device/{deviceId}/aggregate/{resultBucketSize}", method=RequestMethod.GET)
+    @RequestMapping(value="/metrics/device/{deviceId}/aggregate/{aggregationLevel}", method=RequestMethod.GET)
     @ResponseStatus(HttpStatus.OK)
     public @ResponseBody Map<TrackingMetric, Map<Long, Long>> getAggregatedMetricsForDevice(
             @PathVariable(value="deviceId") String deviceId,
-            @PathVariable(value="resultBucketSize") TimeUnit resultBucketSize,
+            @PathVariable(value="aggregationLevel") AggregationLevel aggregationLevel,
             @RequestParam(value="startYear", required=true) Integer startYear,
             @RequestParam(value="startMonth", required=false) Integer startMonth,
             @RequestParam(value="startWeek", required=false) Integer startWeek,
@@ -132,7 +131,7 @@ public class TrackingDataController {
 
         StringBuilder str = new StringBuilder();
         str.append("getAggregatedMetricsForDevice(): deviceId = ").append(deviceId);
-        str.append(", resultBucketSize = ").append(resultBucketSize);
+        str.append(", aggregationLevel = ").append(aggregationLevel);
         str.append(", startYear = ").append(startYear);
         str.append(", startMonth = ").append(startMonth);
         str.append(", startWeek = ").append(startWeek);
@@ -167,9 +166,9 @@ public class TrackingDataController {
         }
 
         Long utcBegin = AggregatedQueryUtil.calculateUTCBegin(
-                startYear, startMonth, startWeek, startDay, startHour, resultBucketSize, aggregationTimeZone);
+                startYear, startMonth, startWeek, startDay, startHour, aggregationLevel, aggregationTimeZone);
         Long utcEnd = AggregatedQueryUtil.calculateUTCEnd(
-                utcBegin, resultBucketSize, bucketsToFetch, aggregationTimeZone);
+                utcBegin, aggregationLevel, bucketsToFetch, aggregationTimeZone);
 
         //
         // If the request is itemizing the metrics to query for, only pass those along.
@@ -186,7 +185,7 @@ public class TrackingDataController {
         boolean createVerboseResponse = (verboseResponse == null) ? false : verboseResponse;
 
         Map<TrackingMetric, Map<Long, Long>> metricResults = trackingDataService.getAggregatedTimeSeries(
-                tags, trackingMetricsParam, utcBegin, utcEnd, resultBucketSize, aggregationTimeZone, 1, createVerboseResponse);
+                tags, trackingMetricsParam, utcBegin, utcEnd, aggregationLevel, aggregationTimeZone, 1, createVerboseResponse);
 
         logger.info("getTrackingMetricsForDevice(): Results: " + metricResults);
         return metricResults;
@@ -197,7 +196,7 @@ public class TrackingDataController {
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(TrackingMetricsSet.class, new TrackingMetricsSetEditor());
         binder.registerCustomEditor(Date.class, new DateEditor());
-        binder.registerCustomEditor(TimeUnit.class, new TimeUnitEditor());
+        binder.registerCustomEditor(AggregationLevel.class, new AggregationLevelEditor());
     }
 
 }

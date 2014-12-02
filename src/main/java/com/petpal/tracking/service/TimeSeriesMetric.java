@@ -1,7 +1,8 @@
 package com.petpal.tracking.service;
 
+import com.petpal.tracking.web.controllers.AggregationLevel;
 import com.petpal.tracking.web.controllers.TrackingMetric;
-import org.kairosdb.client.builder.TimeUnit;
+import org.springframework.util.Assert;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,26 +55,13 @@ public enum TimeSeriesMetric {
      * Get the names of a time series used to aggregate data for the given bucket size
      * given the API's tracking metric identifier
      * @param trackingMetric the name of the tracking metric supplied to the rest API.
-     * @param timeUnit the time series bucket size
+     * @param aggregationLevel the time series bucket size
      * @return name of a time series used to store aggregated data.
      */
-    public static TimeSeriesMetric getAggregatedTimeSeriesMetric(TrackingMetric trackingMetric, TimeUnit timeUnit) {
-
-        if(trackingMetric == null) {
-            throw new IllegalArgumentException("Tracking metric missing");
-        }
-
-        if(timeUnit == null) {
-            throw new IllegalArgumentException("Time unit missing");
-        }
-
-        List<TimeUnit> validTimeUnits = getValidTimeUnits();
-
-        if(timeUnit != null && !validTimeUnits.contains(timeUnit)) {
-            throw new IllegalArgumentException("Invalid time unit " + timeUnit);
-        }
-
-        return TimeSeriesMetric.valueOf(trackingMetric.toString() + "_" + timeUnit.toString());
+    public static TimeSeriesMetric getAggregatedTimeSeriesMetric(TrackingMetric trackingMetric, AggregationLevel aggregationLevel) {
+        Assert.notNull(trackingMetric, "Tracking metric missing");
+        Assert.notNull(aggregationLevel, "Aggregation level missing");
+        return TimeSeriesMetric.valueOf(trackingMetric.toString() + "_" + aggregationLevel.toString().toUpperCase());
     }
 
     /**
@@ -83,30 +71,16 @@ public enum TimeSeriesMetric {
      */
     public static List<TimeSeriesMetric> getAggregatedTimeSeriesMetrics(TrackingMetric trackingMetric) {
 
-        if(trackingMetric == null) {
-            throw new IllegalArgumentException("Tracking metric missing");
-        }
-
-        List<TimeUnit> validTimeUnits = getValidTimeUnits();
+        Assert.notNull(trackingMetric, "Tracking metric missing");
 
         List<TimeSeriesMetric> aggregatedTrackingMetrics = new ArrayList<TimeSeriesMetric>();
 
-        for(TimeUnit validTimeUnit : validTimeUnits) {
+        for(AggregationLevel aggregationLevel : AggregationLevel.getAllAggregationLevels()) {
             TimeSeriesMetric aggregatedTrackingMetric =
-                TimeSeriesMetric.valueOf(trackingMetric.toString() + "_" + validTimeUnit.toString());
+                TimeSeriesMetric.valueOf(trackingMetric.toString() + "_" + aggregationLevel.toString().toUpperCase());
             aggregatedTrackingMetrics.add(aggregatedTrackingMetric);
         }
 
         return aggregatedTrackingMetrics;
-    }
-
-    private static List<TimeUnit> getValidTimeUnits() {
-        List<TimeUnit> validTimeUnits = new ArrayList<TimeUnit>();
-        validTimeUnits.add(TimeUnit.YEARS);
-        validTimeUnits.add(TimeUnit.MONTHS);
-        validTimeUnits.add(TimeUnit.WEEKS);
-        validTimeUnits.add(TimeUnit.DAYS);
-        validTimeUnits.add(TimeUnit.HOURS);
-        return validTimeUnits;
     }
 }

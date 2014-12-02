@@ -7,7 +7,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.kairosdb.client.builder.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.IntegrationTest;
 import org.springframework.boot.test.SpringApplicationConfiguration;
@@ -55,8 +54,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
     @Test
     public void testGetAggregatedMetricForDevice_invalid_bucket_size_400() {
         try {
-            TimeUnit invalidTimeUnit = TimeUnit.MILLISECONDS;
-            getAggregatedMetricsForDevice("deviceid", invalidTimeUnit, 2014, 1, null, null, null, 1, null, null, timeZonePST);
+            getAggregatedMetricsForDevice("deviceid", "SECONDS", 2014, 1, null, null, null, 1, null, null, timeZonePST);
             Assert.fail("Request for metrics with invalid bucket size should have given 400 error");
         } catch(RestClientException e) {
             check400Response(e);
@@ -67,7 +65,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
     public void testGetAggregatedMetricForDevice_start_year_missing_400() {
         try {
             Integer startYear = null;
-            getAggregatedMetricsForDevice("deviceid", TimeUnit.YEARS, startYear, null, null, null, null, 1, null, null, timeZonePST);
+            getAggregatedMetricsForDevice("deviceid", TestAggregationLevel.YEARS.toString(), startYear, null, null, null, null, 1, null, null, timeZonePST);
             Assert.fail("Request for metrics with missing start year should have given 400 error");
         } catch(RestClientException e) {
             check400Response(e);
@@ -78,7 +76,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
     @Test
     public void testGetAggregatedMetricForDevice_invalid_arg_combo_400() {
         try {
-            getAggregatedMetricsForDevice("deviceid", TimeUnit.YEARS, 2014, 3, null, null, null, 1, null, null, timeZonePST);
+            getAggregatedMetricsForDevice("deviceid", TestAggregationLevel.YEARS.toString(), 2014, 3, null, null, null, 1, null, null, timeZonePST);
             Assert.fail("Request for metrics with for year, but month is also specified, should have given 400 error");
         } catch(RestClientException e) {
             check400Response(e);
@@ -106,7 +104,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         blockUntilAsyncThreadIdleInServer();
 
         Map<TestTrackingMetric, Map<Long, Long>> getResponse1 = getAggregatedMetricsForDevice(
-                trackingDeviceId1, TimeUnit.MONTHS, 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
+                trackingDeviceId1, TestAggregationLevel.MONTHS.toString(), 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
 
         // There should be 4 metrics in the response, since we didn't itemize metrics
         Assert.assertEquals(4, getResponse1.size());
@@ -134,7 +132,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         blockUntilAsyncThreadIdleInServer();
 
         Map<TestTrackingMetric, Map<Long, Long>> getResponse2 = getAggregatedMetricsForDevice(
-                trackingDeviceId2, TimeUnit.MONTHS, 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
+                trackingDeviceId2, TestAggregationLevel.MONTHS.toString(), 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
 
         // There should be 4 metrics in the response, since we didn't itemize metrics
         Assert.assertEquals(4, getResponse2.size());
@@ -152,7 +150,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         // Repeat the query for the data for device1 and check that result is still the same
 
         getResponse1 = getAggregatedMetricsForDevice(
-                trackingDeviceId1, TimeUnit.MONTHS, 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
+                trackingDeviceId1, TestAggregationLevel.MONTHS.toString(), 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
 
         // There should be 4 metrics in the response, since we didn't itemize metrics
         Assert.assertEquals(4, getResponse1.size());
@@ -181,7 +179,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         blockUntilAsyncThreadIdleInServer();
 
         getResponse1 = getAggregatedMetricsForDevice(
-                trackingDeviceId1, TimeUnit.MONTHS, 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
+                trackingDeviceId1, TestAggregationLevel.MONTHS.toString(), 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
 
         // There should be 4 metrics in the response, since we didn't itemize metrics
         Assert.assertEquals(4, getResponse1.size());
@@ -198,7 +196,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         // Repeat the query for the data for device2 and check that result is still the same
 
         getResponse2 = getAggregatedMetricsForDevice(
-                trackingDeviceId2, TimeUnit.MONTHS, 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
+                trackingDeviceId2, TestAggregationLevel.MONTHS.toString(), 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
 
         // There should be 4 metrics in the response, since we didn't itemize metrics
         Assert.assertEquals(4, getResponse2.size());
@@ -243,7 +241,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         Map<TestTrackingMetric, Map<Long, Long>> getResponse = getAggregatedMetricsForDevice(
                 trackingDeviceId,
-                TimeUnit.MONTHS,
+                TestAggregationLevel.MONTHS.toString(),
                 2014,
                 Calendar.MAY,
                 null,
@@ -309,7 +307,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         Map<TestTrackingMetric, Map<Long, Long>> getResponse1 = getAggregatedMetricsForDevice(
                 trackingDeviceId,
-                TimeUnit.YEARS,
+                TestAggregationLevel.YEARS.toString(),
                 2012,
                 null,
                 null,
@@ -352,7 +350,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         Map<TestTrackingMetric, Map<Long, Long>> getResponse2 = getAggregatedMetricsForDevice(
                 trackingDeviceId,
-                TimeUnit.YEARS,
+                TestAggregationLevel.YEARS.toString(),
                 2012,
                 null,
                 null,

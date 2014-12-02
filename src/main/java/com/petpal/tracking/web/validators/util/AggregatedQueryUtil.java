@@ -1,9 +1,9 @@
 package com.petpal.tracking.web.validators.util;
 
 import com.petpal.tracking.service.util.BucketBoundaryUtil;
+import com.petpal.tracking.web.controllers.AggregationLevel;
 import com.petpal.tracking.web.errors.InvalidControllerArgumentException;
 import org.apache.log4j.Logger;
-import org.kairosdb.client.builder.TimeUnit;
 
 import java.util.Calendar;
 import java.util.TimeZone;
@@ -21,26 +21,26 @@ public class AggregatedQueryUtil {
             Integer startWeek,
             Integer startDay,
             Integer startHour,
-            TimeUnit bucketSize,
+            AggregationLevel aggregationLevel,
             TimeZone timeZone) {
 
-        validateAggregatedQueryParams(startYear, startMonth, startWeek, startDay, startHour, bucketSize);
+        validateAggregatedQueryParams(startYear, startMonth, startWeek, startDay, startHour, aggregationLevel);
 
         Calendar cal = Calendar.getInstance();
         cal.clear();
         cal.setTimeZone(timeZone);
 
-        if(bucketSize == TimeUnit.YEARS) {
+        if(aggregationLevel == AggregationLevel.YEARS) {
             cal.set(startYear, 1, 1, 0, 0, 0);
-        } else if(bucketSize == TimeUnit.MONTHS) {
+        } else if(aggregationLevel == AggregationLevel.MONTHS) {
             cal.set(startYear, startMonth, 1, 0, 0, 0);
-        } else if(bucketSize == TimeUnit.WEEKS) {
+        } else if(aggregationLevel == AggregationLevel.WEEKS) {
             // Start at Jan 1, 00:00:00 of the specified year, then fast forward the required number of weeks
             cal.set(startYear, 1, 1, 0, 0, 0);
             cal.add(Calendar.WEEK_OF_YEAR, startWeek);
-        } else if(bucketSize == TimeUnit.DAYS) {
+        } else if(aggregationLevel == AggregationLevel.DAYS) {
             cal.set(startYear, startMonth, startDay, 0, 0, 0);
-        } else if(bucketSize == TimeUnit.HOURS) {
+        } else if(aggregationLevel == AggregationLevel.HOURS) {
             cal.set(startYear, startMonth, startDay, startHour, 0, 0);
         }
 
@@ -48,14 +48,14 @@ public class AggregatedQueryUtil {
     }
 
 
-    public static Long calculateUTCEnd(Long utcBegin, TimeUnit bucketSize, Integer bucketsToFetch, TimeZone timeZone) {
+    public static Long calculateUTCEnd(Long utcBegin, AggregationLevel aggregationLevel, Integer bucketsToFetch, TimeZone timeZone) {
 
         if(utcBegin == null) {
             throw new InvalidControllerArgumentException("utcBegin not specified");
         }
 
-        if(bucketSize == null || bucketSize == TimeUnit.MILLISECONDS || bucketSize == TimeUnit.SECONDS || bucketSize == TimeUnit.MINUTES) {
-            throw new InvalidControllerArgumentException("Invalid bucket size " + bucketSize);
+        if(aggregationLevel == null) {
+            throw new InvalidControllerArgumentException("Aggregation level not specified");
         }
 
         if(bucketsToFetch == null) {
@@ -71,7 +71,7 @@ public class AggregatedQueryUtil {
         Long currentEnd = null;
 
         for(int i=0; i<bucketsToFetch; i++) {
-            currentEnd = BucketBoundaryUtil.getBucketEndTime(currentBegin, bucketSize, timeZone);
+            currentEnd = BucketBoundaryUtil.getAggregatedBucketEndTime(currentBegin, aggregationLevel, timeZone);
             currentBegin = currentEnd + 1L;
         }
 
@@ -97,7 +97,7 @@ public class AggregatedQueryUtil {
             Integer startWeek,
             Integer startDay,
             Integer startHour,
-            TimeUnit bucketSize) {
+            AggregationLevel aggregationLevel) {
 
         if(startYear == null || startYear < 1990) {
             throw new InvalidControllerArgumentException("Invalid value " + startYear + " for start year");
@@ -127,98 +127,98 @@ public class AggregatedQueryUtil {
             }
         }
 
-        if (bucketSize == TimeUnit.YEARS) {
+        if (aggregationLevel == AggregationLevel.YEARS) {
 
             if(startMonth != null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startMonth is specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startMonth is specified");
             }
 
             if(startWeek != null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startWeek is specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startWeek is specified");
             }
 
             if(startDay != null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startDay is specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startDay is specified");
             }
 
             if(startHour != null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startHour is specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startHour is specified");
             }
 
-        } else if (bucketSize == TimeUnit.MONTHS) {
+        } else if (aggregationLevel == AggregationLevel.MONTHS) {
 
             if(startMonth == null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startMonth is not specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startMonth is not specified");
             }
 
             if(startWeek != null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startWeek is specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startWeek is specified");
             }
 
             if(startDay != null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startDay is specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startDay is specified");
             }
 
             if(startHour != null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startHour is specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startHour is specified");
             }
 
-        } else if (bucketSize == TimeUnit.WEEKS) {
+        } else if (aggregationLevel == AggregationLevel.WEEKS) {
 
             if(startWeek == null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but no startWeek is specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but no startWeek is specified");
             }
 
             if(startMonth != null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startMonth is specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startMonth is specified");
             }
 
             if(startDay != null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startDay is specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startDay is specified");
             }
 
             if(startHour != null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startHour is specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startHour is specified");
             }
 
-        } else if (bucketSize == TimeUnit.DAYS) {
+        } else if (aggregationLevel == AggregationLevel.DAYS) {
 
             if(startMonth == null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startMonth is not specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startMonth is not specified");
             }
 
             if(startWeek != null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startWeek is specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startWeek is specified");
             }
 
             if(startDay == null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but no startDay is specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but no startDay is specified");
             }
 
             if(startHour != null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startHour is specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startHour is specified");
             }
 
 
-        } else if (bucketSize == TimeUnit.HOURS) {
+        } else if (aggregationLevel == AggregationLevel.HOURS) {
 
             if(startMonth == null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startMonth is not specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startMonth is not specified");
             }
 
             if(startWeek != null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but startWeek is specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startWeek is specified");
             }
 
             if(startDay == null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but no startDay is specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but no startDay is specified");
             }
 
             if(startHour == null) {
-                throw new InvalidControllerArgumentException("Bucket size is " + bucketSize + " but no startHour is specified");
+                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but no startHour is specified");
             }
         } else {
-            throw new InvalidControllerArgumentException("Invalid time unit " + bucketSize);
+            throw new InvalidControllerArgumentException("Invalid aggregation level " + aggregationLevel);
         }
     }
 

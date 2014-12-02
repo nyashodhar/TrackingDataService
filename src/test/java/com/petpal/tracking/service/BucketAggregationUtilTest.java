@@ -1,6 +1,7 @@
 package com.petpal.tracking.service;
 
 import com.petpal.tracking.util.BucketCalculator;
+import com.petpal.tracking.web.controllers.AggregationLevel;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -149,14 +150,14 @@ public class BucketAggregationUtilTest {
     @Test
     public void aggregateIntoBucketsForTimeZone_null_aggregated_data() {
         TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
-                null, timeZonePST, TimeUnit.MONTHS);
+                null, timeZonePST, AggregationLevel.MONTHS);
         Assert.assertNull(aggregatedData);
     }
 
     @Test
     public void aggregateIntoBucketsForTimeZone_empty_aggregated_data() {
         TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
-                new TreeMap<Long, Long>(), timeZonePST, TimeUnit.MONTHS);
+                new TreeMap<Long, Long>(), timeZonePST, AggregationLevel.MONTHS);
         Assert.assertNull(aggregatedData);
     }
 
@@ -164,7 +165,7 @@ public class BucketAggregationUtilTest {
     public void aggregateIntoBucketsForTimeZone_timezone_missing() {
         TreeMap<Long, Long> unaggregatedData = new TreeMap<Long, Long>();
         unaggregatedData.put(1L, 1L);
-        bucketAggregationUtil.aggregateIntoBucketsForTimeZone(unaggregatedData, null, TimeUnit.MONTHS);
+        bucketAggregationUtil.aggregateIntoBucketsForTimeZone(unaggregatedData, null, AggregationLevel.MONTHS);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -173,15 +174,6 @@ public class BucketAggregationUtilTest {
         unaggregatedData.put(1L, 1L);
         bucketAggregationUtil.aggregateIntoBucketsForTimeZone(unaggregatedData, timeZonePST, null);
     }
-
-
-    @Test(expected = IllegalArgumentException.class)
-    public void aggregateIntoBucketsForTimeZone_minutes_not_allowed() {
-        TreeMap<Long, Long> unaggregatedData = new TreeMap<Long, Long>();
-        unaggregatedData.put(1L, 5L);
-        bucketAggregationUtil.aggregateIntoBucketsForTimeZone(unaggregatedData, timeZonePST, TimeUnit.MINUTES);
-    }
-
 
     @Test
     public void aggregateIntoBucketsForTimeZone_years_with_gap() {
@@ -196,7 +188,7 @@ public class BucketAggregationUtilTest {
         unaggregatedData.put(cal3.getTimeInMillis(), 3L);
 
         TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
-                unaggregatedData, timeZonePST, TimeUnit.YEARS);
+                unaggregatedData, timeZonePST, AggregationLevel.YEARS);
 
         long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.YEARS).getTimeInMillis();
         long bucket2Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.YEARS).getTimeInMillis();
@@ -221,7 +213,7 @@ public class BucketAggregationUtilTest {
         unaggregatedData.put(cal3.getTimeInMillis(), 3L);
 
         TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
-                unaggregatedData, timeZonePST, TimeUnit.MONTHS);
+                unaggregatedData, timeZonePST, AggregationLevel.MONTHS);
 
         long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.MONTHS).getTimeInMillis();
         long bucket2Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.MONTHS).getTimeInMillis();
@@ -260,7 +252,7 @@ public class BucketAggregationUtilTest {
         unaggregatedData.put(cal3.getTimeInMillis(), 3L);
 
         TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
-                unaggregatedData, timeZonePST, TimeUnit.WEEKS);
+                unaggregatedData, timeZonePST, AggregationLevel.WEEKS);
         //
         // The aggregated data should be in 3 buckets
         // Bucket 1 should start at midnight 4 weeks ago and have value 5
@@ -295,7 +287,7 @@ public class BucketAggregationUtilTest {
         unaggregatedData.put(cal3.getTimeInMillis(), 3L);
 
         TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
-                unaggregatedData, timeZonePST, TimeUnit.DAYS);
+                unaggregatedData, timeZonePST, AggregationLevel.DAYS);
 
         long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.DAYS).getTimeInMillis();
         long bucket2Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.DAYS).getTimeInMillis();
@@ -321,7 +313,7 @@ public class BucketAggregationUtilTest {
         unaggregatedData.put(cal3.getTimeInMillis(), 3L);
 
         TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
-                unaggregatedData, timeZonePST, TimeUnit.HOURS);
+                unaggregatedData, timeZonePST, AggregationLevel.HOURS);
 
         long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.HOURS).getTimeInMillis();
         long bucket2Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.HOURS).getTimeInMillis();
@@ -346,7 +338,7 @@ public class BucketAggregationUtilTest {
         nowPST.setTimeZone(timeZonePST);
         nowPST.setTimeInMillis(now);
 
-        long timestamp = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePST, timeZoneUTC, TimeUnit.YEARS);
+        long timestamp = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePST, timeZoneUTC, AggregationLevel.YEARS);
 
         // Expect the determined bucket to start on Jan 1, 00:00:00:000 relative to UTC
 
@@ -374,7 +366,7 @@ public class BucketAggregationUtilTest {
         nowPST.setTimeZone(timeZonePST);
         nowPST.setTimeInMillis(now);
 
-        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePST, timeZoneUTC, TimeUnit.MONTHS);
+        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePST, timeZoneUTC, AggregationLevel.MONTHS);
 
         // Expect the determined bucket to start the first of the month, 00:00:00:000 relative to UTC timezone
 
@@ -401,7 +393,7 @@ public class BucketAggregationUtilTest {
         nowPST.setTimeZone(timeZonePST);
         nowPST.setTimeInMillis(now);
 
-        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePST, timeZoneUTC, TimeUnit.WEEKS);
+        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePST, timeZoneUTC, AggregationLevel.WEEKS);
 
         // Expect the determined bucket to start the first day of week of given timestamp, 00:00:00:000 relative to UTC
 
@@ -428,7 +420,7 @@ public class BucketAggregationUtilTest {
         nowPST.setTimeZone(timeZonePST);
         nowPST.setTimeInMillis(now);
 
-        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePST, timeZoneUTC, TimeUnit.DAYS);
+        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePST, timeZoneUTC, AggregationLevel.DAYS);
 
         // Expect the determined bucket to start 00:00:00:000 on the same day as the given timestamp relative to UTC
 
@@ -455,7 +447,7 @@ public class BucketAggregationUtilTest {
         nowPST.setTimeZone(timeZonePST);
         nowPST.setTimeInMillis(now);
 
-        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePST, timeZoneUTC, TimeUnit.HOURS);
+        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePST, timeZoneUTC, AggregationLevel.HOURS);
 
         // Expect the determined bucket to start XX:00:00:000 where XX is the hour in the given timestamp relative to our timezone
 
@@ -473,47 +465,26 @@ public class BucketAggregationUtilTest {
         Assert.assertEquals(0, bucketStartCal.get(Calendar.MILLISECOND));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void test_getShiftedTimeStamp_minute_not_allowed() {
-        Calendar now = Calendar.getInstance();
-        now.setTimeZone(timeZonePST);
-        bucketAggregationUtil.getShiftedTimeStamp(now.getTimeInMillis(), now.getTimeZone(), timeZoneUTC, TimeUnit.MINUTES);
-    }
-
-
-    @Test(expected = IllegalArgumentException.class)
-    public void test_getShiftedTimeStamp_seconds_not_allowed() {
-        Calendar now = Calendar.getInstance();
-        now.setTimeZone(timeZonePST);
-        bucketAggregationUtil.getShiftedTimeStamp(now.getTimeInMillis(), now.getTimeZone(), timeZoneUTC, TimeUnit.SECONDS);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void test_getShiftedTimeStamp_millis_not_allowed() {
-        Calendar now = Calendar.getInstance();
-        now.setTimeZone(timeZonePST);
-        bucketAggregationUtil.getShiftedTimeStamp(now.getTimeInMillis(), now.getTimeZone(), timeZoneUTC, TimeUnit.MILLISECONDS);
-    }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_getShiftedTimeStamp_missing_timestamp() {
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePST);
-        bucketAggregationUtil.getShiftedTimeStamp(null, now.getTimeZone(), timeZoneUTC, TimeUnit.HOURS);
+        bucketAggregationUtil.getShiftedTimeStamp(null, now.getTimeZone(), timeZoneUTC, AggregationLevel.HOURS);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_getShiftedTimeStamp_missing_timezone1() {
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePST);
-        bucketAggregationUtil.getShiftedTimeStamp(now.getTimeInMillis(), null, timeZoneUTC, TimeUnit.HOURS);
+        bucketAggregationUtil.getShiftedTimeStamp(now.getTimeInMillis(), null, timeZoneUTC, AggregationLevel.HOURS);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_getShiftedTimeStamp_missing_timezone2() {
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePST);
-        bucketAggregationUtil.getShiftedTimeStamp(now.getTimeInMillis(), timeZonePST, null, TimeUnit.HOURS);
+        bucketAggregationUtil.getShiftedTimeStamp(now.getTimeInMillis(), timeZonePST, null, AggregationLevel.HOURS);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -534,7 +505,7 @@ public class BucketAggregationUtilTest {
 
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePST);
-        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), now.getTimeZone(), TimeUnit.YEARS);
+        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), now.getTimeZone(), AggregationLevel.YEARS);
 
         // Expect the determined bucket to start on Jan 1, 00:00:00:000 relative to our timezone
 
@@ -557,7 +528,7 @@ public class BucketAggregationUtilTest {
 
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePST);
-        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), now.getTimeZone(), TimeUnit.MONTHS);
+        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), now.getTimeZone(), AggregationLevel.MONTHS);
 
         // Expect the determined bucket to start the first of the month, 00:00:00:000 relative to our timezone
 
@@ -580,7 +551,7 @@ public class BucketAggregationUtilTest {
 
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePST);
-        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), now.getTimeZone(), TimeUnit.WEEKS);
+        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), now.getTimeZone(), AggregationLevel.WEEKS);
 
         // Expect the determined bucket to start the first day of week of given timestamp, 00:00:00:000 relative to our timezone
 
@@ -603,7 +574,7 @@ public class BucketAggregationUtilTest {
 
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePST);
-        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), now.getTimeZone(), TimeUnit.DAYS);
+        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), now.getTimeZone(), AggregationLevel.DAYS);
 
         // Expect the determined bucket to start 00:00:00:000 on the same day as the given timestamp relative to our timezone
 
@@ -626,7 +597,7 @@ public class BucketAggregationUtilTest {
 
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePST);
-        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), now.getTimeZone(), TimeUnit.HOURS);
+        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), now.getTimeZone(), AggregationLevel.HOURS);
 
         // Expect the determined bucket to start XX:00:00:000 where XX is the hour in the given timestamp relative to our timezone
 
@@ -645,43 +616,21 @@ public class BucketAggregationUtilTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_determineInitialBucket_minute_not_allowed() {
-        Calendar now = Calendar.getInstance();
-        now.setTimeZone(timeZonePST);
-        bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), now.getTimeZone(), TimeUnit.MINUTES);
-    }
-
-
-    @Test(expected = IllegalArgumentException.class)
-    public void test_determineInitialBucket_seconds_not_allowed() {
-        Calendar now = Calendar.getInstance();
-        now.setTimeZone(timeZonePST);
-        bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), now.getTimeZone(), TimeUnit.SECONDS);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void test_determineInitialBucket_millis_not_allowed() {
-        Calendar now = Calendar.getInstance();
-        now.setTimeZone(timeZonePST);
-        bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), now.getTimeZone(), TimeUnit.MILLISECONDS);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
     public void test_determineInitialBucket_missing_timestamp() {
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePST);
-        bucketAggregationUtil.determineInitialBucket(null, now.getTimeZone(), TimeUnit.HOURS);
+        bucketAggregationUtil.determineInitialBucket(null, now.getTimeZone(), AggregationLevel.HOURS);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_determineInitialBucket_missing_timezone() {
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePST);
-        bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), null, TimeUnit.HOURS);
+        bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), null, AggregationLevel.HOURS);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_determineInitialBucket_missing_timeunit() {
+    public void test_determineInitialBucket_missing_aggregation_level() {
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePST);
         bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), now.getTimeZone(), null);
