@@ -7,7 +7,6 @@ import org.kairosdb.client.builder.TimeUnit;
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -122,7 +121,7 @@ public class BucketCalculator {
 
 
 
-    public static void addDataPointForAllMetrics(TestTrackingData testTrackingData, Map<Long, Long> dataPoints) {
+    public static void addDataPointForAllMetrics(TestTrackingData testTrackingData, TreeMap<Long, Long> dataPoints) {
         for(TestTrackingMetric testTrackingMetric : TestTrackingMetric.getAllTrackingMetrics()) {
             testTrackingData.setDataForMetric(testTrackingMetric, dataPoints);
         }
@@ -138,10 +137,10 @@ public class BucketCalculator {
         int maxRestSecondsPerMinute = 50;
 
         TestTrackingData testTrackingData = new TestTrackingData();
-        testTrackingData.setWalkingData(generateMinuteBucketRandomData(start, end, maxWalkingStepsPerMinute));
-        testTrackingData.setRunningData(generateMinuteBucketRandomData(start, end, maxRunningStepsPerMinute));
-        testTrackingData.setSleepingData(generateMinuteBucketRandomData(start, end, maxSleepSecondsPerMinute));
-        testTrackingData.setRestingData(generateMinuteBucketRandomData(start, end, maxRestSecondsPerMinute));
+        testTrackingData.setDataForMetric(TestTrackingMetric.WALKINGSTEPS, generateMinuteBucketRandomData(start, end, maxWalkingStepsPerMinute));
+        testTrackingData.setDataForMetric(TestTrackingMetric.RUNNINGSTEPS, generateMinuteBucketRandomData(start, end, maxRunningStepsPerMinute));
+        testTrackingData.setDataForMetric(TestTrackingMetric.SLEEPINGSECONDS, generateMinuteBucketRandomData(start, end, maxSleepSecondsPerMinute));
+        testTrackingData.setDataForMetric(TestTrackingMetric.RESTINGSECONDS, generateMinuteBucketRandomData(start, end, maxRestSecondsPerMinute));
         return testTrackingData;
     }
 
@@ -152,7 +151,7 @@ public class BucketCalculator {
         TestTrackingData combinedTestTrackingData = new TestTrackingData();
 
         for(TestTrackingMetric testTrackingMetric : TestTrackingMetric.getAllTrackingMetrics()) {
-            Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
+            TreeMap<Long, Long> dataPoints = new TreeMap<Long, Long>();
             dataPoints.putAll(testTrackingData1.getDataForMetric(testTrackingMetric));
             dataPoints.putAll(testTrackingData2.getDataForMetric(testTrackingMetric));
             combinedTestTrackingData.setDataForMetric(testTrackingMetric, dataPoints);

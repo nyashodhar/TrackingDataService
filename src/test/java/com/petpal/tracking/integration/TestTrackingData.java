@@ -1,85 +1,59 @@
 package com.petpal.tracking.integration;
 
+import org.springframework.util.CollectionUtils;
+
+import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Created by per on 11/3/14.
  */
 public class TestTrackingData {
 
-    private Map<Long, Long> walkingData;
-    private Map<Long, Long> runningData;
-    private Map<Long, Long> sleepingData;
-    private Map<Long, Long> restingData;
+    private Map<TestTrackingMetric, TreeMap<Long, Long>> rawData;
 
-    public Map<Long, Long> getWalkingData() {
-        return walkingData;
-    }
-
-    public void setWalkingData(Map<Long, Long> walkingData) {
-        this.walkingData = walkingData;
-    }
-
-    public Map<Long, Long> getRunningData() {
-        return runningData;
-    }
-
-    public void setRunningData(Map<Long, Long> runningData) {
-        this.runningData = runningData;
-    }
-
-    public Map<Long, Long> getSleepingData() {
-        return sleepingData;
-    }
-
-    public void setSleepingData(Map<Long, Long> sleepingData) {
-        this.sleepingData = sleepingData;
-    }
-
-    public Map<Long, Long> getRestingData() {
-        return restingData;
-    }
-
-    public void setRestingData(Map<Long, Long> restingData) {
-        this.restingData = restingData;
+    public void setData(Map<TestTrackingMetric, TreeMap<Long, Long>> rawData) {
+        this.rawData = rawData;
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("TestTrackingData{");
-        sb.append(", walkingData=").append(walkingData);
-        sb.append(", runningData=").append(runningData);
-        sb.append(", sleepingData=").append(sleepingData);
-        sb.append(", restingData=").append(restingData);
+
+        final StringBuilder sb = new StringBuilder("TrackingData{");
+
+        sb.append("rawData=");
+        boolean comma = false;
+
+        for(TestTrackingMetric trackingMetric : rawData.keySet()) {
+            if(!comma) {
+                comma = true;
+            } else {
+                sb.append(", ");
+            }
+            TreeMap<Long, Long> dataForMetric = rawData.get(trackingMetric);
+            if(!CollectionUtils.isEmpty(dataForMetric)) {
+                sb.append(trackingMetric + " datapoints=").append(dataForMetric.size());
+            } else {
+                sb.append(trackingMetric + " datapoints=0");
+            }
+        }
         sb.append('}');
         return sb.toString();
     }
 
-    public Map<Long, Long> getDataForMetric(TestTrackingMetric testTrackingMetric) {
-        if (testTrackingMetric == TestTrackingMetric.WALKINGSTEPS) {
-            return getWalkingData();
-        } else if (testTrackingMetric == TestTrackingMetric.RUNNINGSTEPS) {
-            return getRunningData();
-        } else if (testTrackingMetric == TestTrackingMetric.SLEEPINGSECONDS) {
-            return getSleepingData();
-        } else if (testTrackingMetric == TestTrackingMetric.RESTINGSECONDS) {
-            return getRestingData();
-        } else {
-            throw new IllegalArgumentException("Unexpected test tracking metric " + testTrackingMetric);
-        }
+    public TreeMap<Long, Long> getDataForMetric(TestTrackingMetric testTrackingMetric) {
+       return rawData.get(testTrackingMetric);
     }
 
-    public void setDataForMetric(TestTrackingMetric testTrackingMetric, Map<Long, Long> dataPoints) {
-        if (testTrackingMetric == TestTrackingMetric.WALKINGSTEPS) {
-            setWalkingData(dataPoints);
-        } else if (testTrackingMetric == TestTrackingMetric.RUNNINGSTEPS) {
-            setRunningData(dataPoints);
-        } else if (testTrackingMetric == TestTrackingMetric.SLEEPINGSECONDS) {
-            setSleepingData(dataPoints);
-        } else if (testTrackingMetric == TestTrackingMetric.RESTINGSECONDS) {
-            setRestingData(dataPoints);
-        } else {
-            throw new IllegalArgumentException("Unexpected test tracking metric " + testTrackingMetric);
+    public void setDataForMetric(TestTrackingMetric testTrackingMetric, TreeMap<Long, Long> dataPoints) {
+        if(rawData == null) {
+            rawData = new HashMap<TestTrackingMetric, TreeMap<Long, Long>>();
         }
+        rawData.put(testTrackingMetric, dataPoints);
+    }
+
+    public Map<TestTrackingMetric, TreeMap<Long, Long>> getData() {
+        return rawData;
     }
 }

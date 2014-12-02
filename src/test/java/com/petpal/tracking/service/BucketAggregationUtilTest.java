@@ -411,7 +411,6 @@ public class BucketAggregationUtilTest {
         bucketStartCal.setTimeInMillis(initialBucketStart);
 
         Assert.assertEquals(nowPST.get(Calendar.YEAR), bucketStartCal.get(Calendar.YEAR));
-        Assert.assertEquals(nowPST.get(Calendar.MONTH), bucketStartCal.get(Calendar.MONTH));
         Assert.assertEquals(nowPST.get(Calendar.WEEK_OF_YEAR), bucketStartCal.get(Calendar.WEEK_OF_YEAR));
         Assert.assertEquals(1, bucketStartCal.get(Calendar.DAY_OF_WEEK));
         Assert.assertEquals(0, bucketStartCal.get(Calendar.HOUR_OF_DAY));
@@ -591,7 +590,6 @@ public class BucketAggregationUtilTest {
         bucketStartCal.setTimeInMillis(initialBucketStart);
 
         Assert.assertEquals(now.get(Calendar.YEAR), bucketStartCal.get(Calendar.YEAR));
-        Assert.assertEquals(now.get(Calendar.MONTH), bucketStartCal.get(Calendar.MONTH));
         Assert.assertEquals(now.get(Calendar.WEEK_OF_YEAR), bucketStartCal.get(Calendar.WEEK_OF_YEAR));
         Assert.assertEquals(1, bucketStartCal.get(Calendar.DAY_OF_WEEK));
         Assert.assertEquals(0, bucketStartCal.get(Calendar.HOUR_OF_DAY));

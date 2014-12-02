@@ -93,7 +93,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         long timeStamp = BucketCalculator.getCalendar(2014, Calendar.MAY, 29, 0, 0, 0, timeZonePST).getTimeInMillis();
 
-        Map<Long, Long> dataPoints1 = new TreeMap<Long, Long>();
+        TreeMap<Long, Long> dataPoints1 = new TreeMap<Long, Long>();
         dataPoints1.put(timeStamp, 3L);
 
         List<TestTrackingMetric> allMetrics = TestTrackingMetric.getAllTrackingMetrics();
@@ -123,7 +123,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         // Insert data that will be aggregated into the same bucket for a different device...
 
-        Map<Long, Long> dataPoints2 = new TreeMap<Long, Long>();
+        TreeMap<Long, Long> dataPoints2 = new TreeMap<Long, Long>();
         dataPoints2.put(timeStamp, 7L);
 
         TestTrackingData testTrackingData2 = new TestTrackingData();
@@ -170,7 +170,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         timeStamp = BucketCalculator.getCalendar(2014, Calendar.MAY, 27, 0, 0, 0, timeZonePST).getTimeInMillis();
 
-        Map<Long, Long> dataPoints1_1 = new TreeMap<Long, Long>();
+        TreeMap<Long, Long> dataPoints1_1 = new TreeMap<Long, Long>();
         dataPoints1_1.put(timeStamp, 11L);
 
         TestTrackingData testTrackingData1_1 = new TestTrackingData();
@@ -208,9 +208,11 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         // Bucket one should have a value of 7 for each metric
         //
 
+
         for(TestTrackingMetric metric : allMetrics) {
             verifyValueForMetric(metric, bucketKey, 7L, getResponse2);
         }
+
     }
 
 
@@ -221,7 +223,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         TestTrackingData testTrackingData = new TestTrackingData();
 
-        Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
+        TreeMap<Long, Long> dataPoints = new TreeMap<Long, Long>();
 
         // Data point 1: May 29th, 2014, PST - 1401346800488
         long timeStamp1 = BucketCalculator.getCalendar(2014, Calendar.MAY, 29, 0, 0, 0, timeZonePST).getTimeInMillis();
@@ -386,7 +388,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         TestTrackingData testTrackingData = new TestTrackingData();
 
-        Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
+        TreeMap<Long, Long> dataPoints = new TreeMap<Long, Long>();
 
         // Data point 1: May 29th, 2014, PST
         long timeStamp1 = BucketCalculator.getCalendar(2014, Calendar.MAY, 29, 0, 0, 0, timeZonePST).getTimeInMillis();
