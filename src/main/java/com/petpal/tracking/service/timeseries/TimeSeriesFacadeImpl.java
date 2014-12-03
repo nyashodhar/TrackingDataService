@@ -1,6 +1,10 @@
-package com.petpal.tracking.service;
+package com.petpal.tracking.service.timeseries;
 
+import com.petpal.tracking.service.BucketAggregationUtil;
+import com.petpal.tracking.service.TimeSeriesMetric;
 import com.petpal.tracking.service.util.BucketBoundaryUtil;
+import com.petpal.tracking.web.controllers.TrackingData;
+import com.petpal.tracking.web.controllers.TrackingMetric;
 import com.petpal.tracking.web.controllers.TrackingTag;
 import com.petpal.tracking.service.util.QueryArgumentValidationUtil;
 import com.petpal.tracking.service.util.QueryLoggingUtil;
@@ -22,6 +26,7 @@ import org.kairosdb.client.response.Results;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
@@ -40,8 +45,8 @@ import java.util.TreeMap;
  * Contains operations to create queries and extract results from queries
  * Created by per on 11/12/14.
  */
-@Component
-public class TimeSeriesFacade {
+@Component("timeSeriesFacade")
+public class TimeSeriesFacadeImpl {
 
     private Logger logger = Logger.getLogger(this.getClass());
 
@@ -142,13 +147,33 @@ public class TimeSeriesFacade {
     }
 
 
+    public void storeDataForTimeSeries(Map<Long, Long> timeSeriesData, TimeSeriesMetric timeSeriesMetric, Map<TrackingTag, String> tags) {
+        MetricBuilder metricBuilder = MetricBuilder.getInstance();
+        addTimeSeriesDataToMetricBuilder(metricBuilder, timeSeriesData, timeSeriesMetric, tags);
+        insertData(metricBuilder);
+    }
+
+    public void storeRawMetrics(TrackingData trackingData, Map<TrackingTag, String> tags) {
+
+        MetricBuilder metricBuilder = MetricBuilder.getInstance();
+
+        for(TrackingMetric trackingMetric : trackingData.getData().keySet()) {
+            Map<Long, Long> dataPoints = trackingData.getDataForMetric(trackingMetric);
+            if(!CollectionUtils.isEmpty(dataPoints)) {
+                addTimeSeriesDataToMetricBuilder(metricBuilder, dataPoints, TimeSeriesMetric.getRawMetric(trackingMetric), tags);
+            }
+        }
+
+        insertData(metricBuilder);
+    }
+
     /**
      * Persists data for a time series
      * @param metricBuilder
      * @return a metric builder with data than can be passed to the kairos db
      * client to be persisted.
      */
-    public void insertData(MetricBuilder metricBuilder) {
+    protected void insertData(MetricBuilder metricBuilder) {
 
         if(metricBuilder == null) {
             throw new IllegalArgumentException("No metric builder provided");

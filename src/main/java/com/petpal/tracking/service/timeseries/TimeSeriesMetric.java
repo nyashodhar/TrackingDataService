@@ -1,4 +1,4 @@
-package com.petpal.tracking.service;
+package com.petpal.tracking.service.timeseries;
 
 import com.petpal.tracking.web.controllers.AggregationLevel;
 import com.petpal.tracking.web.controllers.TrackingMetric;
