@@ -1,4 +1,4 @@
-package com.petpal.tracking.service.util;
+package com.petpal.tracking.service.timeseries;
 
 import com.petpal.tracking.web.controllers.AggregationLevel;
 import org.kairosdb.client.builder.TimeUnit;
@@ -11,22 +11,6 @@ import java.util.TimeZone;
  * Created by per on 11/24/14.
  */
 public class BucketBoundaryUtil {
-
-
-    /**
-     * Calculate the end time of a bucket given its start time and bucket size
-     * @param bucketStart
-     * @param aggregationLevel
-     * @param timeZone
-     * @return the end time of a bucket
-     */
-    public static long getAggregatedBucketEndTime(Long bucketStart, AggregationLevel aggregationLevel, TimeZone timeZone) {
-        Assert.notNull(aggregationLevel, "Aggregation level not specified");
-        TimeUnit timeUnitForAggregationLevel = TimeUnit.valueOf(aggregationLevel.toString().toUpperCase());
-        return getBucketEndTime(bucketStart, timeUnitForAggregationLevel, timeZone);
-    }
-
-
 
     /**
      * Calculate the end time of a bucket given its start time and bucket size

@@ -1,4 +1,4 @@
-package com.petpal.tracking.service.util;
+package com.petpal.tracking.service.timeseries;
 
 import org.junit.Assert;
 import org.junit.Before;

@@ -1,6 +1,7 @@
 package com.petpal.tracking.web.validators.util;
 
-import com.petpal.tracking.service.util.BucketBoundaryUtil;
+import com.petpal.tracking.service.BucketAggregationUtil;
+import com.petpal.tracking.service.timeseries.BucketBoundaryUtil;
 import com.petpal.tracking.web.controllers.AggregationLevel;
 import com.petpal.tracking.web.errors.InvalidControllerArgumentException;
 import org.apache.log4j.Logger;
@@ -71,7 +72,7 @@ public class AggregatedQueryUtil {
         Long currentEnd = null;
 
         for(int i=0; i<bucketsToFetch; i++) {
-            currentEnd = BucketBoundaryUtil.getAggregatedBucketEndTime(currentBegin, aggregationLevel, timeZone);
+            currentEnd = BucketAggregationUtil.getAggregatedBucketEndTime(currentBegin, aggregationLevel, timeZone);
             currentBegin = currentEnd + 1L;
         }
 

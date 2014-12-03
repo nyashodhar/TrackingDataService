@@ -1,7 +1,6 @@
 package com.petpal.tracking.service.timeseries;
 
 import com.petpal.tracking.service.BucketAggregationUtil;
-import com.petpal.tracking.service.util.BucketBoundaryUtil;
 import com.petpal.tracking.web.controllers.TrackingData;
 import com.petpal.tracking.web.controllers.TrackingMetric;
 import com.petpal.tracking.web.controllers.TrackingTag;
