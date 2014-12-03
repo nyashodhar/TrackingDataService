@@ -164,13 +164,8 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
      */
     protected void insertData(MetricBuilder metricBuilder) {
 
-        if(metricBuilder == null) {
-            throw new IllegalArgumentException("No metric builder provided");
-        }
-
-        if(metricBuilder.getMetrics().isEmpty()) {
-            throw new IllegalArgumentException("The metric builder has no metrics!");
-        }
+        Assert.notNull(metricBuilder, "No metric builder provided");
+        Assert.notEmpty(metricBuilder.getMetrics(), "The metric builder has no metrics!");
 
         StringBuilder msg = new StringBuilder();
 
@@ -201,21 +196,10 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
         TimeSeriesMetric timeSeriesMetric,
         Map<TrackingTag, String> tags) {
 
-        if(metricBuilder == null) {
-            throw new IllegalArgumentException("No metric builder provided");
-        }
-
-        if(timeSeriesMetric == null) {
-            throw new IllegalArgumentException("No time series metric provided");
-        }
-
-        if(tags.isEmpty()) {
-            throw new IllegalArgumentException("Can't assemble metric builder for metric " + timeSeriesMetric + ", no tags provided");
-        }
-
-        if(timeStampValueMap.isEmpty()) {
-            throw new IllegalArgumentException("Can't assemble metric builder for metric " + timeSeriesMetric + ", no data provided");
-        }
+        Assert.notNull(metricBuilder, "No metric builder provided");
+        Assert.notNull(timeSeriesMetric, "No time series metric provided");
+        Assert.notEmpty(tags, "Can't assemble metric builder for metric " + timeSeriesMetric + ", no tags provided");
+        Assert.notEmpty(timeStampValueMap, "Can't assemble metric builder for metric " + timeSeriesMetric + ", no data provided");
 
         Metric metric = metricBuilder.addMetric(timeSeriesMetric.toString());
         for(TrackingTag tag : tags.keySet()) {
@@ -298,9 +282,7 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
     protected Map<Long, Long> adjustBoundariesForMetricResult(
             Map<Long, Long> metricResult, Long utcBegin, Long utcEnd, TimeUnit resultBucketSize) {
 
-        if(utcBegin == null) {
-            throw new IllegalArgumentException("utcBegin not specified");
-        }
+        Assert.notNull(utcBegin, "utcBegin not specified");
 
         if(utcEnd != null && (utcEnd.longValue() <= utcBegin.longValue())) {
             throw new IllegalArgumentException("The utcEnd value ("+utcEnd+") must be greater than utcBegin value (" + utcBegin + ")");

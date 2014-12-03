@@ -44,10 +44,8 @@ public enum TimeSeriesMetric {
      * @return name of a time series used to store raw data.
      */
     public static TimeSeriesMetric getRawMetric(TrackingMetric trackingMetric) {
-        if(trackingMetric == null) {
-            throw new IllegalArgumentException("Tracking metric missing");
-        }
-        return TimeSeriesMetric.valueOf(trackingMetric.toString()+"_RAW");
+        Assert.notNull(trackingMetric, "Tracking metric missing");
+        return TimeSeriesMetric.valueOf(trackingMetric.toString() + "_RAW");
     }
 
 

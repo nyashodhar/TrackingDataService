@@ -71,9 +71,7 @@ public class BucketAggregationUtil {
      */
     protected Map<Long, Long> applyFortyEightHourShift(Map<Long, Long> dataPoints, boolean forward) {
 
-        if(CollectionUtils.isEmpty(dataPoints)) {
-            throw new IllegalArgumentException("Datapoints not specified");
-        }
+        Assert.notEmpty(dataPoints, "Datapoints not specified");
 
         Map<Long, Long> shiftedData = new TreeMap();
         for(long ts : dataPoints.keySet()) {

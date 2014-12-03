@@ -134,23 +134,6 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
         }
     }
 
-    /*
-    private void storeRawMetrics(TrackingData trackingData, Map<TrackingTag, String> tags) {
-
-        MetricBuilder metricBuilder = MetricBuilder.getInstance();
-
-        for(TrackingMetric trackingMetric : trackingData.getData().keySet()) {
-            Map<Long, Long> dataPoints = trackingData.getDataForMetric(trackingMetric);
-            if(!CollectionUtils.isEmpty(dataPoints)) {
-                timeSeriesFacade.addTimeSeriesDataToMetricBuilder(metricBuilder, dataPoints, TimeSeriesMetric.getRawMetric(trackingMetric), tags);
-            }
-        }
-
-        timeSeriesFacade.insertData(metricBuilder);
-    }
-    */
-
-
     /**
      * Handles the storage of new unaggregated date for a given metric. All aggregated
      * series are updated before storing the raw aggregated as well.
@@ -173,7 +156,6 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
         updateUTCShiftedAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, AggregationLevel.WEEKS);
         updateUTCShiftedAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, AggregationLevel.DAYS);
         updateUTCShiftedAggregatedTimeSeries(trackingMetric, unaggregatedData, tags, timeZone, AggregationLevel.HOURS);
-
     }
 
 
