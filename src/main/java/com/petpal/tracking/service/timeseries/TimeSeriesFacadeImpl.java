@@ -2,7 +2,6 @@ package com.petpal.tracking.service.timeseries;
 
 import com.petpal.tracking.service.BucketAggregationUtil;
 import com.petpal.tracking.service.util.BucketBoundaryUtil;
-import com.petpal.tracking.service.util.QueryLoggingUtil;
 import com.petpal.tracking.web.controllers.TrackingData;
 import com.petpal.tracking.web.controllers.TrackingMetric;
 import com.petpal.tracking.web.controllers.TrackingTag;
@@ -28,6 +27,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -83,12 +83,12 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
 
         // Extract the result for response
         Map<TimeSeriesMetric, Map<Long, Long>> resultsByMetric = getResultFromResponse(queryResponse);
-        QueryLoggingUtil.printMetricsResults(resultsByMetric);
+        printMetricsResults(resultsByMetric);
 
         // Adjust the bucket boundaries (and insert explicit empty buckets is response is to be verbose)
         logger.debug("querySingleTimeSeries(): Doing result adjustment for series " + timeSeriesMetric);
         adjustBucketBoundaries(resultsByMetric, utcBegin, utcEnd, resultBucketSize, verboseResponse);
-        QueryLoggingUtil.printMetricsResults(resultsByMetric);
+        printMetricsResults(resultsByMetric);
 
         Map<Long, Long> results = resultsByMetric.get(timeSeriesMetric);
         logger.debug("querySingleTimeSeries(): results = " + results);
@@ -118,12 +118,12 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
 
         // Extract the result for response
         Map<TimeSeriesMetric, Map<Long, Long>> resultsByMetric = getResultFromResponse(queryResponse);
-        QueryLoggingUtil.printMetricsResults(resultsByMetric);
+        printMetricsResults(resultsByMetric);
 
         // Adjust the bucket boundaries (and insert explicit empty buckets is response is to be verbose)
         logger.info("queryMultipleTimeSeries(): Doing result adjustment..");
         adjustBucketBoundaries(resultsByMetric, utcBegin, utcEnd, resultBucketSize, verboseResponse);
-        QueryLoggingUtil.printMetricsResults(resultsByMetric);
+        printMetricsResults(resultsByMetric);
 
         return resultsByMetric;
     }
@@ -376,7 +376,7 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
             if(oldTimeStamps.length() > 0) {
                 oldTimeStamps.append(", ");
             }
-            oldTimeStamps.append(QueryLoggingUtil.getUTCFormat(oldTimeStamp) + "(" + oldTimeStamp  + ")");
+            oldTimeStamps.append(getUTCFormat(oldTimeStamp) + "(" + oldTimeStamp  + ")");
         }
 
         logger.debug("Old bucket boundaries: [" + oldTimeStamps + "]");
@@ -386,7 +386,7 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
             if(newTimeStamps.length() > 0) {
                 newTimeStamps.append(", ");
             }
-            newTimeStamps.append(QueryLoggingUtil.getUTCFormat(newTimeStamp) + "(" + newTimeStamp  + ")");
+            newTimeStamps.append(getUTCFormat(newTimeStamp) + "(" + newTimeStamp  + ")");
         }
 
         logger.debug("New bucket boundaries: [" + newTimeStamps + "]");
@@ -413,7 +413,7 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
         validateQueryParameters(tags, timeSeriesMetric, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
 
         // Print a description of the query in the log
-        QueryLoggingUtil.logTimeSeriesQueryDescription(tags, timeSeriesMetric, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
+        logTimeSeriesQueryDescription(tags, timeSeriesMetric, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
 
         // Set the time interval for the query
         QueryBuilder queryBuilder = QueryBuilder.getInstance();
@@ -450,7 +450,7 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
         validateMetricsQueryParameters(tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
 
         // Print a description of the query in the log
-        QueryLoggingUtil.logTimeSeriesQueryDescription(tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
+        logTimeSeriesQueryDescription(tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
 
         // Set the time interval for the query
         QueryBuilder queryBuilder = QueryBuilder.getInstance();
@@ -549,6 +549,64 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
             throw new IllegalArgumentException("Multiplier for result bucket size must be > 0");
         }
     }
+
+    private void printMetricsResults(Map<TimeSeriesMetric, Map<Long, Long>> metricResults) {
+
+        for(TimeSeriesMetric timeSeriesMetric : metricResults.keySet()) {
+
+            StringBuilder metricResult = new StringBuilder();
+            for(Long timestamp : metricResults.get(timeSeriesMetric).keySet()) {
+                Date date = new Date();
+                date.setTime(timestamp);
+                if(metricResult.length() > 0) {
+                    metricResult.append(", ");
+                }
+                metricResult.append(getUTCFormat(date.getTime()) + "=" + metricResults.get(timeSeriesMetric).get(timestamp));
+            }
+            logger.debug("Result for " + timeSeriesMetric + ": " + metricResult.toString());
+        }
+    }
+
+    private String getUTCFormat(Long utcMillis) {
+        if(utcMillis == null) {
+            throw new IllegalArgumentException("UTCMillis was not specified");
+        }
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEE-MMM-d yyyy hh:mm:ss a z");
+        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return simpleDateFormat.format(new Date(utcMillis.longValue()));
+    }
+
+    private void logTimeSeriesQueryDescription(Map<TrackingTag, String> tags,
+                                                     TimeSeriesMetric timeSeriesMetric,
+                                                     Long utcBegin,
+                                                     Long utcEnd,
+                                                     TimeUnit resultBucketSize,
+                                                     int resultBucketMultiplier) {
+        List<TimeSeriesMetric> timeSeriesMetrics = new ArrayList<TimeSeriesMetric>();
+        timeSeriesMetrics.add(timeSeriesMetric);
+        logTimeSeriesQueryDescription(tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
+    }
+
+    private void logTimeSeriesQueryDescription(Map<TrackingTag, String> tags,
+                                                     List<TimeSeriesMetric> timeSeriesMetrics,
+                                                     Long utcBegin,
+                                                     Long utcEnd,
+                                                     TimeUnit resultBucketSize,
+                                                     int resultBucketMultiplier) {
+
+        StringBuilder intervalDescriptor = new StringBuilder("[" + getUTCFormat(utcBegin) + ",");
+        if(utcEnd == null) {
+            intervalDescriptor.append(" now]");
+        } else {
+            intervalDescriptor.append(" " + getUTCFormat(utcBegin) + "]");
+        }
+
+        logger.info("Time series query for interval " + intervalDescriptor + " for time series metrics " + timeSeriesMetrics +
+                ", each metric tagged by " + tags + ". Results will be grouped into buckets of " +
+                resultBucketMultiplier + " " + resultBucketSize + " size.");
+    }
+
+
 
     @PostConstruct
     public void afterPropertiesSet() throws Exception {
