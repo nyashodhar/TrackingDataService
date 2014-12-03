@@ -1,13 +1,11 @@
 package com.petpal.tracking.service.timeseries;
 
 import com.petpal.tracking.service.BucketAggregationUtil;
-import com.petpal.tracking.service.TimeSeriesMetric;
 import com.petpal.tracking.service.util.BucketBoundaryUtil;
+import com.petpal.tracking.service.util.QueryLoggingUtil;
 import com.petpal.tracking.web.controllers.TrackingData;
 import com.petpal.tracking.web.controllers.TrackingMetric;
 import com.petpal.tracking.web.controllers.TrackingTag;
-import com.petpal.tracking.service.util.QueryArgumentValidationUtil;
-import com.petpal.tracking.service.util.QueryLoggingUtil;
 import org.apache.commons.lang.math.LongRange;
 import org.apache.log4j.Logger;
 import org.kairosdb.client.KairosClientUtil;
@@ -26,6 +24,7 @@ import org.kairosdb.client.response.Results;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
@@ -46,7 +45,7 @@ import java.util.TreeMap;
  * Created by per on 11/12/14.
  */
 @Component("timeSeriesFacade")
-public class TimeSeriesFacadeImpl {
+public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
 
     private Logger logger = Logger.getLogger(this.getClass());
 
@@ -62,15 +61,7 @@ public class TimeSeriesFacadeImpl {
     private BucketAggregationUtil bucketAggregationUtil;
 
     /**
-     * Perform a time series query for a single time series.
-     * @param tags
-     * @param timeSeriesMetric
-     * @param utcBegin
-     * @param utcEnd
-     * @param resultBucketSize
-     * @param resultBucketMultiplier
-     * @param verboseResponse
-     * @return query results for a single time series.
+     * @see com.petpal.tracking.service.timeseries.TimeSeriesFacade#querySingleTimeSeries(java.util.Map, TimeSeriesMetric, Long, Long, org.kairosdb.client.builder.TimeUnit, int, boolean)
      */
     public Map<Long, Long> querySingleTimeSeries(
             Map<TrackingTag, String> tags,
@@ -106,16 +97,7 @@ public class TimeSeriesFacadeImpl {
     }
 
     /**
-     * Perform a time series query for multiple time series (using the same range and tagging parameters for
-     * each time series.
-     * @param tags
-     * @param timeSeriesMetrics
-     * @param utcBegin
-     * @param utcEnd
-     * @param resultBucketSize
-     * @param resultBucketMultiplier
-     * @param verboseResponse
-     * @return Query result, grouped by the metric for each time series.
+     * @see com.petpal.tracking.service.timeseries.TimeSeriesFacade#queryMultipleTimeSeries(java.util.Map, java.util.List, Long, Long, org.kairosdb.client.builder.TimeUnit, int, boolean)
      */
     public Map<TimeSeriesMetric, Map<Long, Long>> queryMultipleTimeSeries(
             Map<TrackingTag, String> tags,
@@ -147,12 +129,19 @@ public class TimeSeriesFacadeImpl {
     }
 
 
+    /**
+     * @see com.petpal.tracking.service.timeseries.TimeSeriesFacade#storeDataForTimeSeries(java.util.Map, TimeSeriesMetric, java.util.Map)
+     */
     public void storeDataForTimeSeries(Map<Long, Long> timeSeriesData, TimeSeriesMetric timeSeriesMetric, Map<TrackingTag, String> tags) {
         MetricBuilder metricBuilder = MetricBuilder.getInstance();
         addTimeSeriesDataToMetricBuilder(metricBuilder, timeSeriesData, timeSeriesMetric, tags);
         insertData(metricBuilder);
     }
 
+
+    /**
+     * @see com.petpal.tracking.service.timeseries.TimeSeriesFacade#storeRawMetrics(com.petpal.tracking.web.controllers.TrackingData, java.util.Map)
+     */
     public void storeRawMetrics(TrackingData trackingData, Map<TrackingTag, String> tags) {
 
         MetricBuilder metricBuilder = MetricBuilder.getInstance();
@@ -207,7 +196,7 @@ public class TimeSeriesFacadeImpl {
     }
 
 
-    public void addTimeSeriesDataToMetricBuilder(MetricBuilder metricBuilder,
+    protected void addTimeSeriesDataToMetricBuilder(MetricBuilder metricBuilder,
         Map<Long, Long> timeStampValueMap,
         TimeSeriesMetric timeSeriesMetric,
         Map<TrackingTag, String> tags) {
@@ -421,7 +410,7 @@ public class TimeSeriesFacadeImpl {
                                                     Long utcEnd, TimeUnit resultBucketSize, int resultBucketMultiplier) {
 
         // Do some validation of the input parameters
-        QueryArgumentValidationUtil.validateQueryParameters(tags, timeSeriesMetric, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
+        validateQueryParameters(tags, timeSeriesMetric, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
 
         // Print a description of the query in the log
         QueryLoggingUtil.logTimeSeriesQueryDescription(tags, timeSeriesMetric, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
@@ -458,7 +447,7 @@ public class TimeSeriesFacadeImpl {
         Long utcEnd, TimeUnit resultBucketSize, int resultBucketMultiplier) {
 
         // Do some validation of the input parameters
-        QueryArgumentValidationUtil.validateMetricsQueryParameters(tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
+        validateMetricsQueryParameters(tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
 
         // Print a description of the query in the log
         QueryLoggingUtil.logTimeSeriesQueryDescription(tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
@@ -521,10 +510,49 @@ public class TimeSeriesFacadeImpl {
         return metricResults;
     }
 
+
+    private void validateQueryParameters(
+            Map<TrackingTag, String> tags,
+            TimeSeriesMetric timeSeriesMetric,
+            Long utcBegin,
+            Long utcEnd,
+            TimeUnit resultBucketSize,
+            int resultBucketMultiplier) {
+
+        List<TimeSeriesMetric> timeSeriesMetrics = new ArrayList<TimeSeriesMetric>();
+        timeSeriesMetrics.add(timeSeriesMetric);
+        validateMetricsQueryParameters(tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
+    }
+
+    private void validateMetricsQueryParameters(
+            Map<TrackingTag, String> tags,
+            List<TimeSeriesMetric> timeSeriesMetrics,
+            Long utcBegin,
+            Long utcEnd,
+            TimeUnit resultBucketSize,
+            int resultBucketMultiplier) {
+
+        Assert.notEmpty(tags, "No tags specified");
+        Assert.notEmpty(timeSeriesMetrics, "No time series metrics specified");
+        Assert.notNull(utcBegin, "No utcBegin specified");
+
+        if (utcEnd != null) {
+            if (!(utcEnd.longValue() > utcBegin)) {
+                throw new IllegalArgumentException("The time stamp " + utcEnd + " for end of time interval, must be " +
+                        "> than the timestamp for the start of the interval (" + utcBegin + ")");
+            }
+        }
+
+        Assert.notNull(resultBucketSize, "Time unit type for result bucket size must be specified");
+
+        if (!(resultBucketMultiplier > 0)) {
+            throw new IllegalArgumentException("Multiplier for result bucket size must be > 0");
+        }
+    }
+
     @PostConstruct
     public void afterPropertiesSet() throws Exception {
         String kairosDBURL = "http://" + kairosDBHost + ":" + kairosDBPort;
         kairosRestClient = new KairosRestClient(kairosDBURL);
     }
-
 }

@@ -2,7 +2,6 @@ package com.petpal.tracking.service.async;
 
 import com.petpal.tracking.web.controllers.TrackingTag;
 import com.petpal.tracking.web.controllers.TrackingData;
-import com.petpal.tracking.service.AsyncTrackingDataInserter;
 import org.apache.log4j.Logger;
 
 import java.util.Map;

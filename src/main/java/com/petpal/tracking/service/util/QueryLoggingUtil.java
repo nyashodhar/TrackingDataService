@@ -1,7 +1,7 @@
 package com.petpal.tracking.service.util;
 
 import com.petpal.tracking.web.controllers.TrackingTag;
-import com.petpal.tracking.service.TimeSeriesMetric;
+import com.petpal.tracking.service.timeseries.TimeSeriesMetric;
 import org.apache.log4j.Logger;
 import org.kairosdb.client.builder.TimeUnit;
 

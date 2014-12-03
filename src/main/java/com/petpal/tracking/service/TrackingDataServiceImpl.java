@@ -1,14 +1,17 @@
 package com.petpal.tracking.service;
 
-import com.petpal.tracking.web.controllers.AggregationLevel;
-import com.petpal.tracking.web.controllers.TrackingTag;
-import com.petpal.tracking.web.controllers.TrackingData;
+import com.petpal.tracking.service.async.AsyncTrackingDataInserter;
 import com.petpal.tracking.service.async.TrackingDataInsertionWorker;
+import com.petpal.tracking.service.timeseries.TimeSeriesFacade;
+import com.petpal.tracking.service.timeseries.TimeSeriesMetric;
+import com.petpal.tracking.web.controllers.AggregationLevel;
+import com.petpal.tracking.web.controllers.TrackingData;
 import com.petpal.tracking.web.controllers.TrackingMetric;
+import com.petpal.tracking.web.controllers.TrackingTag;
 import org.apache.log4j.Logger;
-import org.kairosdb.client.builder.MetricBuilder;
 import org.kairosdb.client.builder.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
@@ -33,6 +36,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
     private BucketAggregationUtil bucketAggregationUtil;
 
     @Autowired
+    @Qualifier("timeSeriesFacade")
     private TimeSeriesFacade timeSeriesFacade;
 
     @Autowired
@@ -113,7 +117,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
 
     /**
      * Called asynchronously when tracking data is inserted into the tracking service.
-     * @see com.petpal.tracking.service.AsyncTrackingDataInserter#asyncTrackingDataInsert(com.petpal.tracking.web.controllers.TrackingData, java.util.Map, java.util.TimeZone)
+     * @see com.petpal.tracking.service.async.AsyncTrackingDataInserter#asyncTrackingDataInsert(com.petpal.tracking.web.controllers.TrackingData, java.util.Map, java.util.TimeZone)
      * @param trackingData
      * @param tags
      * @param timeZone
@@ -122,7 +126,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
             TrackingData trackingData, Map<TrackingTag, String> tags, TimeZone timeZone) {
 
         // Store the raw metrics
-        storeRawMetrics(trackingData, tags);
+        timeSeriesFacade.storeRawMetrics(trackingData, tags);
 
         // Update all the aggregated series
         for(TrackingMetric trackingMetric : trackingData.getData().keySet()) {
@@ -130,6 +134,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
         }
     }
 
+    /*
     private void storeRawMetrics(TrackingData trackingData, Map<TrackingTag, String> tags) {
 
         MetricBuilder metricBuilder = MetricBuilder.getInstance();
@@ -143,6 +148,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
 
         timeSeriesFacade.insertData(metricBuilder);
     }
+    */
 
 
     /**
@@ -213,9 +219,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
                 mergeExistingDataPointsIntoNew(fortyEightHourShiftedUTCAggregatedData, existingDataPoints);
 
         // Persist the updated data in the time series
-
-        MetricBuilder metricBuilder = MetricBuilder.getInstance();
-        timeSeriesFacade.addTimeSeriesDataToMetricBuilder(metricBuilder, updatedAggregatedData, timeSeriesMetric, tags);
-        timeSeriesFacade.insertData(metricBuilder);
+        timeSeriesFacade.storeDataForTimeSeries(updatedAggregatedData, timeSeriesMetric, tags);
     }
+
 }

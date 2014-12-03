@@ -1,9 +1,9 @@
 package com.petpal.tracking.service.util;
 
+import com.petpal.tracking.service.timeseries.TimeSeriesMetric;
 import com.petpal.tracking.web.controllers.TrackingTag;
-import com.petpal.tracking.service.TimeSeriesMetric;
 import org.kairosdb.client.builder.TimeUnit;
-import org.springframework.util.CollectionUtils;
+import org.springframework.util.Assert;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +14,7 @@ import java.util.Map;
  */
 public class QueryArgumentValidationUtil {
 
+    /*
     public static void validateQueryParameters(Map<TrackingTag, String> tags,
                                                TimeSeriesMetric timeSeriesMetric,
                                                Long utcBegin,
@@ -33,17 +34,9 @@ public class QueryArgumentValidationUtil {
                                                       TimeUnit resultBucketSize,
                                                       int resultBucketMultiplier) {
 
-        if (CollectionUtils.isEmpty(tags)) {
-            throw new IllegalArgumentException("No tags specified");
-        }
-
-        if (CollectionUtils.isEmpty(timeSeriesMetrics)) {
-            throw new IllegalArgumentException("No time series metrics specified");
-        }
-
-        if (utcBegin == null) {
-            throw new IllegalArgumentException("No utcBegin specified");
-        }
+        Assert.notEmpty(tags, "No tags specified");
+        Assert.notEmpty(timeSeriesMetrics, "No time series metrics specified");
+        Assert.notNull(utcBegin, "No utcBegin specified");
 
         if (utcEnd != null) {
             if (!(utcEnd.longValue() > utcBegin)) {
@@ -52,12 +45,11 @@ public class QueryArgumentValidationUtil {
             }
         }
 
-        if (resultBucketSize == null) {
-            throw new IllegalArgumentException("Time unit type for result bucket size must be specified");
-        }
+        Assert.notNull(resultBucketSize, "Time unit type for result bucket size must be specified");
 
         if (!(resultBucketMultiplier > 0)) {
             throw new IllegalArgumentException("Multiplier for result bucket size must be > 0");
         }
     }
+    */
 }
