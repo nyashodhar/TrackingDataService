@@ -4,6 +4,7 @@ import com.petpal.tracking.integration.TestTrackingData;
 import com.petpal.tracking.integration.TestTrackingMetric;
 import org.apache.log4j.Logger;
 import org.kairosdb.client.builder.TimeUnit;
+import org.springframework.util.Assert;
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -24,7 +25,7 @@ public class BucketCalculator {
 
     public static void printUTCForCalendar(int year, int month, int date, int hour, int minute, int second, TimeZone timeZone) {
         Calendar calendar = createCalendar(year, month, date, hour, minute, second, timeZone);
-        System.out.println("printUTCForCalendar: calendar.getTime() = " + calendar.getTime() + ", utc millis = " + calendar.getTimeInMillis());
+        logger.info("printUTCForCalendar: calendar.getTime() = " + calendar.getTime() + ", utc millis = " + calendar.getTimeInMillis());
     }
 
     private static Calendar createCalendar(int year, int month, int date, int hour, int minute, int second, TimeZone timeZone) {
@@ -83,13 +84,9 @@ public class BucketCalculator {
      * @return the end time of a bucket
      */
     public static long getBucketEndTime(Long bucketStart, TimeUnit bucketSize, TimeZone timeZone) {
-        if(bucketSize == null) {
-            throw new IllegalArgumentException("Bucket size not specified");
-        }
 
-        if(bucketStart == null) {
-            throw new IllegalArgumentException("Bucket start not specified");
-        }
+        Assert.notNull(bucketSize, "Bucket size not specified");
+        Assert.notNull(bucketStart, "Bucket start not specified");
 
         Calendar cal = Calendar.getInstance();
         cal.clear();
