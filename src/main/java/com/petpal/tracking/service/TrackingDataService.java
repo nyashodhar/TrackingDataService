@@ -1,8 +1,9 @@
 package com.petpal.tracking.service;
 
-import com.petpal.tracking.data.TrackingData;
-import com.petpal.tracking.service.tag.TimeSeriesTag;
-import org.kairosdb.client.builder.TimeUnit;
+import com.petpal.tracking.web.controllers.AggregationLevel;
+import com.petpal.tracking.web.controllers.TrackingData;
+import com.petpal.tracking.web.controllers.TrackingMetric;
+import com.petpal.tracking.web.controllers.TrackingTag;
 
 import java.util.List;
 import java.util.Map;
@@ -20,18 +21,18 @@ public interface TrackingDataService {
      * @param trackingMetrics
      * @param utcBegin
      * @param utcEnd
-     * @param resultBucketSize
+     * @param aggregationLevel
      * @param aggregationTimeZone
      * @param resultBucketMultiplier
      * @param verboseResponse
      * @return time series data obtained from queries against aggregated time series.
      */
     Map<TrackingMetric, Map<Long, Long>> getAggregatedTimeSeries(
-            Map<TimeSeriesTag, String> tags,
+            Map<TrackingTag, String> tags,
             List<TrackingMetric> trackingMetrics,
             Long utcBegin,
             Long utcEnd,
-            TimeUnit resultBucketSize,
+            AggregationLevel aggregationLevel,
             TimeZone aggregationTimeZone,
             int resultBucketMultiplier,
             boolean verboseResponse);
@@ -47,5 +48,5 @@ public interface TrackingDataService {
      *                     date store.
      * @param aggregationTimeZone timezone to aggregate the tracking data for
      */
-    void storeTrackingData(Map<TimeSeriesTag, String> tags, TrackingData trackingData, TimeZone aggregationTimeZone);
+    void storeTrackingData(Map<TrackingTag, String> tags, TrackingData trackingData, TimeZone aggregationTimeZone);
 }

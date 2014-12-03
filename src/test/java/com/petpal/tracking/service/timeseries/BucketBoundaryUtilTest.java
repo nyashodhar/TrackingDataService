@@ -1,4 +1,4 @@
-package com.petpal.tracking.service.util;
+package com.petpal.tracking.service.timeseries;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -31,7 +31,7 @@ public class BucketBoundaryUtilTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testGetBucketEndTime_bucket_size_missing() {
+    public void testGetBucketEndTime_aggregation_level_missing() {
         BucketBoundaryUtil.getBucketEndTime(1L, null, timeZonePST);
     }
 

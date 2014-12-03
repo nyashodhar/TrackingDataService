@@ -1,7 +1,7 @@
-package com.petpal.tracking.service;
+package com.petpal.tracking.service.async;
 
-import com.petpal.tracking.data.TrackingData;
-import com.petpal.tracking.service.tag.TimeSeriesTag;
+import com.petpal.tracking.web.controllers.TrackingTag;
+import com.petpal.tracking.web.controllers.TrackingData;
 
 import java.util.Map;
 import java.util.TimeZone;
@@ -20,5 +20,5 @@ public interface AsyncTrackingDataInserter {
      * @param timeZone
      */
     public void asyncTrackingDataInsert(
-            TrackingData trackingData, Map<TimeSeriesTag, String> tags, TimeZone timeZone);
+            TrackingData trackingData, Map<TrackingTag, String> tags, TimeZone timeZone);
 }

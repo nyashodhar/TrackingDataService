@@ -3,7 +3,6 @@ package com.petpal.tracking.integration;
 import com.petpal.tracking.util.JSONUtil;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
-import org.kairosdb.client.builder.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -86,7 +85,7 @@ public abstract class AbstractTimeSeriesIntegrationTest {
 
     protected Map<TestTrackingMetric, Map<Long, Long>> getAggregatedMetricsForDevice(
             String trackingDeviceId,
-            TimeUnit resultBucketSize,
+            String aggregationLevel,
             Integer startYear,
             Integer startMonth,
             Integer startWeek,
@@ -105,13 +104,13 @@ public abstract class AbstractTimeSeriesIntegrationTest {
 
         HttpEntity<String> entity = new HttpEntity<String>(headers);
 
-        String url = "http://localhost:" + port + "/metrics/device/{deviceId}/aggregate/{resultBucketSize}?startYear={startYear}";
+        String url = "http://localhost:" + port + "/metrics/device/{deviceId}/aggregate/{aggregationLevel}?startYear={startYear}";
 
         // Conditionally add optional query/url parameters
 
         Map<String, Object> urlArgs = new HashMap<String, Object>();
         urlArgs.put("deviceId", trackingDeviceId);
-        urlArgs.put("resultBucketSize", resultBucketSize.toString().toLowerCase());
+        urlArgs.put("aggregationLevel", aggregationLevel);
         urlArgs.put("startYear", startYear);
 
         if(startMonth != null) {
@@ -153,14 +152,6 @@ public abstract class AbstractTimeSeriesIntegrationTest {
             url = url + "&aggregationTimeZone={aggregationTimeZone}";
             urlArgs.put("aggregationTimeZone", aggregationTimeZone.getID());
         }
-
-        //
-        // EXAMPLE:
-        //
-        //    curl -v -X GET "http://localhost:9000/metrics/absolute/device/263e6c54-69c9-45f5-853c-b5f4420ceb5i?startYear=2014&resultBucketSize=YEARS&trackingMetrics=walkingsteps,runningsteps&verboseResponse=true" -H "Accept: application/json" -H "Content-Type: application/json"
-        //
-
-        //http://localhost:63549/metrics/device/a555bb6b-62ab-4e70-bf4a-06431fa8b5ec?startYear=2014&resultBucketSize=MONTHS&startMonth=4&startDay=&verboseResponse=4
 
         try {
             logger.info("Doing GET for metrics " + url);
@@ -205,14 +196,15 @@ public abstract class AbstractTimeSeriesIntegrationTest {
 
 
     protected void check400Response(RestClientException e) {
+
         Assert.assertTrue(e instanceof HttpClientErrorException);
         HttpClientErrorException err = (HttpClientErrorException) e;
         Assert.assertEquals(err.getStatusCode(), HttpStatus.BAD_REQUEST);
 
         Map<String, Serializable> mappedJson = JSONUtil.jsonToMap(err.getResponseBodyAsString());
-        Assert.assertEquals(3, mappedJson.size());
+
         Assert.assertEquals(mappedJson.get("status").toString(), Integer.toString(HttpStatus.BAD_REQUEST.value()));
-        Assert.assertNotNull(mappedJson.get("error"));
+        //Assert.assertNotNull(mappedJson.get("error"));
 
         // Ensure the timestamp is very close to 'now'
         long timestampInResponse = Long.parseLong(mappedJson.get("timestamp").toString());

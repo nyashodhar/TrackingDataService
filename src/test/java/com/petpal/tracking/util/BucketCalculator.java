@@ -4,10 +4,10 @@ import com.petpal.tracking.integration.TestTrackingData;
 import com.petpal.tracking.integration.TestTrackingMetric;
 import org.apache.log4j.Logger;
 import org.kairosdb.client.builder.TimeUnit;
+import org.springframework.util.Assert;
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -25,7 +25,7 @@ public class BucketCalculator {
 
     public static void printUTCForCalendar(int year, int month, int date, int hour, int minute, int second, TimeZone timeZone) {
         Calendar calendar = createCalendar(year, month, date, hour, minute, second, timeZone);
-        System.out.println("printUTCForCalendar: calendar.getTime() = " + calendar.getTime() + ", utc millis = " + calendar.getTimeInMillis());
+        logger.info("printUTCForCalendar: calendar.getTime() = " + calendar.getTime() + ", utc millis = " + calendar.getTimeInMillis());
     }
 
     private static Calendar createCalendar(int year, int month, int date, int hour, int minute, int second, TimeZone timeZone) {
@@ -84,13 +84,9 @@ public class BucketCalculator {
      * @return the end time of a bucket
      */
     public static long getBucketEndTime(Long bucketStart, TimeUnit bucketSize, TimeZone timeZone) {
-        if(bucketSize == null) {
-            throw new IllegalArgumentException("Bucket size not specified");
-        }
 
-        if(bucketStart == null) {
-            throw new IllegalArgumentException("Bucket start not specified");
-        }
+        Assert.notNull(bucketSize, "Bucket size not specified");
+        Assert.notNull(bucketStart, "Bucket start not specified");
 
         Calendar cal = Calendar.getInstance();
         cal.clear();
@@ -119,10 +115,7 @@ public class BucketCalculator {
         return (cal.getTimeInMillis() - 1L);
     }
 
-
-
-
-    public static void addDataPointForAllMetrics(TestTrackingData testTrackingData, Map<Long, Long> dataPoints) {
+    public static void addDataPointForAllMetrics(TestTrackingData testTrackingData, TreeMap<Long, Long> dataPoints) {
         for(TestTrackingMetric testTrackingMetric : TestTrackingMetric.getAllTrackingMetrics()) {
             testTrackingData.setDataForMetric(testTrackingMetric, dataPoints);
         }
@@ -138,10 +131,10 @@ public class BucketCalculator {
         int maxRestSecondsPerMinute = 50;
 
         TestTrackingData testTrackingData = new TestTrackingData();
-        testTrackingData.setWalkingData(generateMinuteBucketRandomData(start, end, maxWalkingStepsPerMinute));
-        testTrackingData.setRunningData(generateMinuteBucketRandomData(start, end, maxRunningStepsPerMinute));
-        testTrackingData.setSleepingData(generateMinuteBucketRandomData(start, end, maxSleepSecondsPerMinute));
-        testTrackingData.setRestingData(generateMinuteBucketRandomData(start, end, maxRestSecondsPerMinute));
+        testTrackingData.setDataForMetric(TestTrackingMetric.WALKINGSTEPS, generateMinuteBucketRandomData(start, end, maxWalkingStepsPerMinute));
+        testTrackingData.setDataForMetric(TestTrackingMetric.RUNNINGSTEPS, generateMinuteBucketRandomData(start, end, maxRunningStepsPerMinute));
+        testTrackingData.setDataForMetric(TestTrackingMetric.SLEEPINGSECONDS, generateMinuteBucketRandomData(start, end, maxSleepSecondsPerMinute));
+        testTrackingData.setDataForMetric(TestTrackingMetric.RESTINGSECONDS, generateMinuteBucketRandomData(start, end, maxRestSecondsPerMinute));
         return testTrackingData;
     }
 
@@ -152,7 +145,7 @@ public class BucketCalculator {
         TestTrackingData combinedTestTrackingData = new TestTrackingData();
 
         for(TestTrackingMetric testTrackingMetric : TestTrackingMetric.getAllTrackingMetrics()) {
-            Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
+            TreeMap<Long, Long> dataPoints = new TreeMap<Long, Long>();
             dataPoints.putAll(testTrackingData1.getDataForMetric(testTrackingMetric));
             dataPoints.putAll(testTrackingData2.getDataForMetric(testTrackingMetric));
             combinedTestTrackingData.setDataForMetric(testTrackingMetric, dataPoints);

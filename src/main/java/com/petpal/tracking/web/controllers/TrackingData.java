@@ -1,19 +1,18 @@
-package com.petpal.tracking.integration;
+package com.petpal.tracking.web.controllers;
 
 import org.springframework.util.CollectionUtils;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Created by per on 11/3/14.
+ * Created by per on 10/28/14.
  */
-public class TestTrackingData {
+public class TrackingData {
 
-    private Map<TestTrackingMetric, TreeMap<Long, Long>> rawData;
+    private Map<TrackingMetric, TreeMap<Long, Long>> rawData;
 
-    public void setData(Map<TestTrackingMetric, TreeMap<Long, Long>> rawData) {
+    public void setData(Map<TrackingMetric, TreeMap<Long, Long>> rawData) {
         this.rawData = rawData;
     }
 
@@ -25,7 +24,7 @@ public class TestTrackingData {
         sb.append("rawData=");
         boolean comma = false;
 
-        for(TestTrackingMetric trackingMetric : rawData.keySet()) {
+        for(TrackingMetric trackingMetric : rawData.keySet()) {
             if(!comma) {
                 comma = true;
             } else {
@@ -42,18 +41,11 @@ public class TestTrackingData {
         return sb.toString();
     }
 
-    public TreeMap<Long, Long> getDataForMetric(TestTrackingMetric testTrackingMetric) {
-       return rawData.get(testTrackingMetric);
+    public TreeMap<Long, Long> getDataForMetric(TrackingMetric trackingMetric) {
+        return rawData.get(trackingMetric);
     }
 
-    public void setDataForMetric(TestTrackingMetric testTrackingMetric, TreeMap<Long, Long> dataPoints) {
-        if(rawData == null) {
-            rawData = new HashMap<TestTrackingMetric, TreeMap<Long, Long>>();
-        }
-        rawData.put(testTrackingMetric, dataPoints);
-    }
-
-    public Map<TestTrackingMetric, TreeMap<Long, Long>> getData() {
+    public Map<TrackingMetric, TreeMap<Long, Long>> getData() {
         return rawData;
     }
 }

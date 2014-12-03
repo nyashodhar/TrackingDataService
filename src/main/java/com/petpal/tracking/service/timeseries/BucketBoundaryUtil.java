@@ -1,6 +1,8 @@
-package com.petpal.tracking.service.util;
+package com.petpal.tracking.service.timeseries;
 
+import com.petpal.tracking.web.controllers.AggregationLevel;
 import org.kairosdb.client.builder.TimeUnit;
+import org.springframework.util.Assert;
 
 import java.util.Calendar;
 import java.util.TimeZone;
@@ -18,13 +20,9 @@ public class BucketBoundaryUtil {
      * @return the end time of a bucket
      */
     public static long getBucketEndTime(Long bucketStart, TimeUnit bucketSize, TimeZone timeZone) {
-        if(bucketSize == null) {
-            throw new IllegalArgumentException("Bucket size not specified");
-        }
 
-        if(bucketStart == null) {
-            throw new IllegalArgumentException("Bucket start not specified");
-        }
+        Assert.notNull(bucketSize, "Bucket size not specified");
+        Assert.notNull(bucketStart, "Bucket start not specified");
 
         Calendar cal = Calendar.getInstance();
         cal.clear();
