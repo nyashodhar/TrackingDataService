@@ -13,6 +13,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.CollectionUtils;
+import org.springframework.validation.Validator;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -49,6 +51,10 @@ public class TrackingDataController {
     @Qualifier("trackingDataService")
     private TrackingDataService trackingDataService;
 
+    @Autowired
+    @Qualifier("trackingDataValidator")
+    private Validator trackingDataValidator;
+
     /**
      * Store metrics in the time series database for a given device.
      * @param deviceId identified the device from which the tracking data originates
@@ -60,7 +66,7 @@ public class TrackingDataController {
     public void saveTrackingDataForDevice(
             @PathVariable String deviceId,
             @RequestParam(value="aggregationTimeZone", required=false) TimeZone aggregationTimeZone,
-            @RequestBody TrackingData trackingData) {
+            @RequestBody @Validated TrackingData trackingData) {
 
         StringBuilder str = new StringBuilder();
         str.append("saveTrackingDataForDevice(): deviceId: ").append(deviceId);
@@ -194,9 +200,14 @@ public class TrackingDataController {
 
     @InitBinder
     public void initBinder(WebDataBinder binder) {
+
+        // Editors
         binder.registerCustomEditor(TrackingMetricsSet.class, new TrackingMetricsSetEditor());
         binder.registerCustomEditor(Date.class, new DateEditor());
         binder.registerCustomEditor(AggregationLevel.class, new AggregationLevelEditor());
+
+        // Validators
+        binder.addValidators(trackingDataValidator);
     }
 
 }

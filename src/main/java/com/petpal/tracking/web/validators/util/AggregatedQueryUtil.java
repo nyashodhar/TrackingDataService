@@ -1,7 +1,6 @@
 package com.petpal.tracking.web.validators.util;
 
 import com.petpal.tracking.service.BucketAggregationUtil;
-import com.petpal.tracking.service.timeseries.BucketBoundaryUtil;
 import com.petpal.tracking.web.controllers.AggregationLevel;
 import com.petpal.tracking.web.errors.InvalidControllerArgumentException;
 import org.apache.log4j.Logger;
@@ -51,13 +50,8 @@ public class AggregatedQueryUtil {
 
     public static Long calculateUTCEnd(Long utcBegin, AggregationLevel aggregationLevel, Integer bucketsToFetch, TimeZone timeZone) {
 
-        if(utcBegin == null) {
-            throw new InvalidControllerArgumentException("utcBegin not specified");
-        }
-
-        if(aggregationLevel == null) {
-            throw new InvalidControllerArgumentException("Aggregation level not specified");
-        }
+        assertNotNull(utcBegin, "utcBegin not specified");
+        assertNotNull(aggregationLevel, "Aggregation level not specified");
 
         if(bucketsToFetch == null) {
             logger.info("Buckets to fetch not specified, returning null to use 'now' as default range end");
@@ -89,7 +83,6 @@ public class AggregatedQueryUtil {
 
         return currentEnd;
     }
-
 
 
     protected static void validateAggregatedQueryParams(
@@ -128,99 +121,55 @@ public class AggregatedQueryUtil {
             }
         }
 
-        if (aggregationLevel == AggregationLevel.YEARS) {
+        if(aggregationLevel == AggregationLevel.YEARS) {
 
-            if(startMonth != null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startMonth is specified");
-            }
+            assertNull(startMonth, "Aggregation level is " + aggregationLevel + " but startMonth is specified");
+            assertNull(startWeek, "Aggregation level is " + aggregationLevel + " but startWeek is specified");
+            assertNull(startDay, "Aggregation level is " + aggregationLevel + " but startDay is specified");
+            assertNull(startHour, "Aggregation level is " + aggregationLevel + " but startHour is specified");
 
-            if(startWeek != null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startWeek is specified");
-            }
+        } else if(aggregationLevel == AggregationLevel.MONTHS) {
 
-            if(startDay != null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startDay is specified");
-            }
+            assertNotNull(startMonth, "Aggregation level is " + aggregationLevel + " but startMonth is not specified");
+            assertNull(startWeek, "Aggregation level is " + aggregationLevel + " but startWeek is specified");
+            assertNull(startDay, "Aggregation level is " + aggregationLevel + " but startDay is specified");
+            assertNull(startHour, "Aggregation level is " + aggregationLevel + " but startHour is specified");
 
-            if(startHour != null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startHour is specified");
-            }
+        } else if(aggregationLevel == AggregationLevel.WEEKS) {
 
-        } else if (aggregationLevel == AggregationLevel.MONTHS) {
+            assertNotNull(startWeek, "Aggregation level is " + aggregationLevel + " but no startWeek is specified");
+            assertNull(startMonth, "Aggregation level is " + aggregationLevel + " but startMonth is specified");
+            assertNull(startDay, "Aggregation level is " + aggregationLevel + " but startDay is specified");
+            assertNull(startHour, "Aggregation level is " + aggregationLevel + " but startHour is specified");
 
-            if(startMonth == null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startMonth is not specified");
-            }
+        } else if(aggregationLevel == AggregationLevel.DAYS) {
 
-            if(startWeek != null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startWeek is specified");
-            }
+            assertNotNull(startMonth, "Aggregation level is " + aggregationLevel + " but startMonth is not specified");
+            assertNull(startWeek, "Aggregation level is " + aggregationLevel + " but startWeek is specified");
+            assertNotNull(startDay, "Aggregation level is " + aggregationLevel + " but no startDay is specified");
+            assertNull(startHour, "Aggregation level is " + aggregationLevel + " but startHour is specified");
 
-            if(startDay != null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startDay is specified");
-            }
+        } else if(aggregationLevel == AggregationLevel.HOURS) {
 
-            if(startHour != null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startHour is specified");
-            }
+            assertNotNull(startMonth, "Aggregation level is " + aggregationLevel + " but startMonth is not specified");
+            assertNull(startWeek, "Aggregation level is " + aggregationLevel + " but startWeek is specified");
+            assertNotNull(startDay, "Aggregation level is " + aggregationLevel + " but no startDay is specified");
+            assertNotNull(startHour, "Aggregation level is " + aggregationLevel + " but no startHour is specified");
 
-        } else if (aggregationLevel == AggregationLevel.WEEKS) {
-
-            if(startWeek == null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but no startWeek is specified");
-            }
-
-            if(startMonth != null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startMonth is specified");
-            }
-
-            if(startDay != null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startDay is specified");
-            }
-
-            if(startHour != null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startHour is specified");
-            }
-
-        } else if (aggregationLevel == AggregationLevel.DAYS) {
-
-            if(startMonth == null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startMonth is not specified");
-            }
-
-            if(startWeek != null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startWeek is specified");
-            }
-
-            if(startDay == null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but no startDay is specified");
-            }
-
-            if(startHour != null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startHour is specified");
-            }
-
-
-        } else if (aggregationLevel == AggregationLevel.HOURS) {
-
-            if(startMonth == null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startMonth is not specified");
-            }
-
-            if(startWeek != null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but startWeek is specified");
-            }
-
-            if(startDay == null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but no startDay is specified");
-            }
-
-            if(startHour == null) {
-                throw new InvalidControllerArgumentException("Aggregation level is " + aggregationLevel + " but no startHour is specified");
-            }
         } else {
             throw new InvalidControllerArgumentException("Invalid aggregation level " + aggregationLevel);
         }
     }
 
+    private static void assertNotNull(Object o, String message) {
+        if(o == null) {
+            throw new InvalidControllerArgumentException(message);
+        }
+    }
+
+    private static void assertNull(Object o, String message) {
+        if(o != null) {
+            throw new InvalidControllerArgumentException(message);
+        }
+    }
 }
