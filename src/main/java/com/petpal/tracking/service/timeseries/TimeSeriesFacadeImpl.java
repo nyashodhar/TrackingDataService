@@ -1,6 +1,5 @@
 package com.petpal.tracking.service.timeseries;
 
-import com.petpal.tracking.service.BucketAggregationUtil;
 import com.petpal.tracking.web.controllers.TrackingData;
 import com.petpal.tracking.web.controllers.TrackingMetric;
 import com.petpal.tracking.web.controllers.TrackingTag;
@@ -8,7 +7,6 @@ import org.apache.commons.lang.math.LongRange;
 import org.apache.log4j.Logger;
 import org.kairosdb.client.KairosClientUtil;
 import org.kairosdb.client.KairosRestClient;
-import org.kairosdb.client.builder.AggregatorFactory;
 import org.kairosdb.client.builder.DataPoint;
 import org.kairosdb.client.builder.Metric;
 import org.kairosdb.client.builder.MetricBuilder;
@@ -19,7 +17,6 @@ import org.kairosdb.client.response.Queries;
 import org.kairosdb.client.response.QueryResponse;
 import org.kairosdb.client.response.Response;
 import org.kairosdb.client.response.Results;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
@@ -55,9 +52,6 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
     private String kairosDBPort;
 
     private KairosRestClient kairosRestClient;
-
-    @Autowired
-    private BucketAggregationUtil bucketAggregationUtil;
 
     /**
      * @see com.petpal.tracking.service.timeseries.TimeSeriesFacade#querySingleTimeSeries(java.util.Map, TimeSeriesMetric, Long, Long, org.kairosdb.client.builder.TimeUnit, int, boolean)
@@ -405,7 +399,6 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
         }
 
         QueryMetric queryMetric = queryBuilder.addMetric(timeSeriesMetric.toString());
-        queryMetric.addAggregator(AggregatorFactory.createSumAggregator(resultBucketMultiplier, resultBucketSize));
         for(TrackingTag tag : tags.keySet()) {
             queryMetric.addTag(tag.toString(), tags.get(tag));
         }
@@ -443,7 +436,6 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
 
         for(TimeSeriesMetric timeSeriesMetric : timeSeriesMetrics) {
             QueryMetric queryMetric = queryBuilder.addMetric(timeSeriesMetric.toString());
-            queryMetric.addAggregator(AggregatorFactory.createSumAggregator(resultBucketMultiplier, resultBucketSize));
             for(TrackingTag tag : tags.keySet()) {
                 queryMetric.addTag(tag.toString(), tags.get(tag));
             }
@@ -587,8 +579,6 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
                 ", each metric tagged by " + tags + ". Results will be grouped into buckets of " +
                 resultBucketMultiplier + " " + resultBucketSize + " size.");
     }
-
-
 
     @PostConstruct
     public void afterPropertiesSet() throws Exception {
