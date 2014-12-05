@@ -12,31 +12,40 @@ import java.util.List;
  */
 public enum TimeSeriesMetric {
 
-    WALKINGSTEPS_YEARS,
-    WALKINGSTEPS_MONTHS,
-    WALKINGSTEPS_WEEKS,
-    WALKINGSTEPS_DAYS,
-    WALKINGSTEPS_HOURS,
-    RUNNINGSTEPS_YEARS,
-    RUNNINGSTEPS_MONTHS,
-    RUNNINGSTEPS_WEEKS,
-    RUNNINGSTEPS_DAYS,
-    RUNNINGSTEPS_HOURS,
-    SLEEPINGSECONDS_YEARS,
-    SLEEPINGSECONDS_MONTHS,
-    SLEEPINGSECONDS_WEEKS,
-    SLEEPINGSECONDS_DAYS,
-    SLEEPINGSECONDS_HOURS,
-    RESTINGSECONDS_YEARS,
-    RESTINGSECONDS_MONTHS,
-    RESTINGSECONDS_WEEKS,
-    RESTINGSECONDS_DAYS,
-    RESTINGSECONDS_HOURS,
-    WALKINGSTEPS_RAW,
-    RUNNINGSTEPS_RAW,
-    SLEEPINGSECONDS_RAW,
-    RESTINGSECONDS_RAW;
+    WALKINGSTEPS_YEARS(false),
+    WALKINGSTEPS_MONTHS(false),
+    WALKINGSTEPS_WEEKS(false),
+    WALKINGSTEPS_DAYS(false),
+    WALKINGSTEPS_HOURS(false),
+    RUNNINGSTEPS_YEARS(false),
+    RUNNINGSTEPS_MONTHS(false),
+    RUNNINGSTEPS_WEEKS(false),
+    RUNNINGSTEPS_DAYS(false),
+    RUNNINGSTEPS_HOURS(false),
+    SLEEPINGSECONDS_YEARS(false),
+    SLEEPINGSECONDS_MONTHS(false),
+    SLEEPINGSECONDS_WEEKS(false),
+    SLEEPINGSECONDS_DAYS(false),
+    SLEEPINGSECONDS_HOURS(false),
+    RESTINGSECONDS_YEARS(false),
+    RESTINGSECONDS_MONTHS(false),
+    RESTINGSECONDS_WEEKS(false),
+    RESTINGSECONDS_DAYS(false),
+    RESTINGSECONDS_HOURS(false),
+    WALKINGSTEPS_RAW(false),
+    RUNNINGSTEPS_RAW(false),
+    SLEEPINGSECONDS_RAW(false),
+    RESTINGSECONDS_RAW(false);
 
+    private final boolean aggregateAsAverage;
+
+    TimeSeriesMetric(boolean aggregateAsAverage) {
+        this.aggregateAsAverage = aggregateAsAverage;
+    }
+
+    public boolean aggregateAsAverage() {
+        return aggregateAsAverage;
+    }
 
     /**
      * Get the name of a time series used for raw data given the API's tracking metric identifier

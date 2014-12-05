@@ -190,10 +190,11 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
     }
 
 
-    protected void addTimeSeriesDataToMetricBuilder(MetricBuilder metricBuilder,
-        Map<Long, Long> timeStampValueMap,
-        TimeSeriesMetric timeSeriesMetric,
-        Map<TrackingTag, String> tags) {
+    protected void addTimeSeriesDataToMetricBuilder(
+            MetricBuilder metricBuilder,
+            Map<Long, Long> timeStampValueMap,
+            TimeSeriesMetric timeSeriesMetric,
+            Map<TrackingTag, String> tags) {
 
         Assert.notNull(metricBuilder, "No metric builder provided");
         Assert.notNull(timeSeriesMetric, "No time series metric provided");

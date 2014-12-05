@@ -11,10 +11,20 @@ import java.util.List;
  */
 public enum TrackingMetric {
 
-    WALKINGSTEPS,
-    RUNNINGSTEPS,
-    SLEEPINGSECONDS,
-    RESTINGSECONDS;
+    WALKINGSTEPS(false),
+    RUNNINGSTEPS(false),
+    SLEEPINGSECONDS(false),
+    RESTINGSECONDS(false);
+
+    private final boolean isCalculatedAverage;
+
+    TrackingMetric(boolean isCalculatedAverage) {
+        this.isCalculatedAverage = isCalculatedAverage;
+    }
+
+    public boolean isCalculatedAverage() {
+        return isCalculatedAverage;
+    }
 
     public static List<TrackingMetric> getAllTrackingMetrics() {
         return Arrays.asList(values());
