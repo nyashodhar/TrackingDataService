@@ -41,7 +41,7 @@ public class TrackingMetricsConfigTest {
     public void testInitialize() throws IOException {
 
         trackingMetricsConfig.initialize();
-        Map<String, TrackingMetricsConfig.TrackingMetric> trackingMetricMap =
+        Map<String, TrackingMetricConfig> trackingMetricMap =
                 trackingMetricsConfig.getAllMetrics();
         Assert.assertEquals(4, trackingMetricMap.size());
         Assert.assertTrue(trackingMetricMap.containsKey("WALKINGSTEPS"));
@@ -49,24 +49,24 @@ public class TrackingMetricsConfigTest {
         Assert.assertTrue(trackingMetricMap.containsKey("SLEEPINGSECONDS"));
         Assert.assertTrue(trackingMetricMap.containsKey("RESTINGSECONDS"));
 
-        TrackingMetricsConfig.TrackingMetric walkingSteps = trackingMetricMap.get("WALKINGSTEPS");
+        TrackingMetricConfig walkingSteps = trackingMetricMap.get("WALKINGSTEPS");
         Assert.assertEquals(Long.class, walkingSteps.getDataType());
-        Assert.assertEquals(TrackingMetricsConfig.Aggregation.SUM, walkingSteps.getAggregation());
+        Assert.assertEquals(Aggregation.SUM, walkingSteps.getAggregation());
         Assert.assertEquals(walkingSteps, trackingMetricsConfig.getTrackingMetric("WALKINGSTEPS"));
 
-        TrackingMetricsConfig.TrackingMetric runningSteps = trackingMetricMap.get("RUNNINGSTEPS");
+        TrackingMetricConfig runningSteps = trackingMetricMap.get("RUNNINGSTEPS");
         Assert.assertEquals(Long.class, runningSteps.getDataType());
-        Assert.assertEquals(TrackingMetricsConfig.Aggregation.SUM, runningSteps.getAggregation());
+        Assert.assertEquals(Aggregation.SUM, runningSteps.getAggregation());
         Assert.assertEquals(runningSteps, trackingMetricsConfig.getTrackingMetric("RUNNINGSTEPS"));
 
-        TrackingMetricsConfig.TrackingMetric sleepingSeconds = trackingMetricMap.get("SLEEPINGSECONDS");
+        TrackingMetricConfig sleepingSeconds = trackingMetricMap.get("SLEEPINGSECONDS");
         Assert.assertEquals(Long.class, sleepingSeconds.getDataType());
-        Assert.assertEquals(TrackingMetricsConfig.Aggregation.SUM, sleepingSeconds.getAggregation());
+        Assert.assertEquals(Aggregation.SUM, sleepingSeconds.getAggregation());
         Assert.assertEquals(sleepingSeconds, trackingMetricsConfig.getTrackingMetric("SLEEPINGSECONDS"));
 
-        TrackingMetricsConfig.TrackingMetric restingSeconds = trackingMetricMap.get("RESTINGSECONDS");
+        TrackingMetricConfig restingSeconds = trackingMetricMap.get("RESTINGSECONDS");
         Assert.assertEquals(Long.class, restingSeconds.getDataType());
-        Assert.assertEquals(TrackingMetricsConfig.Aggregation.SUM, restingSeconds.getAggregation());
+        Assert.assertEquals(Aggregation.SUM, restingSeconds.getAggregation());
         Assert.assertEquals(restingSeconds, trackingMetricsConfig.getTrackingMetric("RESTINGSECONDS"));
     }
 
@@ -103,12 +103,12 @@ public class TrackingMetricsConfigTest {
     @Test
     public void testGetAggregationFromProperties_missing_expected() {
 
-        TrackingMetricsConfig.Aggregation aggregation1 =
+        Aggregation aggregation1 =
                 trackingMetricsConfig.getAggregationFromProperties(1, trackingMetricsProperties, "something");
-        Assert.assertEquals(TrackingMetricsConfig.Aggregation.SUM, aggregation1);
+        Assert.assertEquals(Aggregation.SUM, aggregation1);
 
-        TrackingMetricsConfig.Aggregation aggregation4 =
+        Aggregation aggregation4 =
                 trackingMetricsConfig.getAggregationFromProperties(4, trackingMetricsProperties, "something");
-        Assert.assertEquals(TrackingMetricsConfig.Aggregation.SUM, aggregation4);
+        Assert.assertEquals(Aggregation.SUM, aggregation4);
     }
 }

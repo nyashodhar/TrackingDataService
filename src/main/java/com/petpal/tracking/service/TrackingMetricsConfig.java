@@ -28,14 +28,14 @@ public class TrackingMetricsConfig {
 
     private Properties trackingMetricsProperties;
 
-    private Map<String, TrackingMetric> trackingMetrics;
+    private Map<String, TrackingMetricConfig> trackingMetrics;
 
     @PostConstruct
     public void initialize() throws IOException {
 
         Resource resource = new ClassPathResource("/" + CONFIG_FILE);
         trackingMetricsProperties = PropertiesLoaderUtils.loadProperties(resource);
-        trackingMetrics = new HashMap<String, TrackingMetric>();
+        trackingMetrics = new HashMap<String, TrackingMetricConfig>();
 
         int i=1;
         boolean lookForMetric = true;
@@ -54,19 +54,19 @@ public class TrackingMetricsConfig {
             Type dataType = getDataTypeFromProperties(i, trackingMetricsProperties, metricName);
             Aggregation aggregation = getAggregationFromProperties(i, trackingMetricsProperties, metricName);
 
-            TrackingMetric trackingMetric = new TrackingMetric(metricName, dataType, aggregation);
-            trackingMetrics.put(metricName, trackingMetric);
+            TrackingMetricConfig trackingMetric = new TrackingMetricConfig(metricName, dataType, aggregation);
+            trackingMetrics.put(trackingMetric.getName(), trackingMetric);
             i++;
         }
     }
 
-    public Map<String, TrackingMetric> getAllMetrics() {
-        Map<String, TrackingMetric> configCopy = new HashMap<String, TrackingMetric>(trackingMetrics.size());
+    public Map<String, TrackingMetricConfig> getAllMetrics() {
+        Map<String, TrackingMetricConfig> configCopy = new HashMap<String, TrackingMetricConfig>(trackingMetrics.size());
         configCopy.putAll(trackingMetrics);
         return configCopy;
     }
 
-    public TrackingMetric getTrackingMetric(String metricName) {
+    public TrackingMetricConfig getTrackingMetric(String metricName) {
         if(trackingMetrics.containsKey(metricName)) {
             return trackingMetrics.get(metricName);
         } else {
@@ -122,44 +122,4 @@ public class TrackingMetricsConfig {
         return dataType;
     }
 
-
-    protected class TrackingMetric {
-
-        private String name;
-        private Type dataType;
-        private Aggregation aggregation;
-
-        public TrackingMetric(String name, Type dataType, Aggregation aggregation) {
-            this.name = name;
-            this.dataType = dataType;
-            this.aggregation = aggregation;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public Type getDataType() {
-            return dataType;
-        }
-
-        public Aggregation getAggregation() {
-            return aggregation;
-        }
-
-        @Override
-        public String toString() {
-            final StringBuilder sb = new StringBuilder("TrackingMetric{");
-            sb.append("name='").append(name).append('\'');
-            sb.append(", dataType=").append(dataType);
-            sb.append(", aggregation=").append(aggregation);
-            sb.append('}');
-            return sb.toString();
-        }
-    }
-
-    protected enum Aggregation {
-        SUM,
-        AVERAGE;
-    }
 }

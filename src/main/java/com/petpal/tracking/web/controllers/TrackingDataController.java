@@ -55,6 +55,37 @@ public class TrackingDataController {
     @Qualifier("trackingDataValidator")
     private Validator trackingDataValidator;
 
+
+    @RequestMapping(value="/tracking/TEST/device/{deviceId}", method=RequestMethod.POST)
+    @ResponseStatus( HttpStatus.NO_CONTENT )
+    public void serializeTest(
+            @PathVariable String deviceId,
+            @RequestParam(value="aggregationTimeZone", required=false) TimeZone aggregationTimeZone,
+            @RequestBody @Validated TrackingDataTest trackingDataTest) {
+
+        StringBuilder str = new StringBuilder();
+        str.append("saveTrackingDataForDevice(): deviceId: ").append(deviceId);
+        str.append(", aggregationTimeZone = ");
+
+        if(aggregationTimeZone != null) {
+            str.append(aggregationTimeZone.getID());
+        } else {
+            str.append(aggregationTimeZone);
+        }
+
+        str.append(", trackingData = ").append(trackingDataTest);
+        logger.info(str);
+
+        Map<TrackingTag, String> tags = new HashMap<TrackingTag, String>();
+        tags.put(TrackingTag.TRACKINGDEVICE, deviceId);
+
+        if(aggregationTimeZone == null) {
+            aggregationTimeZone = TimeZone.getTimeZone(defaultAggregationTimeZoneID);
+        }
+
+    }
+
+
     /**
      * Store metrics in the time series database for a given device.
      * @param deviceId identified the device from which the tracking data originates
@@ -207,7 +238,13 @@ public class TrackingDataController {
         binder.registerCustomEditor(AggregationLevel.class, new AggregationLevelEditor());
 
         // Validators
-        binder.addValidators(trackingDataValidator);
+        //binder.addValidators(trackingDataValidator);
+        //binder.replaceValidators(trackingDataValidator);
+    }
+
+    @InitBinder("trackingDataTest")
+    public void initTrackingDataBinder(WebDataBinder webDataBinder) {
+        webDataBinder.addValidators(trackingDataValidator);
     }
 
 }
