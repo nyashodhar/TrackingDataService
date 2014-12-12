@@ -33,6 +33,13 @@
             <artifactId>client</artifactId>
             <version>2.0</version>
         </dependency>
+        <!-- Added by Per: Mocking for unit tests -->
+        <dependency>
+            <groupId>org.easymock</groupId>
+            <artifactId>easymock</artifactId>
+            <version>3.3</version>
+            <scope>test</scope>
+        </dependency>
         <!-- Added by Per: To get log4j logging -->
         <!-- See here: http://docs.spring.io/spring-boot/docs/current/reference/html/howto-logging.html -->
         <dependency>
@@ -79,6 +86,9 @@
         </repository>
 
     </repositories>
+
+
+
     <pluginRepositories>
         <pluginRepository>
             <id>spring-releases</id>

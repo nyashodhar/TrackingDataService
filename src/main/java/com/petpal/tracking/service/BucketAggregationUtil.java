@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
+import java.lang.reflect.Type;
 import java.util.Calendar;
-import java.util.Map;
 import java.util.TimeZone;
 import java.util.TreeMap;
 
@@ -35,10 +35,13 @@ public class BucketAggregationUtil {
      * @return a map containing contributions from any existing datapoints incorporated
      * into the new data.
      */
-    public Map<Long, Long> mergeExistingDataPointsIntoNew(
-            Map<Long, Long> newDataPoints, Map<Long, Long> existingDataPoints) {
+    public TreeMap mergeExistingDataPointsIntoNew(
+            TreeMap newDataPoints, TreeMap existingDataPoints, Aggregation aggregation, Type dataType) {
 
-        Map<Long, Long> updatedDataPoints = new TreeMap<Long, Long>();
+        Assert.isTrue(aggregation == Aggregation.SUM, aggregation + " aggregation not supported");
+        Assert.isTrue(dataType == Long.class, dataType + " type not supported");
+
+        TreeMap updatedDataPoints = new TreeMap();
 
         if(CollectionUtils.isEmpty(existingDataPoints)) {
             logger.info("mergeExistingDataPointsIntoNew(): No existing data points found.");
@@ -48,13 +51,14 @@ public class BucketAggregationUtil {
         } else {
 
             logger.info("mergeExistingDataPointsIntoNew(): Previously aggregated data found => " +
-                    "merging in current aggregated data for update.");
+                    "merging in current aggregated data for update using " + aggregation + " aggregation.");
 
-            for(long newAggregatedDataPoint : newDataPoints.keySet()) {
-                long newAddedValue = newDataPoints.get(newAggregatedDataPoint);
-                long existingValue = existingDataPoints.get(newAggregatedDataPoint) == null ?
-                        0L : existingDataPoints.get(newAggregatedDataPoint);
-                long updatedValue = newAddedValue + existingValue;
+            for(Object newAggregatedDataPointObj : newDataPoints.keySet()) {
+                Long newAggregatedDataPoint = (Long) newAggregatedDataPointObj;
+                Object newAddedValue = newDataPoints.get(newAggregatedDataPoint);
+                Object existingValue = existingDataPoints.get(newAggregatedDataPoint) == null ?
+                        new Long(0L) : existingDataPoints.get(newAggregatedDataPoint);
+                Object updatedValue = sumObjects(newAddedValue, existingValue, dataType);
                 updatedDataPoints.put(newAggregatedDataPoint, updatedValue);
             }
         }
@@ -99,27 +103,31 @@ public class BucketAggregationUtil {
      * timestamps in the utc transformed series before returning to avoid the issue of some timestamps
      * potentially being in the future after the shift into UTC.
      *
+     * @param trackingMetricConfig information about the metric
      * @param shiftedUnaggregatedData the data to aggregate
      * @param aggregationTimeZone the timezone used to calculate time ranges
      * @param aggregationLevel the bucket size
      *
      * @return data aggregated into the specified bucket size for the given time zone.
      */
-    public Map<Long, Long> aggregateIntoUTCShiftedBuckets(TreeMap<Long, Long> shiftedUnaggregatedData, TimeZone aggregationTimeZone, AggregationLevel aggregationLevel) {
+    public TreeMap aggregateIntoUTCShiftedBuckets(
+            TrackingMetricConfig trackingMetricConfig,
+            TreeMap shiftedUnaggregatedData,
+            TimeZone aggregationTimeZone,
+            AggregationLevel aggregationLevel) {
 
-        TreeMap<Long, Long> aggregatedData =
-                aggregateIntoBucketsForTimeZone(shiftedUnaggregatedData, aggregationTimeZone, aggregationLevel);
+        TreeMap aggregatedData = aggregateIntoBucketsForTimeZone(
+                trackingMetricConfig, shiftedUnaggregatedData, aggregationTimeZone, aggregationLevel);
 
         // For each bucket in the aggregated series, into a UTC timezone relative buckets
-
-        Map<Long, Long> utcShiftedAggregatedData = shiftTimeSeriesToBoundariesForTimeZone(aggregatedData, aggregationTimeZone, UTC, aggregationLevel);
+        TreeMap utcShiftedAggregatedData = shiftTimeSeriesToBoundariesForTimeZone(aggregatedData, aggregationTimeZone, UTC, aggregationLevel);
 
         //
         // Apply a 48hr rewind on all timestamps in the aggregated series to avoid the
         // 'future data' problem after data has been shifted
         //
 
-        Map<Long, Long> fortyEightHourShiftedUTCAggregatedData = applyFortyEightHourShift(utcShiftedAggregatedData, false);
+        TreeMap fortyEightHourShiftedUTCAggregatedData = applyFortyEightHourShift(utcShiftedAggregatedData, false);
 
         return fortyEightHourShiftedUTCAggregatedData;
     }
@@ -133,13 +141,15 @@ public class BucketAggregationUtil {
      * @param aggregationLevel
      * @return query result presented relative to the aggregation time zone.
      */
-    public Map<Long, Long> shiftResultToAggregationTimeZone(Map<Long, Long> utcRelativeResult, TimeZone aggregationTimeZone, AggregationLevel aggregationLevel) {
+    public TreeMap shiftResultToAggregationTimeZone(
+            TreeMap utcRelativeResult, TimeZone aggregationTimeZone, AggregationLevel aggregationLevel) {
 
         // Apply forward 48hr forward shift
-        Map<Long, Long> fortyEightHourUnshiftedData = applyFortyEightHourShift(utcRelativeResult, true);
+        TreeMap fortyEightHourUnshiftedData = applyFortyEightHourShift(utcRelativeResult, true);
 
         // For each bucket in the aggregated series, shift back into the aggregation timezone
-        Map<Long, Long> utcShiftedAggregatedData = shiftTimeSeriesToBoundariesForTimeZone(fortyEightHourUnshiftedData, UTC, aggregationTimeZone, aggregationLevel);
+        TreeMap utcShiftedAggregatedData = shiftTimeSeriesToBoundariesForTimeZone(
+                fortyEightHourUnshiftedData, UTC, aggregationTimeZone, aggregationLevel);
 
         return utcShiftedAggregatedData;
     }
@@ -170,25 +180,28 @@ public class BucketAggregationUtil {
      *
      * @return data aggregated into the specified bucket size for the given time zone.
      */
-    public TreeMap<Long, Long> aggregateIntoBucketsForTimeZone(TreeMap<Long, Long> unaggregatedData, TimeZone timeZone, AggregationLevel aggregationLevel) {
+    public TreeMap aggregateIntoBucketsForTimeZone(
+            TrackingMetricConfig trackingMetricConfig, TreeMap unaggregatedData, TimeZone timeZone, AggregationLevel aggregationLevel) {
 
-        if (CollectionUtils.isEmpty(unaggregatedData)) {
+        if(CollectionUtils.isEmpty(unaggregatedData)) {
             return null;
         }
 
         Assert.notNull(timeZone, "Timezone not specified for aggregation");
         Assert.notNull(aggregationLevel, "Bucket size aggregation level not specified for aggregation");
 
-        long initialBucketStart = determineInitialBucket(unaggregatedData.keySet().iterator().next(), timeZone, aggregationLevel);
+        long initialBucketStart = determineInitialBucket((Long) unaggregatedData.keySet().iterator().next(), timeZone, aggregationLevel);
 
         long currentBucketStart = initialBucketStart;
         long currentBucketEnd = getAggregatedBucketEndTime(currentBucketStart, aggregationLevel, timeZone);
-        TreeMap<Long, Long> aggregatedData = new TreeMap<Long, Long>();
-        aggregatedData.put(currentBucketStart, 0L);
+        TreeMap aggregatedData = new TreeMap<Long, Object>();
 
-        for(Long timeStamp : unaggregatedData.keySet()) {
+        aggregatedData.put(currentBucketStart, initialValue(trackingMetricConfig.getDataType()));
 
-            long value = unaggregatedData.get(timeStamp);
+        for(Object timeStampObj : unaggregatedData.keySet()) {
+
+            Long timeStamp = (Long) timeStampObj;
+            Object value = unaggregatedData.get(timeStamp);
 
             while(!(currentBucketStart <= timeStamp && currentBucketEnd >= timeStamp)) {
                 //
@@ -211,13 +224,37 @@ public class BucketAggregationUtil {
             }
 
             // Add the value to the bucket
-            long newValue = aggregatedData.get(currentBucketStart) + value;
+
+            if(trackingMetricConfig.getAggregation() != Aggregation.SUM) {
+                throw new UnsupportedOperationException(
+                        trackingMetricConfig.getAggregation() + " not supported. Only " + Aggregation.SUM + " is supported");
+            }
+
+            Object newValue = sumObjects(aggregatedData.get(currentBucketStart), value, trackingMetricConfig.getDataType());
+
             aggregatedData.put(currentBucketStart, newValue);
         }
 
         return aggregatedData;
     }
 
+    private Object sumObjects(Object o1, Object o2, Type dataType) {
+        Assert.isTrue(dataType == Long.class || dataType == Double.class, "Unsupported datatype " + dataType);
+        if(dataType == Long.class) {
+            return new Long(((Long) o1).longValue() + ((Long) o2).longValue());
+        } else {
+            return new Double(((Double) o1).doubleValue() + ((Double) o2).doubleValue());
+        }
+    }
+
+    private Object initialValue(Type dataType) {
+        Assert.isTrue(dataType == Long.class || dataType == Double.class, "Unsupported datatype " + dataType);
+        if(dataType == Long.class) {
+            return new Long(0L);
+        } else {
+            return new Double(0D);
+        }
+    }
 
     /**
      * Calculate the end time of a bucket given its start time and aggregation level
@@ -239,14 +276,15 @@ public class BucketAggregationUtil {
      * @return a map of datapoints shifted 48 hours in the direction specified
      * by the 'forward' parameter.
      */
-    protected Map<Long, Long> applyFortyEightHourShift(Map<Long, Long> dataPoints, boolean forward) {
+    protected TreeMap applyFortyEightHourShift(TreeMap dataPoints, boolean forward) {
 
         Assert.notEmpty(dataPoints, "Datapoints not specified");
 
-        Map<Long, Long> shiftedData = new TreeMap();
-        for(long ts : dataPoints.keySet()) {
-            long newTimeStamp = shiftTimeStamp(ts, FORTY_EIGHT_HOURS, forward);
-            shiftedData.put(newTimeStamp, dataPoints.get(ts));
+        TreeMap shiftedData = new TreeMap();
+        for(Object tsObj : dataPoints.keySet()) {
+            Long ts = (Long) tsObj;
+            Object newTimeStamp = shiftTimeStamp(ts, FORTY_EIGHT_HOURS, forward);
+            shiftedData.put(newTimeStamp, dataPoints.get(tsObj));
         }
 
         return shiftedData;
@@ -270,15 +308,28 @@ public class BucketAggregationUtil {
     }
 
 
-    protected Map<Long, Long> shiftTimeSeriesToBoundariesForTimeZone(Map<Long, Long> dataPoints, TimeZone timeZone1, TimeZone timeZone2, AggregationLevel aggregationLevel) {
+    protected TreeMap shiftTimeSeriesToBoundariesForTimeZone(
+            TreeMap dataPoints, TimeZone timeZone1, TimeZone timeZone2, AggregationLevel aggregationLevel) {
 
         // For each bucket in the aggregated series, into a UTC timezone relative buckets
 
-        TreeMap<Long, Long> shiftedData = new TreeMap<Long, Long>();
-        for(long timeStamp : dataPoints.keySet()) {
+        //System.out.println("****************** dataPoints = " + dataPoints + ", size() = " + dataPoints.size());
+
+        TreeMap shiftedData = new TreeMap();
+        for(Object timeStampObj : dataPoints.keySet()) {
+            Long timeStamp = (Long) timeStampObj;
+
+            Object value = dataPoints.get(timeStampObj);
+            //System.out.println("****************** value = " + value);
+
             long utcShiftedBucketTimestamp = getShiftedTimeStamp(timeStamp, timeZone1, timeZone2, aggregationLevel);
-            shiftedData.put(utcShiftedBucketTimestamp, dataPoints.get(timeStamp));
+
+            //System.out.println("****************** utcShiftedBucketTimestamp = " + utcShiftedBucketTimestamp);
+
+            shiftedData.put(utcShiftedBucketTimestamp, value);
         }
+
+        //System.out.println("****************** shiftedData = " + shiftedData + ", size() = " + shiftedData.size());
 
         return shiftedData;
     }

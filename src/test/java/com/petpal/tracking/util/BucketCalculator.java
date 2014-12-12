@@ -1,13 +1,14 @@
 package com.petpal.tracking.util;
 
-import com.petpal.tracking.integration.TestTrackingData;
-import com.petpal.tracking.integration.TestTrackingMetric;
+import com.petpal.tracking.integration.TestTrackingDataUpload;
 import org.apache.log4j.Logger;
 import org.kairosdb.client.builder.TimeUnit;
 import org.springframework.util.Assert;
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -115,13 +116,20 @@ public class BucketCalculator {
         return (cal.getTimeInMillis() - 1L);
     }
 
-    public static void addDataPointForAllMetrics(TestTrackingData testTrackingData, TreeMap<Long, Long> dataPoints) {
-        for(TestTrackingMetric testTrackingMetric : TestTrackingMetric.getAllTrackingMetrics()) {
-            testTrackingData.setDataForMetric(testTrackingMetric, dataPoints);
+    public static void addDataPointForAllLongMetrics(TestTrackingDataUpload testTrackingData, TreeMap<Long, Long> dataPoints) {
+
+        Map<String, TreeMap<Long, Long>> longMetricsAndDataPoints =
+                new HashMap<String, TreeMap<Long, Long>>(dataPoints.size());
+
+        for(String longMetricName : TrackingMetricConfigUtil.getAllLongTypeMetrics()) {
+            longMetricsAndDataPoints.put(longMetricName, dataPoints);
         }
+
+        testTrackingData.setLongMetrics(longMetricsAndDataPoints);
+
     }
 
-    public static TestTrackingData generateRandomTrackingData(
+    public static TestTrackingDataUpload generateRandomLongTrackingData(
             Calendar start,
             Calendar end) {
 
@@ -130,26 +138,40 @@ public class BucketCalculator {
         int maxSleepSecondsPerMinute = 50;
         int maxRestSecondsPerMinute = 50;
 
-        TestTrackingData testTrackingData = new TestTrackingData();
-        testTrackingData.setDataForMetric(TestTrackingMetric.WALKINGSTEPS, generateMinuteBucketRandomData(start, end, maxWalkingStepsPerMinute));
-        testTrackingData.setDataForMetric(TestTrackingMetric.RUNNINGSTEPS, generateMinuteBucketRandomData(start, end, maxRunningStepsPerMinute));
-        testTrackingData.setDataForMetric(TestTrackingMetric.SLEEPINGSECONDS, generateMinuteBucketRandomData(start, end, maxSleepSecondsPerMinute));
-        testTrackingData.setDataForMetric(TestTrackingMetric.RESTINGSECONDS, generateMinuteBucketRandomData(start, end, maxRestSecondsPerMinute));
+        Map<String, TreeMap<Long, Long>> longMetricsAndDataPoints =
+                new HashMap<String, TreeMap<Long, Long>>(4);
+
+        longMetricsAndDataPoints.put(TrackingMetricConfigUtil.METRIC_WALKING_STEPS,
+                generateMinuteBucketRandomData(start, end, maxWalkingStepsPerMinute));
+        longMetricsAndDataPoints.put(TrackingMetricConfigUtil.METRIC_RUNNING_STEPS,
+                generateMinuteBucketRandomData(start, end, maxRunningStepsPerMinute));
+        longMetricsAndDataPoints.put(TrackingMetricConfigUtil.METRIC_SLEEPING_SECONDS,
+                generateMinuteBucketRandomData(start, end, maxSleepSecondsPerMinute));
+        longMetricsAndDataPoints.put(TrackingMetricConfigUtil.METRIC_RESTING_SECONDS,
+                generateMinuteBucketRandomData(start, end, maxRestSecondsPerMinute));
+
+        TestTrackingDataUpload testTrackingData = new TestTrackingDataUpload();
+        testTrackingData.setLongMetrics(longMetricsAndDataPoints);
         return testTrackingData;
     }
 
-    public static TestTrackingData combineTrackingData(
-            TestTrackingData testTrackingData1,
-            TestTrackingData testTrackingData2) {
+    public static TestTrackingDataUpload combineLongTrackingData(
+            TestTrackingDataUpload testTrackingData1,
+            TestTrackingDataUpload testTrackingData2) {
 
-        TestTrackingData combinedTestTrackingData = new TestTrackingData();
+        TestTrackingDataUpload combinedTestTrackingData = new TestTrackingDataUpload();
 
-        for(TestTrackingMetric testTrackingMetric : TestTrackingMetric.getAllTrackingMetrics()) {
+        Map<String, TreeMap<Long, Long>> longMetricsAndDataPointsForCombined =
+                new HashMap<String, TreeMap<Long, Long>>();
+
+        for(String longMetricName : testTrackingData1.getLongMetrics().keySet()) {
             TreeMap<Long, Long> dataPoints = new TreeMap<Long, Long>();
-            dataPoints.putAll(testTrackingData1.getDataForMetric(testTrackingMetric));
-            dataPoints.putAll(testTrackingData2.getDataForMetric(testTrackingMetric));
-            combinedTestTrackingData.setDataForMetric(testTrackingMetric, dataPoints);
+            dataPoints.putAll(testTrackingData1.getLongMetrics().get(longMetricName));
+            dataPoints.putAll(testTrackingData2.getLongMetrics().get(longMetricName));
+            longMetricsAndDataPointsForCombined.put(longMetricName, dataPoints);
         }
+
+        combinedTestTrackingData.setLongMetrics(longMetricsAndDataPointsForCombined);
 
         return combinedTestTrackingData;
     }

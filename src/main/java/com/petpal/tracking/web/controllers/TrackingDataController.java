@@ -1,10 +1,11 @@
 package com.petpal.tracking.web.controllers;
 
 import com.petpal.tracking.service.TrackingDataService;
+import com.petpal.tracking.service.TrackingMetricConfig;
+import com.petpal.tracking.service.TrackingMetricsConfig;
 import com.petpal.tracking.web.editors.AggregationLevelEditor;
 import com.petpal.tracking.web.editors.DateEditor;
-import com.petpal.tracking.web.editors.TrackingMetricsSet;
-import com.petpal.tracking.web.editors.TrackingMetricsSetEditor;
+import com.petpal.tracking.web.editors.util.TrackingDataUploadUtil;
 import com.petpal.tracking.web.validators.util.AggregatedQueryUtil;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.CollectionUtils;
+import org.springframework.validation.Validator;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,6 +31,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
 
@@ -49,18 +53,19 @@ public class TrackingDataController {
     @Qualifier("trackingDataService")
     private TrackingDataService trackingDataService;
 
-    /**
-     * Store metrics in the time series database for a given device.
-     * @param deviceId identified the device from which the tracking data originates
-     * @param aggregationTimeZone the timezone the data should be aggregated for
-     * @param trackingData the tracking data to be inserted into the tracking data store.
-     */
+    @Autowired
+    @Qualifier("trackingDataUploadValidator")
+    private Validator trackingDataUploadValidator;
+
+    @Autowired
+    private TrackingMetricsConfig trackingMetricsConfig;
+
     @RequestMapping(value="/tracking/device/{deviceId}", method=RequestMethod.POST)
     @ResponseStatus( HttpStatus.NO_CONTENT )
-    public void saveTrackingDataForDevice(
+    public void serializeTest(
             @PathVariable String deviceId,
             @RequestParam(value="aggregationTimeZone", required=false) TimeZone aggregationTimeZone,
-            @RequestBody TrackingData trackingData) {
+            @RequestBody @Validated TrackingDataUpload trackingDataUpload) {
 
         StringBuilder str = new StringBuilder();
         str.append("saveTrackingDataForDevice(): deviceId: ").append(deviceId);
@@ -72,7 +77,7 @@ public class TrackingDataController {
             str.append(aggregationTimeZone);
         }
 
-        str.append(", trackingData = ").append(trackingData);
+        str.append(", trackingDataUpload = ").append(trackingDataUpload);
         logger.info(str);
 
         Map<TrackingTag, String> tags = new HashMap<TrackingTag, String>();
@@ -81,6 +86,9 @@ public class TrackingDataController {
         if(aggregationTimeZone == null) {
             aggregationTimeZone = TimeZone.getTimeZone(defaultAggregationTimeZoneID);
         }
+
+        TrackingData trackingData = TrackingDataUploadUtil.createTrackingDataFromUploadRequest(
+                trackingDataUpload, trackingMetricsConfig);
 
         trackingDataService.storeTrackingData(tags, trackingData, aggregationTimeZone);
     }
@@ -116,7 +124,7 @@ public class TrackingDataController {
      */
     @RequestMapping(value="/metrics/device/{deviceId}/aggregate/{aggregationLevel}", method=RequestMethod.GET)
     @ResponseStatus(HttpStatus.OK)
-    public @ResponseBody Map<TrackingMetric, Map<Long, Long>> getAggregatedMetricsForDevice(
+    public @ResponseBody TrackingDataDownload getAggregatedMetricsForDevice(
             @PathVariable(value="deviceId") String deviceId,
             @PathVariable(value="aggregationLevel") AggregationLevel aggregationLevel,
             @RequestParam(value="startYear", required=true) Integer startYear,
@@ -125,7 +133,7 @@ public class TrackingDataController {
             @RequestParam(value="startDay", required=false) Integer startDay,
             @RequestParam(value="startHour", required=false) Integer startHour,
             @RequestParam(value="bucketsToFetch", required=false) Integer bucketsToFetch,
-            @RequestParam(value="trackingMetrics", required=false) TrackingMetricsSet trackingMetricsSet,
+            @RequestParam(value="trackingMetrics", required=false) Set<String> trackingMetricsSet,
             @RequestParam(value="verboseResponse", required=false) Boolean verboseResponse,
             @RequestParam(value="aggregationTimeZone", required=false) TimeZone aggregationTimeZone) {
 
@@ -175,28 +183,36 @@ public class TrackingDataController {
         // Otherwise, query for all known metrics
         //
 
-        List<TrackingMetric> trackingMetricsParam = new ArrayList<TrackingMetric>();
+        List<TrackingMetricConfig> trackingMetricConfigs = new ArrayList<TrackingMetricConfig>();
         if(CollectionUtils.isEmpty(trackingMetricsSet)) {
-            trackingMetricsParam.addAll(TrackingMetric.getAllTrackingMetrics());
+            trackingMetricConfigs.addAll(trackingMetricsConfig.getAllMetrics().values());
         } else {
-            trackingMetricsParam.addAll(trackingMetricsSet);
+            for(String metricName : trackingMetricsSet) {
+                trackingMetricConfigs.add(trackingMetricsConfig.getTrackingMetric(metricName));
+            }
         }
 
         boolean createVerboseResponse = (verboseResponse == null) ? false : verboseResponse;
 
-        Map<TrackingMetric, Map<Long, Long>> metricResults = trackingDataService.getAggregatedTimeSeries(
-                tags, trackingMetricsParam, utcBegin, utcEnd, aggregationLevel, aggregationTimeZone, 1, createVerboseResponse);
+        TrackingDataDownload trackingDataDownload = trackingDataService.getAggregatedTimeSeries(
+                tags, trackingMetricConfigs, utcBegin, utcEnd, aggregationLevel, aggregationTimeZone, 1, createVerboseResponse);
 
-        logger.info("getTrackingMetricsForDevice(): Results: " + metricResults);
-        return metricResults;
+        logger.info("getTrackingMetricsForDevice(): Result: " + trackingDataDownload);
+        return trackingDataDownload;
     }
 
 
     @InitBinder
     public void initBinder(WebDataBinder binder) {
-        binder.registerCustomEditor(TrackingMetricsSet.class, new TrackingMetricsSetEditor());
+
+        // Editors
         binder.registerCustomEditor(Date.class, new DateEditor());
         binder.registerCustomEditor(AggregationLevel.class, new AggregationLevelEditor());
+    }
+
+    @InitBinder("trackingDataUpload")
+    public void initTrackingDataBinder(WebDataBinder webDataBinder) {
+        webDataBinder.addValidators(trackingDataUploadValidator);
     }
 
 }
