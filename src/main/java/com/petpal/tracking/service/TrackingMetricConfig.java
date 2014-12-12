@@ -1,5 +1,7 @@
 package com.petpal.tracking.service;
 
+import com.petpal.tracking.web.controllers.AggregationLevel;
+
 import java.lang.reflect.Type;
 
 /**
@@ -10,11 +12,13 @@ public class TrackingMetricConfig {
     private String name;
     private Type dataType;
     private Aggregation aggregation;
+    private String unaggregatedSeriesName;
 
     public TrackingMetricConfig(String name, Type dataType, Aggregation aggregation) {
         this.name = name;
         this.dataType = dataType;
         this.aggregation = aggregation;
+        this.unaggregatedSeriesName = name + "_RAW";
     }
 
     public String getName() {
@@ -27,6 +31,14 @@ public class TrackingMetricConfig {
 
     public Aggregation getAggregation() {
         return aggregation;
+    }
+
+    public String getUnaggregatedSeriesName() {
+        return unaggregatedSeriesName;
+    }
+
+    public String getAggregatedSeriesName(AggregationLevel aggregationLevel) {
+        return name + "_" + aggregationLevel.toString().toUpperCase();
     }
 
     @Override

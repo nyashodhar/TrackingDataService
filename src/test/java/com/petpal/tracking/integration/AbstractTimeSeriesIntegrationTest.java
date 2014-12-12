@@ -37,7 +37,7 @@ public abstract class AbstractTimeSeriesIntegrationTest {
     protected int port;
 
     protected ResponseEntity<String> postMetricsForDevice(
-            String deviceId, TestTrackingData testTrackingData, TimeZone aggregationTimeZone) {
+            String deviceId, TestTrackingDataUpload testTrackingData, TimeZone aggregationTimeZone) {
 
         String json = JSONUtil.convertToString(testTrackingData);
         //System.out.println("*** Tracking data: " + testTrackingData);
@@ -83,7 +83,7 @@ public abstract class AbstractTimeSeriesIntegrationTest {
     }
 
 
-    protected Map<TestTrackingMetric, Map<Long, Long>> getAggregatedMetricsForDevice(
+    protected TestTrackingDataDownload getAggregatedMetricsForDevice(
             String trackingDeviceId,
             String aggregationLevel,
             Integer startYear,
@@ -92,7 +92,7 @@ public abstract class AbstractTimeSeriesIntegrationTest {
             Integer startDay,
             Integer startHour,
             Integer bucketsToFetch,
-            List<TestTrackingMetric> trackingMetrics,
+            List<String> trackingMetrics,
             Boolean verboseResponse,
             TimeZone aggregationTimeZone) {
 
@@ -157,9 +157,9 @@ public abstract class AbstractTimeSeriesIntegrationTest {
             logger.info("Doing GET for metrics " + url);
             long start = System.currentTimeMillis();
 
-            ResponseEntity<Map<TestTrackingMetric, Map<Long, Long>>> response =
+            ResponseEntity<TestTrackingDataDownload> response =
                     restTemplate.exchange(url, HttpMethod.GET, entity,
-                            new ParameterizedTypeReference<Map<TestTrackingMetric, Map<Long, Long>>>() {},
+                            new ParameterizedTypeReference<TestTrackingDataDownload>() {},
                             urlArgs);
 
             long end = System.currentTimeMillis();
@@ -178,14 +178,14 @@ public abstract class AbstractTimeSeriesIntegrationTest {
         }
     }
 
-    protected String trackingMetricsToCommaSeparated(List<TestTrackingMetric> trackingMetrics) {
+    protected String trackingMetricsToCommaSeparated(List<String> trackingMetrics) {
 
         if(trackingMetrics == null) {
             return null;
         }
 
         StringBuilder stringBuilder = new StringBuilder();
-        for(TestTrackingMetric testTrackingMetric : trackingMetrics) {
+        for(String testTrackingMetric : trackingMetrics) {
             if(stringBuilder.length() > 0) {
                 stringBuilder.append(",");
             }

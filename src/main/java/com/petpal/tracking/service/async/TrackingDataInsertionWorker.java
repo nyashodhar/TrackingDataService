@@ -1,7 +1,7 @@
 package com.petpal.tracking.service.async;
 
-import com.petpal.tracking.web.controllers.TrackingTag;
 import com.petpal.tracking.web.controllers.TrackingData;
+import com.petpal.tracking.web.controllers.TrackingTag;
 import org.apache.log4j.Logger;
 
 import java.util.Map;
@@ -21,7 +21,12 @@ public class TrackingDataInsertionWorker implements Runnable {
     private TimeZone timeZone;
     private AsyncTrackingDataInserter callBack;
 
-    public TrackingDataInsertionWorker(AsyncTrackingDataInserter callBack, TrackingData trackingData, Map<TrackingTag, String> tags, TimeZone timeZone){
+    public TrackingDataInsertionWorker(
+            AsyncTrackingDataInserter callBack,
+            TrackingData trackingData,
+            Map<TrackingTag, String> tags,
+            TimeZone timeZone) {
+
         this.trackingData = trackingData;
         this.tags = tags;
         this.timeZone = timeZone;

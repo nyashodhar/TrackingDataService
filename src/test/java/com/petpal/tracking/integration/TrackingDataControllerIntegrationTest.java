@@ -1,7 +1,9 @@
 package com.petpal.tracking.integration;
 
 import com.petpal.tracking.TrackingDataServiceConfiguration;
+import com.petpal.tracking.service.TrackingMetricsConfig;
 import com.petpal.tracking.util.BucketCalculator;
+import com.petpal.tracking.util.TrackingMetricConfigUtil;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
@@ -44,6 +46,8 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
     @Autowired
     private ThreadPoolTaskExecutor threadPoolTaskExecutor;
 
+    @Autowired
+    private TrackingMetricsConfig trackingMetricsConfig;
 
     @Before
     public void setUp() {
@@ -94,20 +98,20 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         TreeMap<Long, Long> dataPoints1 = new TreeMap<Long, Long>();
         dataPoints1.put(timeStamp, 3L);
 
-        List<TestTrackingMetric> allMetrics = TestTrackingMetric.getAllTrackingMetrics();
+        List<String> allLongMetrics = TrackingMetricConfigUtil.getAllLongTypeMetrics();
 
-        TestTrackingData testTrackingData1 = new TestTrackingData();
-        BucketCalculator.addDataPointForAllMetrics(testTrackingData1, dataPoints1);
+        TestTrackingDataUpload testTrackingData1 = new TestTrackingDataUpload();
+        BucketCalculator.addDataPointForAllLongMetrics(testTrackingData1, dataPoints1);
 
         ResponseEntity<String> postResponse1 = postMetricsForDevice(trackingDeviceId1, testTrackingData1, timeZonePST);
 
         blockUntilAsyncThreadIdleInServer();
 
-        Map<TestTrackingMetric, Map<Long, Long>> getResponse1 = getAggregatedMetricsForDevice(
+        TestTrackingDataDownload testTrackingDataDownload1 = getAggregatedMetricsForDevice(
                 trackingDeviceId1, TestAggregationLevel.MONTHS.toString(), 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
 
-        // There should be 4 metrics in the response, since we didn't itemize metrics
-        Assert.assertEquals(4, getResponse1.size());
+        // There should be 4 long metrics in the response, since we didn't itemize metrics
+        Assert.assertEquals(4, testTrackingDataDownload1.getLongMetrics().size());
 
         //
         // Bucket one should start at May 1, 2014 PST
@@ -115,8 +119,8 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         //
 
         long bucketKey = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 0, 0, 0, timeZonePST).getTimeInMillis();
-        for(TestTrackingMetric metric : allMetrics) {
-            verifyValueForMetric(metric, bucketKey, 3L, getResponse1);
+        for(String longMetric : testTrackingDataDownload1.getLongMetrics().keySet()) {
+            verifyValueForMetric(longMetric, bucketKey, 3L, testTrackingDataDownload1.getLongMetrics());
         }
 
         // Insert data that will be aggregated into the same bucket for a different device...
@@ -124,18 +128,18 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         TreeMap<Long, Long> dataPoints2 = new TreeMap<Long, Long>();
         dataPoints2.put(timeStamp, 7L);
 
-        TestTrackingData testTrackingData2 = new TestTrackingData();
-        BucketCalculator.addDataPointForAllMetrics(testTrackingData2, dataPoints2);
+        TestTrackingDataUpload testTrackingData2 = new TestTrackingDataUpload();
+        BucketCalculator.addDataPointForAllLongMetrics(testTrackingData2, dataPoints2);
 
         ResponseEntity<String> postResponse2 = postMetricsForDevice(trackingDeviceId2, testTrackingData2, timeZonePST);
 
         blockUntilAsyncThreadIdleInServer();
 
-        Map<TestTrackingMetric, Map<Long, Long>> getResponse2 = getAggregatedMetricsForDevice(
+        TestTrackingDataDownload testTrackingDataDownload2 = getAggregatedMetricsForDevice(
                 trackingDeviceId2, TestAggregationLevel.MONTHS.toString(), 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
 
         // There should be 4 metrics in the response, since we didn't itemize metrics
-        Assert.assertEquals(4, getResponse2.size());
+        Assert.assertEquals(4, testTrackingDataDownload2.getLongMetrics().size());
 
         //
         // Bucket one should start at May 1, 2014 PST
@@ -143,25 +147,25 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         //
 
         //long bucketKey = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 0, 0, 0, timeZonePST).getTimeInMillis();
-        for(TestTrackingMetric metric : allMetrics) {
-            verifyValueForMetric(metric, bucketKey, 7L, getResponse2);
+        for(String longMetric : testTrackingDataDownload2.getLongMetrics().keySet()) {
+            verifyValueForMetric(longMetric, bucketKey, 7L, testTrackingDataDownload2.getLongMetrics());
         }
 
         // Repeat the query for the data for device1 and check that result is still the same
 
-        getResponse1 = getAggregatedMetricsForDevice(
+        testTrackingDataDownload1 = getAggregatedMetricsForDevice(
                 trackingDeviceId1, TestAggregationLevel.MONTHS.toString(), 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
 
         // There should be 4 metrics in the response, since we didn't itemize metrics
-        Assert.assertEquals(4, getResponse1.size());
+        Assert.assertEquals(4, testTrackingDataDownload1.getLongMetrics().size());
 
         //
         // Bucket one should start at May 1, 2014 PST
         // Bucket one should have a value of 3 for each metric
         //
 
-        for(TestTrackingMetric metric : allMetrics) {
-            verifyValueForMetric(metric, bucketKey, 3L, getResponse1);
+        for(String longMetric : testTrackingDataDownload1.getLongMetrics().keySet()) {
+            verifyValueForMetric(longMetric, bucketKey, 3L, testTrackingDataDownload1.getLongMetrics());
         }
 
         // Add a 2nd value for device1 in the same bucket
@@ -171,46 +175,44 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         TreeMap<Long, Long> dataPoints1_1 = new TreeMap<Long, Long>();
         dataPoints1_1.put(timeStamp, 11L);
 
-        TestTrackingData testTrackingData1_1 = new TestTrackingData();
-        BucketCalculator.addDataPointForAllMetrics(testTrackingData1_1, dataPoints1_1);
+        TestTrackingDataUpload testTrackingData1_1 = new TestTrackingDataUpload();
+        BucketCalculator.addDataPointForAllLongMetrics(testTrackingData1_1, dataPoints1_1);
 
         postMetricsForDevice(trackingDeviceId1, testTrackingData1_1, timeZonePST);
 
         blockUntilAsyncThreadIdleInServer();
 
-        getResponse1 = getAggregatedMetricsForDevice(
+        testTrackingDataDownload1 = getAggregatedMetricsForDevice(
                 trackingDeviceId1, TestAggregationLevel.MONTHS.toString(), 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
 
         // There should be 4 metrics in the response, since we didn't itemize metrics
-        Assert.assertEquals(4, getResponse1.size());
+        Assert.assertEquals(4, testTrackingDataDownload1.getLongMetrics().size());
 
         //
         // Bucket one should start at May 1, 2014 PST
         // Bucket one should have a value of 14 for each metric
         //
 
-        for(TestTrackingMetric metric : allMetrics) {
-            verifyValueForMetric(metric, bucketKey, 14L, getResponse1);
+        for(String longMetric : testTrackingDataDownload1.getLongMetrics().keySet()) {
+            verifyValueForMetric(longMetric, bucketKey, 14L, testTrackingDataDownload1.getLongMetrics());
         }
 
         // Repeat the query for the data for device2 and check that result is still the same
 
-        getResponse2 = getAggregatedMetricsForDevice(
+        testTrackingDataDownload2 = getAggregatedMetricsForDevice(
                 trackingDeviceId2, TestAggregationLevel.MONTHS.toString(), 2014, Calendar.MAY, null, null, null, null, null, false, timeZonePST);
 
         // There should be 4 metrics in the response, since we didn't itemize metrics
-        Assert.assertEquals(4, getResponse2.size());
+        Assert.assertEquals(4, testTrackingDataDownload2.getLongMetrics().size());
 
         //
         // Bucket one should start at May 1, 2014 PST
         // Bucket one should have a value of 7 for each metric
         //
 
-
-        for(TestTrackingMetric metric : allMetrics) {
-            verifyValueForMetric(metric, bucketKey, 7L, getResponse2);
+        for(String longMetric : testTrackingDataDownload2.getLongMetrics().keySet()) {
+            verifyValueForMetric(longMetric, bucketKey, 7L, testTrackingDataDownload2.getLongMetrics());
         }
-
     }
 
 
@@ -219,7 +221,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         String trackingDeviceId = createTrackingDeviceId();
 
-        TestTrackingData testTrackingData = new TestTrackingData();
+        TestTrackingDataUpload testTrackingData = new TestTrackingDataUpload();
 
         TreeMap<Long, Long> dataPoints = new TreeMap<Long, Long>();
 
@@ -231,15 +233,15 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         long timeStamp2 = BucketCalculator.getCalendar(2014, Calendar.JULY, 2, 0, 0, 0, timeZonePST).getTimeInMillis();
         dataPoints.put(timeStamp2, 2L);
 
-        List<TestTrackingMetric> allMetrics = TestTrackingMetric.getAllTrackingMetrics();
+        List<String> allMetrics = TrackingMetricConfigUtil.getAllLongTypeMetrics();
 
-        BucketCalculator.addDataPointForAllMetrics(testTrackingData, dataPoints);
+        BucketCalculator.addDataPointForAllLongMetrics(testTrackingData, dataPoints);
 
         ResponseEntity<String> postResponse = postMetricsForDevice(trackingDeviceId, testTrackingData, timeZonePST);
 
         blockUntilAsyncThreadIdleInServer();
 
-        Map<TestTrackingMetric, Map<Long, Long>> getResponse = getAggregatedMetricsForDevice(
+        TestTrackingDataDownload testTrackingDataDownload = getAggregatedMetricsForDevice(
                 trackingDeviceId,
                 TestAggregationLevel.MONTHS.toString(),
                 2014,
@@ -254,7 +256,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         // There should be 4 metrics in the response, since we didn't itemize metrics
 
-        Assert.assertEquals(4, getResponse.size());
+        Assert.assertEquals(4, testTrackingDataDownload.getLongMetrics().size());
 
         //
         // Bucket one should start at May 1, 2014 PST
@@ -262,8 +264,8 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         //
 
         long bucketKey = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 0, 0, 0, timeZonePST).getTimeInMillis();
-        for(TestTrackingMetric metric : allMetrics) {
-            verifyValueForMetric(metric, bucketKey, 3L, getResponse);
+        for(String metric : allMetrics) {
+            verifyValueForMetric(metric, bucketKey, 3L, testTrackingDataDownload.getLongMetrics());
         }
 
         //
@@ -277,8 +279,8 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         //
 
         bucketKey = BucketCalculator.getCalendar(2014, Calendar.JULY, 1, 0, 0, 0, timeZonePST).getTimeInMillis();
-        for(TestTrackingMetric metric : allMetrics) {
-            verifyValueForMetric(metric, bucketKey, 2L, getResponse);
+        for(String metric : allMetrics) {
+            verifyValueForMetric(metric, bucketKey, 2L, testTrackingDataDownload.getLongMetrics());
         }
     }
 
@@ -292,20 +294,20 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         // Do the first post followed by a GET to validate aggregated data
         //
 
-        TestTrackingData testTrackingData1 = BucketCalculator.generateRandomTrackingData(
+        TestTrackingDataUpload testTrackingData1 = BucketCalculator.generateRandomLongTrackingData(
                 BucketCalculator.getCalendar(2012, Calendar.MAY, 7, 0, 0, 0, timeZonePST),
                 BucketCalculator.getCalendar(2012, Calendar.MAY, 20, 0, 0, 0, timeZonePST));
 
-        TestTrackingData testTrackingData2 = BucketCalculator.generateRandomTrackingData(
+        TestTrackingDataUpload testTrackingData2 = BucketCalculator.generateRandomLongTrackingData(
                 BucketCalculator.getCalendar(2014, Calendar.FEBRUARY, 2, 0, 0, 0, timeZonePST),
                 BucketCalculator.getCalendar(2014, Calendar.MARCH, 3, 0, 0, 0, timeZonePST));
 
-        TestTrackingData combinedTestTrackingData1 = BucketCalculator.combineTrackingData(testTrackingData1, testTrackingData2);
+        TestTrackingDataUpload combinedTestTrackingData1 = BucketCalculator.combineLongTrackingData(testTrackingData1, testTrackingData2);
 
         ResponseEntity<String> responseData1 = postMetricsForDevice(trackingDeviceId, combinedTestTrackingData1, timeZonePST);
         blockUntilAsyncThreadIdleInServer();
 
-        Map<TestTrackingMetric, Map<Long, Long>> getResponse1 = getAggregatedMetricsForDevice(
+        TestTrackingDataDownload testTrackingDataDownload1 = getAggregatedMetricsForDevice(
                 trackingDeviceId,
                 TestAggregationLevel.YEARS.toString(),
                 2012,
@@ -318,37 +320,40 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
                 false,
                 timeZonePST);
 
-        Assert.assertEquals("Unexpected number of metric types in get response", 4, getResponse1.size());
+        Assert.assertEquals("Unexpected number of long metric types in get response",
+                4, testTrackingDataDownload1.getLongMetrics().size());
 
-        for(TestTrackingMetric testTrackingMetric : TestTrackingMetric.getAllTrackingMetrics()) {
+        for(String testTrackingMetric : TrackingMetricConfigUtil.getAllLongTypeMetrics()) {
 
-            Assert.assertEquals("Unexpected number of year buckets types in get response for metric " + testTrackingMetric, 2, getResponse1.get(testTrackingMetric).size());
+            Assert.assertEquals("Unexpected number of year buckets types in get response for metric " + testTrackingMetric,
+                    2, testTrackingDataDownload1.getLongMetrics().get(testTrackingMetric).size());
 
-            long firstYearExpectedValue = sumValuesFromTrackingData(testTrackingData1, testTrackingMetric);
-            verifyValueForMetric(testTrackingMetric, BucketCalculator.getCalendar(2012, Calendar.JANUARY, 1, 0, 0, 0, timeZonePST).getTimeInMillis(), firstYearExpectedValue, getResponse1);
+            long firstYearExpectedValue = sumValuesFromLongMetric(testTrackingData1, testTrackingMetric);
+            verifyValueForMetric(testTrackingMetric, BucketCalculator.getCalendar(2012, Calendar.JANUARY, 1, 0, 0, 0, timeZonePST).getTimeInMillis(),
+                    firstYearExpectedValue, testTrackingDataDownload1.getLongMetrics());
 
-            long secondYearExpectedValue = sumValuesFromTrackingData(testTrackingData2, testTrackingMetric);
-            verifyValueForMetric(testTrackingMetric, BucketCalculator.getCalendar(2014, Calendar.JANUARY, 1, 0, 0, 0, timeZonePST).getTimeInMillis(), secondYearExpectedValue, getResponse1);
+            long secondYearExpectedValue = sumValuesFromLongMetric(testTrackingData2, testTrackingMetric);
+            verifyValueForMetric(testTrackingMetric, BucketCalculator.getCalendar(2014, Calendar.JANUARY, 1, 0, 0, 0, timeZonePST).getTimeInMillis(),
+                    secondYearExpectedValue, testTrackingDataDownload1.getLongMetrics());
         }
 
         //
         // Do a 2nd post and a GET to validate updated aggregated data
         //
 
-        TestTrackingData testTrackingData3 = BucketCalculator.generateRandomTrackingData(
+        TestTrackingDataUpload testTrackingData3 = BucketCalculator.generateRandomLongTrackingData(
                 BucketCalculator.getCalendar(2012, Calendar.MAY, 22, 0, 0, 0, timeZonePST),
                 BucketCalculator.getCalendar(2012, Calendar.MAY, 27, 0, 0, 0, timeZonePST));
 
-        TestTrackingData testTrackingData4 = BucketCalculator.generateRandomTrackingData(
+        TestTrackingDataUpload testTrackingData4 = BucketCalculator.generateRandomLongTrackingData(
                 BucketCalculator.getCalendar(2014, Calendar.AUGUST, 9, 0, 0, 0, timeZonePST),
                 BucketCalculator.getCalendar(2014, Calendar.AUGUST, 23, 0, 0, 0, timeZonePST));
 
-        TestTrackingData combinedTestTrackingData2 = BucketCalculator.combineTrackingData(testTrackingData3, testTrackingData4);
+        TestTrackingDataUpload combinedTestTrackingData2 = BucketCalculator.combineLongTrackingData(testTrackingData3, testTrackingData4);
         ResponseEntity<String> responseData2 = postMetricsForDevice(trackingDeviceId, combinedTestTrackingData2, timeZonePST);
         blockUntilAsyncThreadIdleInServer();
 
-
-        Map<TestTrackingMetric, Map<Long, Long>> getResponse2 = getAggregatedMetricsForDevice(
+        TestTrackingDataDownload testTrackingDataDownload2 = getAggregatedMetricsForDevice(
                 trackingDeviceId,
                 TestAggregationLevel.YEARS.toString(),
                 2012,
@@ -361,19 +366,23 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
                 false,
                 timeZonePST);
 
-        Assert.assertEquals("Unexpected number of metric types in 2nd get response", 4, getResponse2.size());
+        Assert.assertEquals("Unexpected number of long metric types in 2nd get response",
+                4, testTrackingDataDownload2.getLongMetrics().size());
 
-        for(TestTrackingMetric testTrackingMetric : TestTrackingMetric.getAllTrackingMetrics()) {
+        for(String testTrackingMetric : TrackingMetricConfigUtil.getAllLongTypeMetrics()) {
 
-            Assert.assertEquals("Unexpected number of year buckets types in 2nd get response for metric " + testTrackingMetric, 2, getResponse2.get(testTrackingMetric).size());
+            Assert.assertEquals("Unexpected number of year buckets types in 2nd get response for metric " + testTrackingMetric,
+                    2, testTrackingDataDownload2.getLongMetrics().get(testTrackingMetric).size());
 
-            long firstYearExpectedValue = sumValuesFromTrackingData(testTrackingData1, testTrackingMetric);
-            firstYearExpectedValue = firstYearExpectedValue + sumValuesFromTrackingData(testTrackingData3, testTrackingMetric);
-            verifyValueForMetric(testTrackingMetric, BucketCalculator.getCalendar(2012, Calendar.JANUARY, 1, 0, 0, 0, timeZonePST).getTimeInMillis(), firstYearExpectedValue, getResponse2);
+            long firstYearExpectedValue = sumValuesFromLongMetric(testTrackingData1, testTrackingMetric);
+            firstYearExpectedValue = firstYearExpectedValue + sumValuesFromLongMetric(testTrackingData3, testTrackingMetric);
+            verifyValueForMetric(testTrackingMetric, BucketCalculator.getCalendar(2012, Calendar.JANUARY, 1, 0, 0, 0, timeZonePST).getTimeInMillis(),
+                    firstYearExpectedValue, testTrackingDataDownload2.getLongMetrics());
 
-            long secondYearExpectedValue = sumValuesFromTrackingData(testTrackingData2, testTrackingMetric);
-            secondYearExpectedValue = secondYearExpectedValue + sumValuesFromTrackingData(testTrackingData4, testTrackingMetric);
-            verifyValueForMetric(testTrackingMetric, BucketCalculator.getCalendar(2014, Calendar.JANUARY, 1, 0, 0, 0, timeZonePST).getTimeInMillis(), secondYearExpectedValue, getResponse2);
+            long secondYearExpectedValue = sumValuesFromLongMetric(testTrackingData2, testTrackingMetric);
+            secondYearExpectedValue = secondYearExpectedValue + sumValuesFromLongMetric(testTrackingData4, testTrackingMetric);
+            verifyValueForMetric(testTrackingMetric, BucketCalculator.getCalendar(2014, Calendar.JANUARY, 1, 0, 0, 0, timeZonePST).getTimeInMillis(),
+                    secondYearExpectedValue, testTrackingDataDownload2.getLongMetrics());
         }
     }
 
@@ -384,7 +393,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
 
         String trackingDeviceId = "blablabla";
 
-        TestTrackingData testTrackingData = new TestTrackingData();
+        TestTrackingDataUpload testTrackingData = new TestTrackingDataUpload();
 
         TreeMap<Long, Long> dataPoints = new TreeMap<Long, Long>();
 
@@ -392,7 +401,7 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
         long timeStamp1 = BucketCalculator.getCalendar(2014, Calendar.MAY, 29, 0, 0, 0, timeZonePST).getTimeInMillis();
         dataPoints.put(timeStamp1, 4L);
 
-        BucketCalculator.addDataPointForAllMetrics(testTrackingData, dataPoints);
+        BucketCalculator.addDataPointForAllLongMetrics(testTrackingData, dataPoints);
 
         ResponseEntity<String> responseData = postMetricsForDevice(trackingDeviceId, testTrackingData, timeZonePST);
 
@@ -413,9 +422,9 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
     // Utility methods
     //
 
-    private long sumValuesFromTrackingData(TestTrackingData testTrackingData, TestTrackingMetric testTrackingMetric) {
+    private long sumValuesFromLongMetric(TestTrackingDataUpload testTrackingData, String testTrackingMetric) {
 
-        Map<Long, Long> mapToSumValuesFrom = testTrackingData.getDataForMetric(testTrackingMetric);
+        Map<Long, Long> mapToSumValuesFrom = testTrackingData.getLongMetrics().get(testTrackingMetric);
 
         long sum = 0;
 
@@ -427,11 +436,10 @@ public class TrackingDataControllerIntegrationTest extends AbstractTimeSeriesInt
     }
 
     private void verifyValueForMetric(
-            TestTrackingMetric testTrackingMetric,
+            String testTrackingMetric,
             Long bucketKey,
             Long expectedBucketValue,
-            Map<TestTrackingMetric,
-            Map<Long, Long>> metricResponse) {
+            Map<String, TreeMap<Long, Long>> metricResponse) {
 
         Map<Long, Long> bucketsForMetric = metricResponse.get(testTrackingMetric);
         Assert.assertNotNull("No bucket found for metric " + testTrackingMetric, bucketsForMetric);

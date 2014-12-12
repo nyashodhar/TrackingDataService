@@ -1,7 +1,8 @@
 package com.petpal.tracking.service.timeseries;
 
+import com.petpal.tracking.service.TrackingMetricConfig;
+import com.petpal.tracking.service.TrackingMetricsConfig;
 import com.petpal.tracking.web.controllers.TrackingData;
-import com.petpal.tracking.web.controllers.TrackingMetric;
 import com.petpal.tracking.web.controllers.TrackingTag;
 import org.apache.commons.lang.math.LongRange;
 import org.apache.log4j.Logger;
@@ -17,12 +18,15 @@ import org.kairosdb.client.response.Queries;
 import org.kairosdb.client.response.QueryResponse;
 import org.kairosdb.client.response.Response;
 import org.kairosdb.client.response.Results;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
+import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -53,12 +57,16 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
 
     private KairosRestClient kairosRestClient;
 
+    @Autowired
+    private TrackingMetricsConfig trackingMetricsConfig;
+
     /**
-     * @see com.petpal.tracking.service.timeseries.TimeSeriesFacade#querySingleTimeSeries(java.util.Map, TimeSeriesMetric, Long, Long, org.kairosdb.client.builder.TimeUnit, int, boolean)
+     * @see com.petpal.tracking.service.timeseries.TimeSeriesFacade#querySingleTimeSeries(java.util.Map, String, java.lang.reflect.Type, Long, Long, org.kairosdb.client.builder.TimeUnit, int, boolean)
      */
-    public Map<Long, Long> querySingleTimeSeries(
+    public TreeMap querySingleTimeSeries(
             Map<TrackingTag, String> tags,
-            TimeSeriesMetric timeSeriesMetric,
+            String timeSeriesName,
+            Type dataType,
             Long utcBegin,
             Long utcEnd,
             TimeUnit resultBucketSize,
@@ -67,34 +75,39 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
 
         // Build the query
         QueryBuilder queryBuilder = createQueryForSingleMetric(
-                tags, timeSeriesMetric, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
+                tags, timeSeriesName, dataType, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
 
         // Do the query
         QueryResponse queryResponse = KairosClientUtil.executeQuery(queryBuilder, kairosRestClient);
         logger.debug("querySingleTimeSeries(): Query completed with status code " +
-                queryResponse.getStatusCode() + " for series " + timeSeriesMetric);
+                queryResponse.getStatusCode() + " for series " + timeSeriesName);
 
         // Extract the result for response
-        Map<TimeSeriesMetric, Map<Long, Long>> resultsByMetric = getResultFromResponse(queryResponse);
+
+        Map<String, Type> timeSeriesNameToDataType = new HashMap<String, Type>();
+        timeSeriesNameToDataType.put(timeSeriesName, dataType);
+
+        Map<String, TreeMap> resultsByMetric = getResultFromResponse(queryResponse, timeSeriesNameToDataType);
         printMetricsResults(resultsByMetric);
 
         // Adjust the bucket boundaries (and insert explicit empty buckets is response is to be verbose)
-        logger.debug("querySingleTimeSeries(): Doing result adjustment for series " + timeSeriesMetric);
-        adjustBucketBoundaries(resultsByMetric, utcBegin, utcEnd, resultBucketSize, verboseResponse);
+        logger.debug("querySingleTimeSeries(): Doing result adjustment for series " + timeSeriesName);
+
+        adjustBucketBoundaries(resultsByMetric, utcBegin, utcEnd, resultBucketSize, timeSeriesNameToDataType, verboseResponse);
         printMetricsResults(resultsByMetric);
 
-        Map<Long, Long> results = resultsByMetric.get(timeSeriesMetric);
+        TreeMap results = resultsByMetric.get(timeSeriesName);
         logger.debug("querySingleTimeSeries(): results = " + results);
 
         return results;
     }
 
     /**
-     * @see com.petpal.tracking.service.timeseries.TimeSeriesFacade#queryMultipleTimeSeries(java.util.Map, java.util.List, Long, Long, org.kairosdb.client.builder.TimeUnit, int, boolean)
+     * @see com.petpal.tracking.service.timeseries.TimeSeriesFacade#queryMultipleTimeSeries(java.util.Map, java.util.Map, Long, Long, org.kairosdb.client.builder.TimeUnit, int, boolean)
      */
-    public Map<TimeSeriesMetric, Map<Long, Long>> queryMultipleTimeSeries(
+    public Map<String, TreeMap> queryMultipleTimeSeries(
             Map<TrackingTag, String> tags,
-            List<TimeSeriesMetric> timeSeriesMetrics,
+            Map<String, Type> timeSeriesNamesToDataType,
             Long utcBegin,
             Long utcEnd,
             TimeUnit resultBucketSize,
@@ -103,34 +116,33 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
 
         // Build the query
         QueryBuilder queryBuilder = createQueryForMultipleMetrics(
-                tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
+                tags, timeSeriesNamesToDataType, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
 
         // Do the query
         QueryResponse queryResponse = KairosClientUtil.executeQuery(queryBuilder, kairosRestClient);
         logger.info("queryMultipleTimeSeries(): Query completed with status code " + queryResponse.getStatusCode());
 
         // Extract the result for response
-        Map<TimeSeriesMetric, Map<Long, Long>> resultsByMetric = getResultFromResponse(queryResponse);
-        printMetricsResults(resultsByMetric);
+        Map<String, TreeMap> resultsByTimeSeriesName = getResultFromResponse(queryResponse, timeSeriesNamesToDataType);
+        printMetricsResults(resultsByTimeSeriesName);
 
         // Adjust the bucket boundaries (and insert explicit empty buckets is response is to be verbose)
         logger.info("queryMultipleTimeSeries(): Doing result adjustment..");
-        adjustBucketBoundaries(resultsByMetric, utcBegin, utcEnd, resultBucketSize, verboseResponse);
-        printMetricsResults(resultsByMetric);
+        adjustBucketBoundaries(resultsByTimeSeriesName, utcBegin, utcEnd, resultBucketSize, timeSeriesNamesToDataType, verboseResponse);
+        printMetricsResults(resultsByTimeSeriesName);
 
-        return resultsByMetric;
+        return resultsByTimeSeriesName;
     }
 
 
     /**
-     * @see com.petpal.tracking.service.timeseries.TimeSeriesFacade#storeDataForTimeSeries(java.util.Map, TimeSeriesMetric, java.util.Map)
+     * @see com.petpal.tracking.service.timeseries.TimeSeriesFacade#storeDataForTimeSeries(java.util.TreeMap, String, java.lang.reflect.Type, java.util.Map)
      */
-    public void storeDataForTimeSeries(Map<Long, Long> timeSeriesData, TimeSeriesMetric timeSeriesMetric, Map<TrackingTag, String> tags) {
+    public void storeDataForTimeSeries(TreeMap dataPoints, String timeSeriesName, Type dataType, Map<TrackingTag, String> tags) {
         MetricBuilder metricBuilder = MetricBuilder.getInstance();
-        addTimeSeriesDataToMetricBuilder(metricBuilder, timeSeriesData, timeSeriesMetric, tags);
+        addTimeSeriesDataToMetricBuilder(metricBuilder, dataPoints, dataType, timeSeriesName, tags);
         insertData(metricBuilder);
     }
-
 
     /**
      * @see com.petpal.tracking.service.timeseries.TimeSeriesFacade#storeRawMetrics(com.petpal.tracking.web.controllers.TrackingData, java.util.Map)
@@ -139,10 +151,18 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
 
         MetricBuilder metricBuilder = MetricBuilder.getInstance();
 
-        for(TrackingMetric trackingMetric : trackingData.getData().keySet()) {
-            Map<Long, Long> dataPoints = trackingData.getDataForMetric(trackingMetric);
+        Map<TrackingMetricConfig, TreeMap> metricConfigAndData = trackingData.getMetricConfigAndData();
+
+        for(TrackingMetricConfig trackingMetricConfig : metricConfigAndData.keySet()) {
+
+            TreeMap dataPoints = metricConfigAndData.get(trackingMetricConfig);
+            String timeSeriesName = trackingMetricConfig.getUnaggregatedSeriesName();
+
             if(!CollectionUtils.isEmpty(dataPoints)) {
-                addTimeSeriesDataToMetricBuilder(metricBuilder, dataPoints, TimeSeriesMetric.getRawMetric(trackingMetric), tags);
+                addTimeSeriesDataToMetricBuilder(metricBuilder, dataPoints, trackingMetricConfig.getDataType(), timeSeriesName, tags);
+            } else {
+                logger.info("No datapoints found for " + trackingMetricConfig.getDataType() + " metric " +
+                        trackingMetricConfig.getName() + ", skipping update of time series " + timeSeriesName);
             }
         }
 
@@ -186,49 +206,61 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
 
     protected void addTimeSeriesDataToMetricBuilder(
             MetricBuilder metricBuilder,
-            Map<Long, Long> timeStampValueMap,
-            TimeSeriesMetric timeSeriesMetric,
+            TreeMap dataPoints,
+            Type dataType,
+            String timeSeriesName,
             Map<TrackingTag, String> tags) {
 
+        Assert.isTrue(dataType == Long.class || dataType == Double.class || dataType == String.class, "Invalid data type " + dataType);
         Assert.notNull(metricBuilder, "No metric builder provided");
-        Assert.notNull(timeSeriesMetric, "No time series metric provided");
-        Assert.notEmpty(tags, "Can't assemble metric builder for metric " + timeSeriesMetric + ", no tags provided");
-        Assert.notEmpty(timeStampValueMap, "Can't assemble metric builder for metric " + timeSeriesMetric + ", no data provided");
+        Assert.isTrue(!StringUtils.isEmpty(timeSeriesName), "No time series name provided");
+        Assert.notEmpty(tags, "Can't assemble metric builder for " + dataType + " time series " + timeSeriesName + ", no tags provided");
+        Assert.notEmpty(dataPoints, "Can't assemble metric builder for " + dataType + " time series " + timeSeriesName + ", no data points provided");
 
-        Metric metric = metricBuilder.addMetric(timeSeriesMetric.toString());
+        Metric metric = metricBuilder.addMetric(timeSeriesName);
         for(TrackingTag tag : tags.keySet()) {
             metric.addTag(tag.toString(), tags.get(tag));
         }
 
-        for(long timeStamp : timeStampValueMap.keySet()) {
-            long metricValue = timeStampValueMap.get(timeStamp);
-            metric.addDataPoint(timeStamp, metricValue);
+        for(Object timeStampObj : dataPoints.keySet()) {
+            Object metricValue = dataPoints.get(timeStampObj);
+            metric.addDataPoint((Long) timeStampObj, metricValue);
         }
 
-        logger.info("Metric " + timeSeriesMetric + " prepped: " + timeStampValueMap.size() + " data points, tags = " + tags);
+        logger.info("Metrics for time series " + timeSeriesName + " prepped: " + dataPoints.size() + " data points, tags = " + tags);
     }
 
 
-    protected void adjustBucketBoundaries(Map<TimeSeriesMetric, Map<Long, Long>> metricResults,
-                                       Long utcBegin, Long utcEnd, TimeUnit resultBucketSize, boolean verboseResponse) {
+    protected void adjustBucketBoundaries(
+            Map<String, TreeMap> metricResults,
+            Long utcBegin,
+            Long utcEnd,
+            TimeUnit resultBucketSize,
+            Map<String, Type> timeSeriesNamesToDataType,
+            boolean verboseResponse) {
 
-        for (TimeSeriesMetric timeSeriesMetric : metricResults.keySet()) {
+        for(String timeSeriesName : metricResults.keySet()) {
+
+            Type dataType = timeSeriesNamesToDataType.get(timeSeriesName);
+            if(dataType != Long.class) {
+                throw new IllegalArgumentException("adjustBucketBoundaries(): Only Long type supported");
+            }
 
             //
             // Adjust the bucket boundaries and inject empty buckets.
             //
-            Map<Long, Long> adjustedMetricResult = adjustBoundariesForMetricResult(
-                    metricResults.get(timeSeriesMetric), utcBegin, utcEnd, resultBucketSize);
-            metricResults.put(timeSeriesMetric, adjustedMetricResult);
+            TreeMap adjustedMetricResult = adjustBoundariesForMetricResult(
+                    metricResults.get(timeSeriesName), utcBegin, utcEnd, resultBucketSize);
+            metricResults.put(timeSeriesName, adjustedMetricResult);
 
-            logger.debug("Bucket adjust for time series metric " + timeSeriesMetric + ": old bucket count = " +
-                    metricResults.get(timeSeriesMetric).size() + ", new bucket count = " + adjustedMetricResult.size());
+            logger.debug("Bucket adjust for time series " + timeSeriesName + ": old bucket count = " +
+                    metricResults.get(timeSeriesName).size() + ", new bucket count = " + adjustedMetricResult.size());
 
             // If the response is not to be verbose, filter out the empty buckets.
             if(!verboseResponse) {
                 Set<Long> bucketTimeStamps = new HashSet<Long>(adjustedMetricResult.keySet());
                 for(Long timestamp : bucketTimeStamps) {
-                    if(adjustedMetricResult.get(timestamp) == 0L) {
+                    if(((Long)adjustedMetricResult.get(timestamp)).longValue() == 0L) {
                         adjustedMetricResult.remove(timestamp);
                     }
                 }
@@ -273,8 +305,8 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
      * @return buckets with the same values, but adjusted bucket intervals to align with
      * utcBegin and the specific result bucket size.
      */
-    protected Map<Long, Long> adjustBoundariesForMetricResult(
-            Map<Long, Long> metricResult, Long utcBegin, Long utcEnd, TimeUnit resultBucketSize) {
+    protected TreeMap adjustBoundariesForMetricResult(
+            TreeMap metricResult, Long utcBegin, Long utcEnd, TimeUnit resultBucketSize) {
 
         Assert.notNull(utcBegin, "utcBegin not specified");
 
@@ -293,7 +325,7 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
         // This will also ensure that any missing empty buckets are created.
         //
 
-        Map<Long, Long> newMetricResult = new TreeMap<Long, Long>();
+        TreeMap newMetricResult = new TreeMap();
 
         while(true) {
             newMetricResult.put(cursorCalendar.getTimeInMillis(), 0L);
@@ -334,7 +366,8 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
             }
         }
 
-        for(long oldTimeStamp : metricResult.keySet()) {
+        for(Object oldTimeStampObj : metricResult.keySet()) {
+            Long oldTimeStamp = (Long) oldTimeStampObj;
             for (LongRange newBucketRange : newBucketRanges) {
                 if (newBucketRange.containsLong(oldTimeStamp)) {
                     newMetricResult.put(newBucketRange.getMinimumLong(), metricResult.get(oldTimeStamp));
@@ -375,21 +408,30 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
      * Create a query builder. A query builder can be passed to the kairos db client
      * to perform a time series query.
      * @param tags
-     * @param timeSeriesMetric
+     * @param timeSeriesName
      * @param utcBegin
      * @param utcEnd
      * @param resultBucketSize
      * @param resultBucketMultiplier
      * @return a query builder ready to be passed to the kairos db client.
      */
-    protected QueryBuilder createQueryForSingleMetric(Map<TrackingTag, String> tags, TimeSeriesMetric timeSeriesMetric, Long utcBegin,
-                                                    Long utcEnd, TimeUnit resultBucketSize, int resultBucketMultiplier) {
+    protected QueryBuilder createQueryForSingleMetric(
+            Map<TrackingTag, String> tags,
+            String timeSeriesName,
+            Type dataType,
+            Long utcBegin,
+            Long utcEnd,
+            TimeUnit resultBucketSize,
+            int resultBucketMultiplier) {
 
         // Do some validation of the input parameters
-        validateQueryParameters(tags, timeSeriesMetric, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
+        validateQueryParameters(tags, timeSeriesName, dataType, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
 
         // Print a description of the query in the log
-        logTimeSeriesQueryDescription(tags, timeSeriesMetric, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
+
+        Map<String, Type> timeSeriesToDataType = new HashMap<String, Type>();
+        timeSeriesToDataType.put(timeSeriesName, dataType);
+        logTimeSeriesQueryDescription(tags, timeSeriesToDataType, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
 
         // Set the time interval for the query
         QueryBuilder queryBuilder = QueryBuilder.getInstance();
@@ -398,7 +440,7 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
             queryBuilder.setEnd(new Date(utcEnd));
         }
 
-        QueryMetric queryMetric = queryBuilder.addMetric(timeSeriesMetric.toString());
+        QueryMetric queryMetric = queryBuilder.addMetric(timeSeriesName);
         for(TrackingTag tag : tags.keySet()) {
             queryMetric.addTag(tag.toString(), tags.get(tag));
         }
@@ -411,21 +453,27 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
      * Create a query builder. A query builder can be passed to the kairos db client
      * to perform a time series query.
      * @param tags
-     * @param timeSeriesMetrics
+     * @param timeSeriesNamesToDataType
      * @param utcBegin
      * @param utcEnd
      * @param resultBucketSize
      * @param resultBucketMultiplier
      * @return a query builder ready to be passed to the kairos db client.
      */
-    protected QueryBuilder createQueryForMultipleMetrics(Map<TrackingTag, String> tags, List<TimeSeriesMetric> timeSeriesMetrics, Long utcBegin,
-        Long utcEnd, TimeUnit resultBucketSize, int resultBucketMultiplier) {
+    protected QueryBuilder createQueryForMultipleMetrics(
+            Map<TrackingTag,
+            String> tags,
+            Map<String, Type> timeSeriesNamesToDataType,
+            Long utcBegin,
+            Long utcEnd,
+            TimeUnit resultBucketSize,
+            int resultBucketMultiplier) {
 
         // Do some validation of the input parameters
-        validateMetricsQueryParameters(tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
+        validateMetricsQueryParameters(tags, timeSeriesNamesToDataType, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
 
         // Print a description of the query in the log
-        logTimeSeriesQueryDescription(tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
+        logTimeSeriesQueryDescription(tags, timeSeriesNamesToDataType, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
 
         // Set the time interval for the query
         QueryBuilder queryBuilder = QueryBuilder.getInstance();
@@ -434,8 +482,8 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
             queryBuilder.setEnd(new Date(utcEnd));
         }
 
-        for(TimeSeriesMetric timeSeriesMetric : timeSeriesMetrics) {
-            QueryMetric queryMetric = queryBuilder.addMetric(timeSeriesMetric.toString());
+        for(String timeSeriesName : timeSeriesNamesToDataType.keySet()) {
+            QueryMetric queryMetric = queryBuilder.addMetric(timeSeriesName);
             for(TrackingTag tag : tags.keySet()) {
                 queryMetric.addTag(tag.toString(), tags.get(tag));
             }
@@ -449,9 +497,11 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
     /**
      * Get the results from a query response and group the results by time series metrics
      * @param queryResponse
+     * @param timeSeriesNamesToDataType
      * @return results from a time series query grouped by time series metric.
      */
-    protected Map<TimeSeriesMetric, Map<Long, Long>> getResultFromResponse(QueryResponse queryResponse) {
+    protected Map<String, TreeMap> getResultFromResponse(
+            QueryResponse queryResponse, Map<String, Type> timeSeriesNamesToDataType) {
 
         //
         // Gather the results into a data structure
@@ -461,22 +511,35 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
 
         List<Queries> queries = queryResponse.getQueries();
 
-        Map<TimeSeriesMetric, Map<Long, Long>> metricResults = new HashMap<TimeSeriesMetric, Map<Long, Long>>();
+        Map<String, TreeMap> metricResults = new HashMap<String, TreeMap>();
 
         for(Queries query : queries) {
             List<Results> results = query.getResults();
             for(Results result : results) {
                 List<DataPoint> dataPoints = result.getDataPoints();
-                String resultName = result.getName();
-                TimeSeriesMetric timeSeriesMetric = TimeSeriesMetric.valueOf(resultName.toUpperCase());
+                String timeSeriesName = result.getName();
                 if(!dataPoints.isEmpty()) {
-                    if (!metricResults.containsKey(resultName)) {
-                        metricResults.put(timeSeriesMetric, new TreeMap<Long, Long>());
+                    if (!metricResults.containsKey(timeSeriesName)) {
+                        metricResults.put(timeSeriesName, new TreeMap());
                     }
                 }
 
+                Type dataType = timeSeriesNamesToDataType.get(timeSeriesName);
+                if(dataType == null) {
+                    throw new IllegalStateException("The query returned result for an unexpected time series " + timeSeriesName);
+                }
+
                 for(DataPoint dataPoint : dataPoints) {
-                    metricResults.get(timeSeriesMetric).put(dataPoint.getTimestamp(), KairosClientUtil.getLongValueFromDataPoint(dataPoint));
+
+                    Object value;
+
+                    if(dataType != Long.class) {
+                        throw new IllegalArgumentException("getResultFromResponse(): Only Long data type supported");
+                    } else {
+                        value = KairosClientUtil.getLongValueFromDataPoint(dataPoint);
+                    }
+
+                    metricResults.get(timeSeriesName).put(dataPoint.getTimestamp(), value);
                 }
             }
         }
@@ -487,27 +550,33 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
 
     private void validateQueryParameters(
             Map<TrackingTag, String> tags,
-            TimeSeriesMetric timeSeriesMetric,
+            String timeSeriesName,
+            Type dataType,
             Long utcBegin,
             Long utcEnd,
             TimeUnit resultBucketSize,
             int resultBucketMultiplier) {
 
-        List<TimeSeriesMetric> timeSeriesMetrics = new ArrayList<TimeSeriesMetric>();
-        timeSeriesMetrics.add(timeSeriesMetric);
-        validateMetricsQueryParameters(tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
+        List<String> timeSeriesNames = new ArrayList<String>();
+        timeSeriesNames.add(timeSeriesName);
+
+        Assert.notNull(dataType, "No datatype specified");
+
+        Map<String, Type> timeSeriesNameToDataType = new HashMap<String, Type>();
+        timeSeriesNameToDataType.put(timeSeriesName, dataType);
+        validateMetricsQueryParameters(tags, timeSeriesNameToDataType, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
     }
 
     private void validateMetricsQueryParameters(
             Map<TrackingTag, String> tags,
-            List<TimeSeriesMetric> timeSeriesMetrics,
+            Map<String, Type> timeSeriesNamesToDataType,
             Long utcBegin,
             Long utcEnd,
             TimeUnit resultBucketSize,
             int resultBucketMultiplier) {
 
         Assert.notEmpty(tags, "No tags specified");
-        Assert.notEmpty(timeSeriesMetrics, "No time series metrics specified");
+        Assert.notEmpty(timeSeriesNamesToDataType, "No time series name and type mapping specified");
         Assert.notNull(utcBegin, "No utcBegin specified");
 
         if (utcEnd != null) {
@@ -524,20 +593,21 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
         }
     }
 
-    private void printMetricsResults(Map<TimeSeriesMetric, Map<Long, Long>> metricResults) {
+    private void printMetricsResults(Map<String, TreeMap> metricResults) {
 
-        for(TimeSeriesMetric timeSeriesMetric : metricResults.keySet()) {
+        for(String timeSeriesName : metricResults.keySet()) {
 
             StringBuilder metricResult = new StringBuilder();
-            for(Long timestamp : metricResults.get(timeSeriesMetric).keySet()) {
+            for(Object timestampObj : metricResults.get(timeSeriesName).keySet()) {
+                Long timestamp = (Long) timestampObj;
                 Date date = new Date();
                 date.setTime(timestamp);
                 if(metricResult.length() > 0) {
                     metricResult.append(", ");
                 }
-                metricResult.append(getUTCFormat(date.getTime()) + "=" + metricResults.get(timeSeriesMetric).get(timestamp));
+                metricResult.append(getUTCFormat(date.getTime()) + "=" + metricResults.get(timeSeriesName).get(timestamp));
             }
-            logger.debug("Result for " + timeSeriesMetric + ": " + metricResult.toString());
+            logger.debug("Result for " + timeSeriesName + ": " + metricResult.toString());
         }
     }
 
@@ -550,23 +620,13 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
         return simpleDateFormat.format(new Date(utcMillis.longValue()));
     }
 
-    private void logTimeSeriesQueryDescription(Map<TrackingTag, String> tags,
-                                                     TimeSeriesMetric timeSeriesMetric,
-                                                     Long utcBegin,
-                                                     Long utcEnd,
-                                                     TimeUnit resultBucketSize,
-                                                     int resultBucketMultiplier) {
-        List<TimeSeriesMetric> timeSeriesMetrics = new ArrayList<TimeSeriesMetric>();
-        timeSeriesMetrics.add(timeSeriesMetric);
-        logTimeSeriesQueryDescription(tags, timeSeriesMetrics, utcBegin, utcEnd, resultBucketSize, resultBucketMultiplier);
-    }
-
-    private void logTimeSeriesQueryDescription(Map<TrackingTag, String> tags,
-                                                     List<TimeSeriesMetric> timeSeriesMetrics,
-                                                     Long utcBegin,
-                                                     Long utcEnd,
-                                                     TimeUnit resultBucketSize,
-                                                     int resultBucketMultiplier) {
+    private void logTimeSeriesQueryDescription(
+            Map<TrackingTag, String> tags,
+            Map<String, Type> timeSeriesNamesToDataType,
+            Long utcBegin,
+            Long utcEnd,
+            TimeUnit resultBucketSize,
+            int resultBucketMultiplier) {
 
         StringBuilder intervalDescriptor = new StringBuilder("[" + getUTCFormat(utcBegin) + ",");
         if(utcEnd == null) {
@@ -575,8 +635,8 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
             intervalDescriptor.append(" " + getUTCFormat(utcBegin) + "]");
         }
 
-        logger.info("Time series query for interval " + intervalDescriptor + " for time series metrics " + timeSeriesMetrics +
-                ", each metric tagged by " + tags + ". Results will be grouped into buckets of " +
+        logger.info("Time series query for interval " + intervalDescriptor + " for time series " + timeSeriesNamesToDataType +
+                ", each metric series tagged by " + tags + ". Results will be grouped into buckets of " +
                 resultBucketMultiplier + " " + resultBucketSize + " size.");
     }
 

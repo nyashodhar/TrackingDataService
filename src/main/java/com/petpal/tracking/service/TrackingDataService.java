@@ -2,7 +2,7 @@ package com.petpal.tracking.service;
 
 import com.petpal.tracking.web.controllers.AggregationLevel;
 import com.petpal.tracking.web.controllers.TrackingData;
-import com.petpal.tracking.web.controllers.TrackingMetric;
+import com.petpal.tracking.web.controllers.TrackingDataDownload;
 import com.petpal.tracking.web.controllers.TrackingTag;
 
 import java.util.List;
@@ -18,7 +18,7 @@ public interface TrackingDataService {
      * Query data for multiple API level metrics for a given time range and time horizon
      * based on aggregated time series data.
      * @param tags
-     * @param trackingMetrics
+     * @param trackingMetricConfigs
      * @param utcBegin
      * @param utcEnd
      * @param aggregationLevel
@@ -27,9 +27,9 @@ public interface TrackingDataService {
      * @param verboseResponse
      * @return time series data obtained from queries against aggregated time series.
      */
-    Map<TrackingMetric, Map<Long, Long>> getAggregatedTimeSeries(
+    TrackingDataDownload getAggregatedTimeSeries(
             Map<TrackingTag, String> tags,
-            List<TrackingMetric> trackingMetrics,
+            List<TrackingMetricConfig> trackingMetricConfigs,
             Long utcBegin,
             Long utcEnd,
             AggregationLevel aggregationLevel,
@@ -48,5 +48,8 @@ public interface TrackingDataService {
      *                     date store.
      * @param aggregationTimeZone timezone to aggregate the tracking data for
      */
-    void storeTrackingData(Map<TrackingTag, String> tags, TrackingData trackingData, TimeZone aggregationTimeZone);
+    void storeTrackingData(
+            Map<TrackingTag, String> tags,
+            TrackingData trackingData,
+            TimeZone aggregationTimeZone);
 }

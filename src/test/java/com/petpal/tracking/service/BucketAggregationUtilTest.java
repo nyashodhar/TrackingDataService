@@ -9,7 +9,6 @@ import org.kairosdb.client.builder.TimeUnit;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -44,13 +43,13 @@ public class BucketAggregationUtilTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testApplyFortyEightHourShift_empty_input() {
-        bucketAggregationUtil.applyFortyEightHourShift(new HashMap<Long, Long>(), true);
+        bucketAggregationUtil.applyFortyEightHourShift(new TreeMap(), true);
     }
 
     @Test
     public void testApplyFortyEightHourShift_forward() {
 
-        Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
+        TreeMap dataPoints = new TreeMap();
         dataPoints.put(System.currentTimeMillis() - 10000L, 5L);
         dataPoints.put(System.currentTimeMillis() - 20000L, 5L);
 
@@ -58,8 +57,8 @@ public class BucketAggregationUtilTest {
 
         Assert.assertEquals(2, shiftedDataPoints.size());
 
-        for(long timestamp : dataPoints.keySet()) {
-            long expectedNewTimeStamp = timestamp + 48L*60L*60L*1000L;
+        for(Object timestamp : dataPoints.keySet()) {
+            long expectedNewTimeStamp = (Long) timestamp + 48L*60L*60L*1000L;
             Assert.assertEquals(shiftedDataPoints.get(expectedNewTimeStamp),  dataPoints.get(timestamp));
         }
     }
@@ -68,7 +67,7 @@ public class BucketAggregationUtilTest {
     @Test
     public void testApplyFortyEightHourShift_backward() {
 
-        Map<Long, Long> dataPoints = new TreeMap<Long, Long>();
+        TreeMap dataPoints = new TreeMap();
         dataPoints.put(System.currentTimeMillis() - 10000L, 5L);
         dataPoints.put(System.currentTimeMillis() - 20000L, 5L);
 
@@ -76,8 +75,8 @@ public class BucketAggregationUtilTest {
 
         Assert.assertEquals(2, shiftedDataPoints.size());
 
-        for(long timestamp : dataPoints.keySet()) {
-            long expectedNewTimeStamp = timestamp - 48L*60L*60L*1000L;
+        for(Object timestamp : dataPoints.keySet()) {
+            long expectedNewTimeStamp = (Long) timestamp - 48L*60L*60L*1000L;
             Assert.assertEquals(shiftedDataPoints.get(expectedNewTimeStamp),  dataPoints.get(timestamp));
         }
     }
@@ -89,36 +88,36 @@ public class BucketAggregationUtilTest {
 
     @Test
     public void testMergeExistingDataPointsIntoNew_both_args_null() {
-        Map<Long, Long> updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(null, null);
+        TreeMap updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(null, null, Aggregation.SUM, Long.class);
         Assert.assertTrue(CollectionUtils.isEmpty(updatedDataPoints));
     }
 
     @Test
     public void testMergeExistingDataPointsIntoNew_new_data_null_old_data_empty() {
-        Map<Long, Long> updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(null, new HashMap<Long, Long>());
+        TreeMap updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(null, new TreeMap(), Aggregation.SUM, Long.class);
         Assert.assertTrue(CollectionUtils.isEmpty(updatedDataPoints));
     }
 
     @Test
     public void testMergeExistingDataPointsIntoNew_new_data_empty_old_data_null() {
-        Map<Long, Long> updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(new HashMap<Long, Long>(), null);
+        TreeMap updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(new TreeMap(), null, Aggregation.SUM, Long.class);
         Assert.assertTrue(CollectionUtils.isEmpty(updatedDataPoints));
     }
 
     @Test
     public void testMergeExistingDataPointsIntoNew_new_data_empty_old_data_empty() {
-        Map<Long, Long> updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(new HashMap<Long, Long>(), new HashMap<Long, Long>());
+        TreeMap updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(new TreeMap(), new TreeMap(), Aggregation.SUM, Long.class);
         Assert.assertTrue(CollectionUtils.isEmpty(updatedDataPoints));
     }
 
     @Test
     public void testMergeExistingDataPointsIntoNew_new_data_not_empty_old_data_empty() {
 
-        Map<Long, Long> newDataPoints = new HashMap<Long, Long>();
+        TreeMap newDataPoints = new TreeMap();
         newDataPoints.put(1L, 333L);
         newDataPoints.put(2L, 444L);
 
-        Map<Long, Long> updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(newDataPoints, new HashMap<Long, Long>());
+        TreeMap updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(newDataPoints, new TreeMap(), Aggregation.SUM, Long.class);
         Assert.assertEquals(2, updatedDataPoints.size());
         Assert.assertEquals(newDataPoints.get(1L), updatedDataPoints.get(1L));
         Assert.assertEquals(newDataPoints.get(2L), updatedDataPoints.get(2L));
@@ -127,19 +126,19 @@ public class BucketAggregationUtilTest {
     @Test
     public void testMergeExistingDataPointsIntoNew_new_data_not_empty_and_old_data_not_empty() {
 
-        Map<Long, Long> newDataPoints = new HashMap<Long, Long>();
+        TreeMap newDataPoints = new TreeMap();
         newDataPoints.put(1L, 333L);
         newDataPoints.put(2L, 444L);
 
-        Map<Long, Long> existingDataPoints = new HashMap<Long, Long>();
+        TreeMap existingDataPoints = new TreeMap();
         existingDataPoints.put(2L, 1L);
         existingDataPoints.put(7L, 888L);
 
-        Map<Long, Long> updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(newDataPoints, existingDataPoints);
+        TreeMap updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(newDataPoints, existingDataPoints, Aggregation.SUM, Long.class);
         Assert.assertEquals(2, updatedDataPoints.size());
         Assert.assertEquals(newDataPoints.get(1L), updatedDataPoints.get(1L));
 
-        Long expectedSum = newDataPoints.get(2L) + existingDataPoints.get(2L);
+        Long expectedSum = ((Long) newDataPoints.get(2L)).longValue() + ((Long) existingDataPoints.get(2L)).longValue();
         Assert.assertEquals(expectedSum, updatedDataPoints.get(2L));
     }
 
@@ -149,30 +148,49 @@ public class BucketAggregationUtilTest {
 
     @Test
     public void aggregateIntoBucketsForTimeZone_null_aggregated_data() {
-        TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
-                null, timeZonePST, AggregationLevel.MONTHS);
+
+        TrackingMetricConfig trackingMetricConfig =
+                new TrackingMetricConfig("something", Long.class, Aggregation.SUM);
+
+        TreeMap aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
+                trackingMetricConfig, null, timeZonePST, AggregationLevel.MONTHS);
+
         Assert.assertNull(aggregatedData);
     }
 
     @Test
     public void aggregateIntoBucketsForTimeZone_empty_aggregated_data() {
-        TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
-                new TreeMap<Long, Long>(), timeZonePST, AggregationLevel.MONTHS);
+
+        TrackingMetricConfig trackingMetricConfig =
+                new TrackingMetricConfig("something", Long.class, Aggregation.SUM);
+
+        TreeMap aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
+                trackingMetricConfig, new TreeMap(), timeZonePST, AggregationLevel.MONTHS);
         Assert.assertNull(aggregatedData);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void aggregateIntoBucketsForTimeZone_timezone_missing() {
-        TreeMap<Long, Long> unaggregatedData = new TreeMap<Long, Long>();
+
+        TrackingMetricConfig trackingMetricConfig =
+                new TrackingMetricConfig("something", Long.class, Aggregation.SUM);
+
+        TreeMap unaggregatedData = new TreeMap();
         unaggregatedData.put(1L, 1L);
-        bucketAggregationUtil.aggregateIntoBucketsForTimeZone(unaggregatedData, null, AggregationLevel.MONTHS);
+        bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
+                trackingMetricConfig, unaggregatedData, null, AggregationLevel.MONTHS);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void aggregateIntoBucketsForTimeZone_bucketsize_missing() {
-        TreeMap<Long, Long> unaggregatedData = new TreeMap<Long, Long>();
+
+        TrackingMetricConfig trackingMetricConfig =
+                new TrackingMetricConfig("something", Long.class, Aggregation.SUM);
+
+        TreeMap unaggregatedData = new TreeMap();
+
         unaggregatedData.put(1L, 1L);
-        bucketAggregationUtil.aggregateIntoBucketsForTimeZone(unaggregatedData, timeZonePST, null);
+        bucketAggregationUtil.aggregateIntoBucketsForTimeZone(trackingMetricConfig, unaggregatedData, timeZonePST, null);
     }
 
     @Test
@@ -182,13 +200,16 @@ public class BucketAggregationUtilTest {
         Calendar cal2 = BucketCalculator.getCalendar(2012, Calendar.MAY, 2, 0, 0, 0, timeZonePST);
         Calendar cal3 = BucketCalculator.getCalendar(2014, Calendar.JULY, 1, 0, 0, 0, timeZonePST);
 
-        TreeMap<Long, Long> unaggregatedData = new TreeMap<Long, Long>();
+        TreeMap unaggregatedData = new TreeMap();
         unaggregatedData.put(cal1.getTimeInMillis(), 5L);
         unaggregatedData.put(cal2.getTimeInMillis(), 6L);
         unaggregatedData.put(cal3.getTimeInMillis(), 3L);
 
+        TrackingMetricConfig trackingMetricConfig =
+                new TrackingMetricConfig("something", Long.class, Aggregation.SUM);
+
         TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
-                unaggregatedData, timeZonePST, AggregationLevel.YEARS);
+                trackingMetricConfig, unaggregatedData, timeZonePST, AggregationLevel.YEARS);
 
         long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.YEARS).getTimeInMillis();
         long bucket2Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.YEARS).getTimeInMillis();
@@ -207,13 +228,16 @@ public class BucketAggregationUtilTest {
         Calendar cal2 = BucketCalculator.getCalendar(2014, Calendar.MAY, 2, 0, 0, 2, timeZonePST);
         Calendar cal3 = BucketCalculator.getCalendar(2014, Calendar.JULY, 1, 0, 0, 0, timeZonePST);
 
-        TreeMap<Long, Long> unaggregatedData = new TreeMap<Long, Long>();
+        TreeMap unaggregatedData = new TreeMap();
         unaggregatedData.put(cal1.getTimeInMillis(), 5L);
         unaggregatedData.put(cal2.getTimeInMillis(), 6L);
         unaggregatedData.put(cal3.getTimeInMillis(), 3L);
 
+        TrackingMetricConfig trackingMetricConfig =
+                new TrackingMetricConfig("something", Long.class, Aggregation.SUM);
+
         TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
-                unaggregatedData, timeZonePST, AggregationLevel.MONTHS);
+                trackingMetricConfig, unaggregatedData, timeZonePST, AggregationLevel.MONTHS);
 
         long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.MONTHS).getTimeInMillis();
         long bucket2Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.MONTHS).getTimeInMillis();
@@ -246,13 +270,16 @@ public class BucketAggregationUtilTest {
         Calendar cal3 = Calendar.getInstance();
         cal3.setTimeZone(timeZonePST);
 
-        TreeMap<Long, Long> unaggregatedData = new TreeMap<Long, Long>();
+        TreeMap unaggregatedData = new TreeMap();
         unaggregatedData.put(cal1.getTimeInMillis(), 5L);
         unaggregatedData.put(cal2.getTimeInMillis(), 6L);
         unaggregatedData.put(cal3.getTimeInMillis(), 3L);
 
-        TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
-                unaggregatedData, timeZonePST, AggregationLevel.WEEKS);
+        TrackingMetricConfig trackingMetricConfig =
+                new TrackingMetricConfig("something", Long.class, Aggregation.SUM);
+
+        TreeMap aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
+                trackingMetricConfig, unaggregatedData, timeZonePST, AggregationLevel.WEEKS);
         //
         // The aggregated data should be in 3 buckets
         // Bucket 1 should start at midnight 4 weeks ago and have value 5
@@ -266,11 +293,11 @@ public class BucketAggregationUtilTest {
 
         Assert.assertEquals(3, aggregatedData.size());
         Assert.assertNotNull(aggregatedData.get(bucket1Start));
-        Assert.assertEquals(5L, aggregatedData.get(bucket1Start).longValue());
+        Assert.assertEquals(5L, ((Long)aggregatedData.get(bucket1Start)).longValue());
         Assert.assertNotNull(aggregatedData.get(bucket2Start));
-        Assert.assertEquals(6L, aggregatedData.get(bucket2Start).longValue());
+        Assert.assertEquals(6L, ((Long)aggregatedData.get(bucket2Start)).longValue());
         Assert.assertNotNull(aggregatedData.get(bucket3Start));
-        Assert.assertEquals(3L, aggregatedData.get(bucket3Start).longValue());
+        Assert.assertEquals(3L, ((Long)aggregatedData.get(bucket3Start)).longValue());
     }
 
 
@@ -281,22 +308,25 @@ public class BucketAggregationUtilTest {
         Calendar cal2 = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 0, 0, 2, timeZonePST);
         Calendar cal3 = BucketCalculator.getCalendar(2014, Calendar.MAY, 3, 0, 0, 0, timeZonePST);
 
-        TreeMap<Long, Long> unaggregatedData = new TreeMap<Long, Long>();
+        TreeMap unaggregatedData = new TreeMap();
         unaggregatedData.put(cal1.getTimeInMillis(), 5L);
         unaggregatedData.put(cal2.getTimeInMillis(), 6L);
         unaggregatedData.put(cal3.getTimeInMillis(), 3L);
 
-        TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
-                unaggregatedData, timeZonePST, AggregationLevel.DAYS);
+        TrackingMetricConfig trackingMetricConfig =
+                new TrackingMetricConfig("something", Long.class, Aggregation.SUM);
+
+        TreeMap aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
+                trackingMetricConfig, unaggregatedData, timeZonePST, AggregationLevel.DAYS);
 
         long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.DAYS).getTimeInMillis();
         long bucket2Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.DAYS).getTimeInMillis();
 
         Assert.assertEquals(2, aggregatedData.size());
         Assert.assertNotNull(aggregatedData.get(bucket1Start));
-        Assert.assertEquals(11L, aggregatedData.get(bucket1Start).longValue());
+        Assert.assertEquals(11L, ((Long)aggregatedData.get(bucket1Start)).longValue());
         Assert.assertNotNull(aggregatedData.get(bucket2Start));
-        Assert.assertEquals(3L, aggregatedData.get(bucket2Start).longValue());
+        Assert.assertEquals(3L, ((Long)aggregatedData.get(bucket2Start)).longValue());
     }
 
 
@@ -307,22 +337,25 @@ public class BucketAggregationUtilTest {
         Calendar cal2 = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 1, 3, 0, timeZonePST);
         Calendar cal3 = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 3, 0, 0, timeZonePST);
 
-        TreeMap<Long, Long> unaggregatedData = new TreeMap<Long, Long>();
+        TreeMap unaggregatedData = new TreeMap();
         unaggregatedData.put(cal1.getTimeInMillis(), 5L);
         unaggregatedData.put(cal2.getTimeInMillis(), 6L);
         unaggregatedData.put(cal3.getTimeInMillis(), 3L);
 
-        TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
-                unaggregatedData, timeZonePST, AggregationLevel.HOURS);
+        TrackingMetricConfig trackingMetricConfig =
+                new TrackingMetricConfig("something", Long.class, Aggregation.SUM);
+
+        TreeMap aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
+                trackingMetricConfig, unaggregatedData, timeZonePST, AggregationLevel.HOURS);
 
         long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.HOURS).getTimeInMillis();
         long bucket2Start = BucketCalculator.getBucketStartForCalendar(cal3, TimeUnit.HOURS).getTimeInMillis();
 
         Assert.assertEquals(2, aggregatedData.size());
         Assert.assertNotNull(aggregatedData.get(bucket1Start));
-        Assert.assertEquals(11L, aggregatedData.get(bucket1Start).longValue());
+        Assert.assertEquals(11L, ((Long)aggregatedData.get(bucket1Start)).longValue());
         Assert.assertNotNull(aggregatedData.get(bucket2Start));
-        Assert.assertEquals(3L, aggregatedData.get(bucket2Start).longValue());
+        Assert.assertEquals(3L, ((Long)aggregatedData.get(bucket2Start)).longValue());
     }
 
     //
