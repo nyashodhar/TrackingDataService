@@ -21,6 +21,7 @@ import java.util.TreeMap;
 public class BucketAggregationUtil {
 
     private static final long FORTY_EIGHT_HOURS = 48L*60L*60L*1000L;
+
     private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
     private Logger logger = Logger.getLogger(this.getClass());
@@ -119,7 +120,7 @@ public class BucketAggregationUtil {
         TreeMap aggregatedData = aggregateIntoBucketsForTimeZone(
                 trackingMetricConfig, shiftedUnaggregatedData, aggregationTimeZone, aggregationLevel);
 
-        // For each bucket in the aggregated series, into a UTC timezone relative buckets
+        // For each bucket in the aggregated series, shift into a UTC timezone relative buckets
         TreeMap utcShiftedAggregatedData = shiftTimeSeriesToBoundariesForTimeZone(aggregatedData, aggregationTimeZone, UTC, aggregationLevel);
 
         //
@@ -283,7 +284,7 @@ public class BucketAggregationUtil {
         TreeMap shiftedData = new TreeMap();
         for(Object tsObj : dataPoints.keySet()) {
             Long ts = (Long) tsObj;
-            Object newTimeStamp = shiftTimeStamp(ts, FORTY_EIGHT_HOURS, forward);
+            Object newTimeStamp = shiftTimeStamp(ts.longValue(), FORTY_EIGHT_HOURS, forward);
             shiftedData.put(newTimeStamp, dataPoints.get(tsObj));
         }
 
@@ -297,7 +298,7 @@ public class BucketAggregationUtil {
      * @return a timestamp shifted 48 hours in the direction specified
      * by the 'forward' parameter.
      */
-    protected long shiftTimeStamp(long input, long shiftAmount, boolean forward) {
+    protected Long shiftTimeStamp(long input, long shiftAmount, boolean forward) {
         long newTimeStamp;
         if(forward) {
             newTimeStamp = input + shiftAmount;
@@ -311,25 +312,16 @@ public class BucketAggregationUtil {
     protected TreeMap shiftTimeSeriesToBoundariesForTimeZone(
             TreeMap dataPoints, TimeZone timeZone1, TimeZone timeZone2, AggregationLevel aggregationLevel) {
 
-        // For each bucket in the aggregated series, into a UTC timezone relative buckets
-
-        //System.out.println("****************** dataPoints = " + dataPoints + ", size() = " + dataPoints.size());
-
         TreeMap shiftedData = new TreeMap();
         for(Object timeStampObj : dataPoints.keySet()) {
             Long timeStamp = (Long) timeStampObj;
 
             Object value = dataPoints.get(timeStampObj);
-            //System.out.println("****************** value = " + value);
 
             long utcShiftedBucketTimestamp = getShiftedTimeStamp(timeStamp, timeZone1, timeZone2, aggregationLevel);
 
-            //System.out.println("****************** utcShiftedBucketTimestamp = " + utcShiftedBucketTimestamp);
-
             shiftedData.put(utcShiftedBucketTimestamp, value);
         }
-
-        //System.out.println("****************** shiftedData = " + shiftedData + ", size() = " + shiftedData.size());
 
         return shiftedData;
     }
@@ -359,33 +351,33 @@ public class BucketAggregationUtil {
         // less significance than the desired bucket size time unit
         //
 
-        Calendar utcShiftedBucketStartCal = Calendar.getInstance();
-        utcShiftedBucketStartCal.clear();
-        utcShiftedBucketStartCal.setTimeZone(timeZone2);
+        Calendar outputCal = Calendar.getInstance();
+        outputCal.clear();
+        outputCal.setTimeZone(timeZone2);
 
         if (aggregationLevel == AggregationLevel.YEARS) {
-            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
+            outputCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
         } else if (aggregationLevel == AggregationLevel.MONTHS) {
-            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
-            utcShiftedBucketStartCal.set(Calendar.MONTH, inputCal.get(Calendar.MONTH));
+            outputCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
+            outputCal.set(Calendar.MONTH, inputCal.get(Calendar.MONTH));
         } else if (aggregationLevel == AggregationLevel.WEEKS) {
-            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
-            utcShiftedBucketStartCal.set(Calendar.WEEK_OF_YEAR, inputCal.get(Calendar.WEEK_OF_YEAR));
-            utcShiftedBucketStartCal.set(Calendar.DAY_OF_WEEK, 1);
+            outputCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
+            outputCal.set(Calendar.WEEK_OF_YEAR, inputCal.get(Calendar.WEEK_OF_YEAR));
+            outputCal.set(Calendar.DAY_OF_WEEK, 1);
         } else if (aggregationLevel == AggregationLevel.DAYS) {
-            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
-            utcShiftedBucketStartCal.set(Calendar.MONTH, inputCal.get(Calendar.MONTH));
-            utcShiftedBucketStartCal.set(Calendar.DAY_OF_MONTH, inputCal.get(Calendar.DAY_OF_MONTH));
+            outputCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
+            outputCal.set(Calendar.MONTH, inputCal.get(Calendar.MONTH));
+            outputCal.set(Calendar.DAY_OF_MONTH, inputCal.get(Calendar.DAY_OF_MONTH));
         } else if (aggregationLevel == AggregationLevel.HOURS) {
-            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
-            utcShiftedBucketStartCal.set(Calendar.MONTH, inputCal.get(Calendar.MONTH));
-            utcShiftedBucketStartCal.set(Calendar.DAY_OF_MONTH, inputCal.get(Calendar.DAY_OF_MONTH));
-            utcShiftedBucketStartCal.set(Calendar.HOUR_OF_DAY, inputCal.get(Calendar.HOUR_OF_DAY));
+            outputCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
+            outputCal.set(Calendar.MONTH, inputCal.get(Calendar.MONTH));
+            outputCal.set(Calendar.DAY_OF_MONTH, inputCal.get(Calendar.DAY_OF_MONTH));
+            outputCal.set(Calendar.HOUR_OF_DAY, inputCal.get(Calendar.HOUR_OF_DAY));
         } else {
             throw new IllegalArgumentException("Unexpected aggregation level " + aggregationLevel);
         }
 
-        return utcShiftedBucketStartCal.getTimeInMillis();
+        return outputCal.getTimeInMillis();
     }
 
 

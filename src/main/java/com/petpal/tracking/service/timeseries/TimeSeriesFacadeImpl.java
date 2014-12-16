@@ -71,7 +71,7 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
             Long utcEnd,
             TimeUnit resultBucketSize,
             int resultBucketMultiplier,
-            boolean verboseResponse) {
+            boolean performBucketAdjustment) {
 
         // Build the query
         QueryBuilder queryBuilder = createQueryForSingleMetric(
@@ -93,7 +93,10 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
         // Adjust the bucket boundaries (and insert explicit empty buckets is response is to be verbose)
         logger.debug("querySingleTimeSeries(): Doing result adjustment for series " + timeSeriesName);
 
-        adjustBucketBoundaries(resultsByMetric, utcBegin, utcEnd, resultBucketSize, timeSeriesNameToDataType, verboseResponse);
+        if(performBucketAdjustment) {
+            adjustBucketBoundaries(resultsByMetric, utcBegin, utcEnd, resultBucketSize, timeSeriesNameToDataType);
+        }
+
         printMetricsResults(resultsByMetric);
 
         TreeMap results = resultsByMetric.get(timeSeriesName);
@@ -112,7 +115,7 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
             Long utcEnd,
             TimeUnit resultBucketSize,
             int resultBucketMultiplier,
-            boolean verboseResponse) {
+            boolean performBucketAdjustment) {
 
         // Build the query
         QueryBuilder queryBuilder = createQueryForMultipleMetrics(
@@ -124,11 +127,17 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
 
         // Extract the result for response
         Map<String, TreeMap> resultsByTimeSeriesName = getResultFromResponse(queryResponse, timeSeriesNamesToDataType);
+
         printMetricsResults(resultsByTimeSeriesName);
+
 
         // Adjust the bucket boundaries (and insert explicit empty buckets is response is to be verbose)
         logger.info("queryMultipleTimeSeries(): Doing result adjustment..");
-        adjustBucketBoundaries(resultsByTimeSeriesName, utcBegin, utcEnd, resultBucketSize, timeSeriesNamesToDataType, verboseResponse);
+
+        if(performBucketAdjustment) {
+            adjustBucketBoundaries(resultsByTimeSeriesName, utcBegin, utcEnd, resultBucketSize, timeSeriesNamesToDataType);
+        }
+
         printMetricsResults(resultsByTimeSeriesName);
 
         return resultsByTimeSeriesName;
@@ -231,18 +240,25 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
     }
 
 
+    /**************************************
+     *
+     * THIS METHOD IS NOT SAFE FOR USE WITH PRE-AGGRAGATED SERIES.
+     * WHEN INJECTING NEW BUCKETS INTO THOSE SERIES, IT WILL NOT
+     * CREATE CORRECT BOUNDARIES.
+     *
+     * THE 'verbose response feature' should be REMOVED. It's worthless.
+     ***************************************/
     protected void adjustBucketBoundaries(
             Map<String, TreeMap> metricResults,
             Long utcBegin,
             Long utcEnd,
             TimeUnit resultBucketSize,
-            Map<String, Type> timeSeriesNamesToDataType,
-            boolean verboseResponse) {
+            Map<String, Type> timeSeriesNamesToDataType) {
 
         for(String timeSeriesName : metricResults.keySet()) {
 
             Type dataType = timeSeriesNamesToDataType.get(timeSeriesName);
-            if(dataType != Long.class) {
+            if (dataType != Long.class) {
                 throw new IllegalArgumentException("adjustBucketBoundaries(): Only Long type supported");
             }
 
@@ -256,13 +272,11 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
             logger.debug("Bucket adjust for time series " + timeSeriesName + ": old bucket count = " +
                     metricResults.get(timeSeriesName).size() + ", new bucket count = " + adjustedMetricResult.size());
 
-            // If the response is not to be verbose, filter out the empty buckets.
-            if(!verboseResponse) {
-                Set<Long> bucketTimeStamps = new HashSet<Long>(adjustedMetricResult.keySet());
-                for(Long timestamp : bucketTimeStamps) {
-                    if(((Long)adjustedMetricResult.get(timestamp)).longValue() == 0L) {
-                        adjustedMetricResult.remove(timestamp);
-                    }
+            // Filter out the empty buckets.
+            Set<Long> bucketTimeStamps = new HashSet<Long>(adjustedMetricResult.keySet());
+            for (Long timestamp : bucketTimeStamps) {
+                if (((Long) adjustedMetricResult.get(timestamp)).longValue() == 0L) {
+                    adjustedMetricResult.remove(timestamp);
                 }
             }
         }
@@ -400,8 +414,6 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
 
         logger.debug("New bucket boundaries: [" + newTimeStamps + "]");
     }
-
-
 
 
     /**
@@ -632,7 +644,7 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
         if(utcEnd == null) {
             intervalDescriptor.append(" now]");
         } else {
-            intervalDescriptor.append(" " + getUTCFormat(utcBegin) + "]");
+            intervalDescriptor.append(" " + getUTCFormat(utcEnd) + "]");
         }
 
         logger.info("Time series query for interval " + intervalDescriptor + " for time series " + timeSeriesNamesToDataType +

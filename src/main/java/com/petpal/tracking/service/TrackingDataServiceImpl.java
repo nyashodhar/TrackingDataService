@@ -45,7 +45,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
     private TrackingMetricsConfig trackingMetricsConfig;
 
     /**
-     * @see com.petpal.tracking.service.TrackingDataService#getAggregatedTimeSeries(java.util.Map, java.util.List, Long, Long, com.petpal.tracking.web.controllers.AggregationLevel, java.util.TimeZone, int, boolean)
+     * @see com.petpal.tracking.service.TrackingDataService#getAggregatedTimeSeries(java.util.Map, java.util.List, Long, Long, com.petpal.tracking.web.controllers.AggregationLevel, java.util.TimeZone, int)
      */
     @Override
     public TrackingDataDownload getAggregatedTimeSeries(
@@ -55,8 +55,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
             Long utcEnd,
             AggregationLevel aggregationLevel,
             TimeZone aggregationTimeZone,
-            int resultBucketMultiplier,
-            boolean verboseResponse) {
+            int resultBucketMultiplier) {
 
         Assert.notNull(aggregationLevel, "Aggregation level not specified");
 
@@ -94,7 +93,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
                 shiftedUTCEnd,
                 timeUnitForAggregationLevel,
                 resultBucketMultiplier,
-                verboseResponse);
+                false);
 
         // Shift result back from the UTC relative result
         Map<String, TreeMap> unshiftedResults = new HashMap<String, TreeMap>();

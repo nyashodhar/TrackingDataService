@@ -93,7 +93,6 @@ public abstract class AbstractTimeSeriesIntegrationTest {
             Integer startHour,
             Integer bucketsToFetch,
             List<String> trackingMetrics,
-            Boolean verboseResponse,
             TimeZone aggregationTimeZone) {
 
         RestTemplate restTemplate = new RestTemplate();
@@ -141,11 +140,6 @@ public abstract class AbstractTimeSeriesIntegrationTest {
         if(trackingMetrics != null) {
             url = url + "&trackingMetrics={trackingMetrics}";
             urlArgs.put("trackingMetrics", trackingMetricsToCommaSeparated(trackingMetrics));
-        }
-
-        if(verboseResponse != null) {
-            url = url + "&verboseResponse={verboseResponse}";
-            urlArgs.put("verboseResponse", verboseResponse);
         }
 
         if(aggregationTimeZone != null) {
