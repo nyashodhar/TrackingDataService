@@ -50,22 +50,22 @@ public class TrackingMetricsConfigTest {
         Assert.assertTrue(trackingMetricMap.containsKey("RESTINGSECONDS"));
 
         TrackingMetricConfig walkingSteps = trackingMetricMap.get("WALKINGSTEPS");
-        Assert.assertEquals(Long.class, walkingSteps.getDataType());
+        Assert.assertEquals(Long.class, walkingSteps.getAggregationDataType());
         Assert.assertEquals(Aggregation.SUM, walkingSteps.getAggregation());
         Assert.assertEquals(walkingSteps, trackingMetricsConfig.getTrackingMetric("WALKINGSTEPS"));
 
         TrackingMetricConfig runningSteps = trackingMetricMap.get("RUNNINGSTEPS");
-        Assert.assertEquals(Long.class, runningSteps.getDataType());
+        Assert.assertEquals(Long.class, runningSteps.getAggregationDataType());
         Assert.assertEquals(Aggregation.SUM, runningSteps.getAggregation());
         Assert.assertEquals(runningSteps, trackingMetricsConfig.getTrackingMetric("RUNNINGSTEPS"));
 
         TrackingMetricConfig sleepingSeconds = trackingMetricMap.get("SLEEPINGSECONDS");
-        Assert.assertEquals(Long.class, sleepingSeconds.getDataType());
+        Assert.assertEquals(Long.class, sleepingSeconds.getAggregationDataType());
         Assert.assertEquals(Aggregation.SUM, sleepingSeconds.getAggregation());
         Assert.assertEquals(sleepingSeconds, trackingMetricsConfig.getTrackingMetric("SLEEPINGSECONDS"));
 
         TrackingMetricConfig restingSeconds = trackingMetricMap.get("RESTINGSECONDS");
-        Assert.assertEquals(Long.class, restingSeconds.getDataType());
+        Assert.assertEquals(Long.class, restingSeconds.getAggregationDataType());
         Assert.assertEquals(Aggregation.SUM, restingSeconds.getAggregation());
         Assert.assertEquals(restingSeconds, trackingMetricsConfig.getTrackingMetric("RESTINGSECONDS"));
     }
@@ -76,18 +76,18 @@ public class TrackingMetricsConfigTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testGetDataTypeFromProperties_missing_data_type() {
-        trackingMetricsConfig.getDataTypeFromProperties(5, trackingMetricsProperties, "something");
+        trackingMetricsConfig.getDataTypeFromProperties(5, trackingMetricsProperties, "something", "aggregated");
     }
 
     @Test
     public void testGetDataTypeFromProperties_expected() {
 
         Type dataType1 = trackingMetricsConfig.getDataTypeFromProperties(
-                1, trackingMetricsProperties, "something");
+                1, trackingMetricsProperties, "something", "aggregated");
         Assert.assertEquals(Long.class, dataType1);
 
         Type dataType4 = trackingMetricsConfig.getDataTypeFromProperties(
-                4, trackingMetricsProperties, "something");
+                4, trackingMetricsProperties, "something", "aggregated");
         Assert.assertEquals(Long.class, dataType4);
     }
 

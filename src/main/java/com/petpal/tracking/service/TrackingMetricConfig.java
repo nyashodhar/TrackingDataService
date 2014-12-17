@@ -19,13 +19,20 @@ public class TrackingMetricConfig {
         this.dataType = dataType;
         this.aggregation = aggregation;
         this.unaggregatedSeriesName = name + "_RAW";
+
+        if(aggregation == Aggregation.AVERAGE) {
+            if(dataType != Double.class) {
+                throw new IllegalArgumentException("Metric " + name + " has aggregation " +
+                        aggregation + " but data type (" + dataType + " is not Double");
+            }
+        }
     }
 
     public String getName() {
         return name;
     }
 
-    public Type getDataType() {
+    public Type getAggregationDataType() {
         return dataType;
     }
 

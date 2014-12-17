@@ -51,7 +51,7 @@ public class TrackingMetricsConfig {
                 continue;
             }
 
-            Type dataType = getDataTypeFromProperties(i, trackingMetricsProperties, metricName);
+            Type dataType = getDataTypeFromProperties(i, trackingMetricsProperties, metricName, "aggregated");
             Aggregation aggregation = getAggregationFromProperties(i, trackingMetricsProperties, metricName);
 
             TrackingMetricConfig trackingMetric = new TrackingMetricConfig(metricName, dataType, aggregation);
@@ -102,16 +102,16 @@ public class TrackingMetricsConfig {
     }
 
     protected Type getDataTypeFromProperties(
-            int metrixIndex, Properties trackingMetricsProperties, String metricName) {
+            int metricIndex, Properties trackingMetricsProperties, String metricName, String suffix) {
 
-        String dataTypeStr = trackingMetricsProperties.getProperty("metric." + metrixIndex + ".datatype");
-        Assert.isTrue(!StringUtils.isEmpty(dataTypeStr), "Metric " + metrixIndex + "(" + metricName + "): " +
-                "Data type missing for metric " + metricName);
+        String dataTypeStr = trackingMetricsProperties.getProperty("metric." + metricIndex + ".datatype." + suffix);
+        Assert.isTrue(!StringUtils.isEmpty(dataTypeStr), "Metric " + metricIndex + "(" + metricName + "): " +
+                suffix + " data type missing for metric " + metricName);
         Assert.isTrue(
                 dataTypeStr.equalsIgnoreCase(DATA_TYPE_LONG) ||
                         dataTypeStr.equalsIgnoreCase(DATA_TYPE_DOUBLE) ||
                         dataTypeStr.equalsIgnoreCase(DATA_TYPE_STRING),
-                "Metric " + metrixIndex + "(" + metricName + "): " +
+                "Metric " + metricIndex + "(" + metricName + "): " +
                         "Invalid value for data type " + dataTypeStr + ", must be " +
                         DATA_TYPE_LONG + ", " + DATA_TYPE_DOUBLE + " or " + DATA_TYPE_STRING);
 

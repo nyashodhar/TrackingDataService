@@ -197,7 +197,7 @@ public class BucketAggregationUtil {
         long currentBucketEnd = getAggregatedBucketEndTime(currentBucketStart, aggregationLevel, timeZone);
         TreeMap aggregatedData = new TreeMap<Long, Object>();
 
-        aggregatedData.put(currentBucketStart, initialValue(trackingMetricConfig.getDataType()));
+        aggregatedData.put(currentBucketStart, initialValue(trackingMetricConfig.getAggregationDataType()));
 
         for(Object timeStampObj : unaggregatedData.keySet()) {
 
@@ -231,7 +231,7 @@ public class BucketAggregationUtil {
                         trackingMetricConfig.getAggregation() + " not supported. Only " + Aggregation.SUM + " is supported");
             }
 
-            Object newValue = sumObjects(aggregatedData.get(currentBucketStart), value, trackingMetricConfig.getDataType());
+            Object newValue = sumObjects(aggregatedData.get(currentBucketStart), value, trackingMetricConfig.getAggregationDataType());
 
             aggregatedData.put(currentBucketStart, newValue);
         }

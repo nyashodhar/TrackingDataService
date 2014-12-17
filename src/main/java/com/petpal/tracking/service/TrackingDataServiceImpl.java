@@ -79,7 +79,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
 
         for(TrackingMetricConfig trackingMetricConfig : trackingMetricConfigs) {
             String timeSeriesName = trackingMetricConfig.getAggregatedSeriesName(aggregationLevel);
-            Type timeSeriesType = trackingMetricConfig.getDataType();
+            Type timeSeriesType = trackingMetricConfig.getAggregationDataType();
             timeSeriesNamesToDataType.put(timeSeriesName, timeSeriesType);
             metricMap.put(timeSeriesName, trackingMetricConfig);
         }
@@ -161,7 +161,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
 
         if(CollectionUtils.isEmpty(unaggregatedDataPoints)) {
             logger.info("updateAggregatedSeriesForMetric(): No unaggregated data found for " +
-                    trackingMetricConfig.getDataType() + " metric " + trackingMetricConfig.getName() + ", returning.");
+                    trackingMetricConfig.getAggregationDataType() + " metric " + trackingMetricConfig.getName() + ", returning.");
             return;
         }
 
@@ -195,7 +195,7 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
 
         if(CollectionUtils.isEmpty(fortyEightHourShiftedUTCAggregatedData)) {
             logger.info("updateUTCShiftedAggregatedTimeSeries(): No aggregated data found for " +
-                    trackingMetricConfig.getDataType() + " metric " + trackingMetricConfig.getName() + ", returning.");
+                    trackingMetricConfig.getAggregationDataType() + " metric " + trackingMetricConfig.getName() + ", returning.");
             return;
         }
 
@@ -208,17 +208,17 @@ public class TrackingDataServiceImpl implements AsyncTrackingDataInserter, Track
         TimeUnit timeUnitForAggregationLevel = TimeUnit.valueOf(aggregationLevel.toString().toUpperCase());
 
         TreeMap existingDataPoints = timeSeriesFacade.querySingleTimeSeries(
-                tags, timeSeriesName, trackingMetricConfig.getDataType(), startOfFirstBucket, null, timeUnitForAggregationLevel, 1, false);
+                tags, timeSeriesName, trackingMetricConfig.getAggregationDataType(), startOfFirstBucket, null, timeUnitForAggregationLevel, 1, false);
 
         // Incorporate the existing values for the contributed data points
         TreeMap updatedAggregatedData = bucketAggregationUtil.mergeExistingDataPointsIntoNew(
                 fortyEightHourShiftedUTCAggregatedData,
                 existingDataPoints,
                 trackingMetricConfig.getAggregation(),
-                trackingMetricConfig.getDataType());
+                trackingMetricConfig.getAggregationDataType());
 
         // Persist the updated data in the time series
-        timeSeriesFacade.storeDataForTimeSeries(updatedAggregatedData, timeSeriesName, trackingMetricConfig.getDataType(), tags);
+        timeSeriesFacade.storeDataForTimeSeries(updatedAggregatedData, timeSeriesName, trackingMetricConfig.getAggregationDataType(), tags);
     }
 
 
