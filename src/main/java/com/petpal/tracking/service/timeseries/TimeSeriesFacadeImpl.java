@@ -168,7 +168,7 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
             String timeSeriesName = trackingMetricConfig.getUnaggregatedSeriesName();
 
             if(!CollectionUtils.isEmpty(dataPoints)) {
-                addTimeSeriesDataToMetricBuilder(metricBuilder, dataPoints, trackingMetricConfig.getAggregationDataType(), timeSeriesName, tags);
+                addTimeSeriesDataToMetricBuilder(metricBuilder, dataPoints, trackingMetricConfig.getRawDataType(), timeSeriesName, tags);
             } else {
                 logger.info("No datapoints found for " + trackingMetricConfig.getAggregationDataType() + " metric " +
                         trackingMetricConfig.getName() + ", skipping update of time series " + timeSeriesName);
