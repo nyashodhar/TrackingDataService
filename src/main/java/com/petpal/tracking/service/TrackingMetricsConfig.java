@@ -55,6 +55,12 @@ public class TrackingMetricsConfig {
             Aggregation aggregation = getAggregationFromProperties(i, trackingMetricsProperties, metricName);
 
             TrackingMetricConfig trackingMetric = new TrackingMetricConfig(metricName, dataType, aggregation);
+
+            if(trackingMetrics.get(trackingMetric.getName()) != null) {
+                throw new IllegalArgumentException("Metric " + trackingMetric.getName() +
+                        " is repeated in the config file " + CONFIG_FILE);
+            }
+
             trackingMetrics.put(trackingMetric.getName(), trackingMetric);
             i++;
         }
