@@ -170,8 +170,8 @@ public class TimeSeriesFacadeImpl implements TimeSeriesFacade {
             if(!CollectionUtils.isEmpty(dataPoints)) {
                 addTimeSeriesDataToMetricBuilder(metricBuilder, dataPoints, trackingMetricConfig.getRawDataType(), timeSeriesName, tags);
             } else {
-                logger.info("No datapoints found for " + trackingMetricConfig.getAggregationDataType() + " metric " +
-                        trackingMetricConfig.getName() + ", skipping update of time series " + timeSeriesName);
+                logger.info("No datapoints found for " + trackingMetricConfig.getRawDataType() + " metric " +
+                        trackingMetricConfig.getName() + ", skipping update of time unaggregated series " + timeSeriesName);
             }
         }
 
