@@ -12,6 +12,26 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ *
+ * Scheme for storing an aggregated average number that is continuously
+ * updated and rolled up into a string:
+ *
+ * Serialization:
+ *
+ *      "{"s":"XXXXX.YYY","w":"ZZZZ"}"
+ *
+ * XXXXX.YYY is a string formatted double representing a sum
+ * ZZZZ is an integer representing the number of weights
+ *
+ * Deserialization:
+ *
+ *     Average = XXXXX.YYY/ZZZZ
+ *
+ * Updating the value:
+ *
+ *     Update the sum
+ *     Increment the weights
+ *
  * Created by per on 12/16/14.
  */
 public class AggregatedAverageNumberUtil {
