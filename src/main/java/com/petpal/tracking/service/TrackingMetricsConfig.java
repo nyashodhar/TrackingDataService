@@ -51,10 +51,12 @@ public class TrackingMetricsConfig {
                 continue;
             }
 
-            Type dataType = getDataTypeFromProperties(i, trackingMetricsProperties, metricName, "aggregated");
+            Type aggregationDataType = getDataTypeFromProperties(i, trackingMetricsProperties, metricName, "aggregated");
+            Type rawDataType = getDataTypeFromProperties(i, trackingMetricsProperties, metricName, "raw");
+
             Aggregation aggregation = getAggregationFromProperties(i, trackingMetricsProperties, metricName);
 
-            TrackingMetricConfig trackingMetric = new TrackingMetricConfig(metricName, dataType, aggregation);
+            TrackingMetricConfig trackingMetric = new TrackingMetricConfig(metricName, rawDataType, aggregationDataType, aggregation);
 
             if(trackingMetrics.get(trackingMetric.getName()) != null) {
                 throw new IllegalArgumentException("Metric " + trackingMetric.getName() +
@@ -105,8 +107,8 @@ public class TrackingMetricsConfig {
             int metricIndex, Properties trackingMetricsProperties, String metricName, String suffix) {
 
         String dataTypeStr = trackingMetricsProperties.getProperty("metric." + metricIndex + ".datatype." + suffix);
-        Assert.isTrue(!StringUtils.isEmpty(dataTypeStr), "Metric " + metricIndex + "(" + metricName + "): " +
-                suffix + " data type missing for metric " + metricName);
+        Assert.isTrue(!StringUtils.isEmpty(dataTypeStr), "Metric " + metricIndex + " (" + metricName + "): " +
+                suffix + " data type missing");
         Assert.isTrue(
                 dataTypeStr.equalsIgnoreCase(DATA_TYPE_LONG) ||
                         dataTypeStr.equalsIgnoreCase(DATA_TYPE_DOUBLE) ||

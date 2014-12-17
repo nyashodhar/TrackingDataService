@@ -88,25 +88,29 @@ public class BucketAggregationUtilTest {
 
     @Test
     public void testMergeExistingDataPointsIntoNew_both_args_null() {
-        TreeMap updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(null, null, Aggregation.SUM, Long.class);
+        TreeMap updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(
+                null, null, Aggregation.SUM, Long.class);
         Assert.assertTrue(CollectionUtils.isEmpty(updatedDataPoints));
     }
 
     @Test
     public void testMergeExistingDataPointsIntoNew_new_data_null_old_data_empty() {
-        TreeMap updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(null, new TreeMap(), Aggregation.SUM, Long.class);
+        TreeMap updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(
+                null, new TreeMap(), Aggregation.SUM, Long.class);
         Assert.assertTrue(CollectionUtils.isEmpty(updatedDataPoints));
     }
 
     @Test
     public void testMergeExistingDataPointsIntoNew_new_data_empty_old_data_null() {
-        TreeMap updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(new TreeMap(), null, Aggregation.SUM, Long.class);
+        TreeMap updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(
+                new TreeMap(), null, Aggregation.SUM, Long.class);
         Assert.assertTrue(CollectionUtils.isEmpty(updatedDataPoints));
     }
 
     @Test
     public void testMergeExistingDataPointsIntoNew_new_data_empty_old_data_empty() {
-        TreeMap updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(new TreeMap(), new TreeMap(), Aggregation.SUM, Long.class);
+        TreeMap updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(
+                new TreeMap(), new TreeMap(), Aggregation.SUM, Long.class);
         Assert.assertTrue(CollectionUtils.isEmpty(updatedDataPoints));
     }
 
@@ -117,7 +121,8 @@ public class BucketAggregationUtilTest {
         newDataPoints.put(1L, 333L);
         newDataPoints.put(2L, 444L);
 
-        TreeMap updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(newDataPoints, new TreeMap(), Aggregation.SUM, Long.class);
+        TreeMap updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(
+                newDataPoints, new TreeMap(), Aggregation.SUM, Long.class);
         Assert.assertEquals(2, updatedDataPoints.size());
         Assert.assertEquals(newDataPoints.get(1L), updatedDataPoints.get(1L));
         Assert.assertEquals(newDataPoints.get(2L), updatedDataPoints.get(2L));
@@ -134,7 +139,8 @@ public class BucketAggregationUtilTest {
         existingDataPoints.put(2L, 1L);
         existingDataPoints.put(7L, 888L);
 
-        TreeMap updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(newDataPoints, existingDataPoints, Aggregation.SUM, Long.class);
+        TreeMap updatedDataPoints = bucketAggregationUtil.mergeExistingDataPointsIntoNew(
+                newDataPoints, existingDataPoints, Aggregation.SUM, Long.class);
         Assert.assertEquals(2, updatedDataPoints.size());
         Assert.assertEquals(newDataPoints.get(1L), updatedDataPoints.get(1L));
 
@@ -150,7 +156,7 @@ public class BucketAggregationUtilTest {
     public void aggregateIntoBucketsForTimeZone_null_aggregated_data() {
 
         TrackingMetricConfig trackingMetricConfig =
-                new TrackingMetricConfig("something", Long.class, Aggregation.SUM);
+                new TrackingMetricConfig("something", Long.class, Long.class, Aggregation.SUM);
 
         TreeMap aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
                 trackingMetricConfig, null, timeZonePST, AggregationLevel.MONTHS);
@@ -162,7 +168,7 @@ public class BucketAggregationUtilTest {
     public void aggregateIntoBucketsForTimeZone_empty_aggregated_data() {
 
         TrackingMetricConfig trackingMetricConfig =
-                new TrackingMetricConfig("something", Long.class, Aggregation.SUM);
+                new TrackingMetricConfig("something", Long.class, Long.class, Aggregation.SUM);
 
         TreeMap aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
                 trackingMetricConfig, new TreeMap(), timeZonePST, AggregationLevel.MONTHS);
@@ -173,7 +179,7 @@ public class BucketAggregationUtilTest {
     public void aggregateIntoBucketsForTimeZone_timezone_missing() {
 
         TrackingMetricConfig trackingMetricConfig =
-                new TrackingMetricConfig("something", Long.class, Aggregation.SUM);
+                new TrackingMetricConfig("something", Long.class, Long.class, Aggregation.SUM);
 
         TreeMap unaggregatedData = new TreeMap();
         unaggregatedData.put(1L, 1L);
@@ -185,7 +191,7 @@ public class BucketAggregationUtilTest {
     public void aggregateIntoBucketsForTimeZone_bucketsize_missing() {
 
         TrackingMetricConfig trackingMetricConfig =
-                new TrackingMetricConfig("something", Long.class, Aggregation.SUM);
+                new TrackingMetricConfig("something", Long.class, Long.class, Aggregation.SUM);
 
         TreeMap unaggregatedData = new TreeMap();
 
@@ -206,7 +212,7 @@ public class BucketAggregationUtilTest {
         unaggregatedData.put(cal3.getTimeInMillis(), 3L);
 
         TrackingMetricConfig trackingMetricConfig =
-                new TrackingMetricConfig("something", Long.class, Aggregation.SUM);
+                new TrackingMetricConfig("something", Long.class, Long.class, Aggregation.SUM);
 
         TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
                 trackingMetricConfig, unaggregatedData, timeZonePST, AggregationLevel.YEARS);
@@ -234,7 +240,7 @@ public class BucketAggregationUtilTest {
         unaggregatedData.put(cal3.getTimeInMillis(), 3L);
 
         TrackingMetricConfig trackingMetricConfig =
-                new TrackingMetricConfig("something", Long.class, Aggregation.SUM);
+                new TrackingMetricConfig("something", Long.class, Long.class, Aggregation.SUM);
 
         TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
                 trackingMetricConfig, unaggregatedData, timeZonePST, AggregationLevel.MONTHS);
@@ -276,7 +282,7 @@ public class BucketAggregationUtilTest {
         unaggregatedData.put(cal3.getTimeInMillis(), 3L);
 
         TrackingMetricConfig trackingMetricConfig =
-                new TrackingMetricConfig("something", Long.class, Aggregation.SUM);
+                new TrackingMetricConfig("something", Long.class, Long.class, Aggregation.SUM);
 
         TreeMap aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
                 trackingMetricConfig, unaggregatedData, timeZonePST, AggregationLevel.WEEKS);
@@ -314,7 +320,7 @@ public class BucketAggregationUtilTest {
         unaggregatedData.put(cal3.getTimeInMillis(), 3L);
 
         TrackingMetricConfig trackingMetricConfig =
-                new TrackingMetricConfig("something", Long.class, Aggregation.SUM);
+                new TrackingMetricConfig("something", Long.class, Long.class, Aggregation.SUM);
 
         TreeMap aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
                 trackingMetricConfig, unaggregatedData, timeZonePST, AggregationLevel.DAYS);
@@ -343,7 +349,7 @@ public class BucketAggregationUtilTest {
         unaggregatedData.put(cal3.getTimeInMillis(), 3L);
 
         TrackingMetricConfig trackingMetricConfig =
-                new TrackingMetricConfig("something", Long.class, Aggregation.SUM);
+                new TrackingMetricConfig("something", Long.class, Long.class, Aggregation.SUM);
 
         TreeMap aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
                 trackingMetricConfig, unaggregatedData, timeZonePST, AggregationLevel.HOURS);
@@ -371,7 +377,8 @@ public class BucketAggregationUtilTest {
         nowPST.setTimeZone(timeZonePST);
         nowPST.setTimeInMillis(now);
 
-        long timestamp = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePST, timeZoneUTC, AggregationLevel.YEARS);
+        long timestamp = bucketAggregationUtil.getShiftedTimeStamp(
+                now, timeZonePST, timeZoneUTC, AggregationLevel.YEARS);
 
         // Expect the determined bucket to start on Jan 1, 00:00:00:000 relative to UTC
 
@@ -399,7 +406,8 @@ public class BucketAggregationUtilTest {
         nowPST.setTimeZone(timeZonePST);
         nowPST.setTimeInMillis(now);
 
-        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePST, timeZoneUTC, AggregationLevel.MONTHS);
+        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(
+                now, timeZonePST, timeZoneUTC, AggregationLevel.MONTHS);
 
         // Expect the determined bucket to start the first of the month, 00:00:00:000 relative to UTC timezone
 
@@ -426,7 +434,8 @@ public class BucketAggregationUtilTest {
         nowPST.setTimeZone(timeZonePST);
         nowPST.setTimeInMillis(now);
 
-        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePST, timeZoneUTC, AggregationLevel.WEEKS);
+        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(
+                now, timeZonePST, timeZoneUTC, AggregationLevel.WEEKS);
 
         // Expect the determined bucket to start the first day of week of given timestamp, 00:00:00:000 relative to UTC
 
@@ -453,7 +462,8 @@ public class BucketAggregationUtilTest {
         nowPST.setTimeZone(timeZonePST);
         nowPST.setTimeInMillis(now);
 
-        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePST, timeZoneUTC, AggregationLevel.DAYS);
+        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(
+                now, timeZonePST, timeZoneUTC, AggregationLevel.DAYS);
 
         // Expect the determined bucket to start 00:00:00:000 on the same day as the given timestamp relative to UTC
 
@@ -480,7 +490,8 @@ public class BucketAggregationUtilTest {
         nowPST.setTimeZone(timeZonePST);
         nowPST.setTimeInMillis(now);
 
-        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(now, timeZonePST, timeZoneUTC, AggregationLevel.HOURS);
+        long initialBucketStart = bucketAggregationUtil.getShiftedTimeStamp(
+                now, timeZonePST, timeZoneUTC, AggregationLevel.HOURS);
 
         // Expect the determined bucket to start XX:00:00:000 where XX is the hour in the given timestamp relative to our timezone
 
@@ -538,7 +549,8 @@ public class BucketAggregationUtilTest {
 
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePST);
-        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), now.getTimeZone(), AggregationLevel.YEARS);
+        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(
+                now.getTimeInMillis(), now.getTimeZone(), AggregationLevel.YEARS);
 
         // Expect the determined bucket to start on Jan 1, 00:00:00:000 relative to our timezone
 
@@ -561,7 +573,8 @@ public class BucketAggregationUtilTest {
 
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePST);
-        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), now.getTimeZone(), AggregationLevel.MONTHS);
+        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(
+                now.getTimeInMillis(), now.getTimeZone(), AggregationLevel.MONTHS);
 
         // Expect the determined bucket to start the first of the month, 00:00:00:000 relative to our timezone
 
@@ -584,7 +597,8 @@ public class BucketAggregationUtilTest {
 
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePST);
-        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), now.getTimeZone(), AggregationLevel.WEEKS);
+        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(
+                now.getTimeInMillis(), now.getTimeZone(), AggregationLevel.WEEKS);
 
         // Expect the determined bucket to start the first day of week of given timestamp, 00:00:00:000 relative to our timezone
 
@@ -607,7 +621,8 @@ public class BucketAggregationUtilTest {
 
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePST);
-        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), now.getTimeZone(), AggregationLevel.DAYS);
+        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(
+                now.getTimeInMillis(), now.getTimeZone(), AggregationLevel.DAYS);
 
         // Expect the determined bucket to start 00:00:00:000 on the same day as the given timestamp relative to our timezone
 
@@ -630,7 +645,8 @@ public class BucketAggregationUtilTest {
 
         Calendar now = Calendar.getInstance();
         now.setTimeZone(timeZonePST);
-        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(now.getTimeInMillis(), now.getTimeZone(), AggregationLevel.HOURS);
+        long initialBucketStart = bucketAggregationUtil.determineInitialBucket(
+                now.getTimeInMillis(), now.getTimeZone(), AggregationLevel.HOURS);
 
         // Expect the determined bucket to start XX:00:00:000 where XX is the hour in the given timestamp relative to our timezone
 
