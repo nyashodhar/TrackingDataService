@@ -118,7 +118,7 @@ public class BucketAggregationUtil {
             TimeZone aggregationTimeZone,
             AggregationLevel aggregationLevel) {
 
-        TreeMap aggregatedData = aggregateIntoBucketsForTimeZone(
+        TreeMap aggregatedData = shiftDataIntoUTCBuckets(
                 trackingMetricConfig, shiftedUnaggregatedData, aggregationTimeZone, aggregationLevel);
 
         // For each bucket in the aggregated series, shift into a UTC timezone relative buckets
@@ -158,7 +158,7 @@ public class BucketAggregationUtil {
 
 
     /**
-     * Organize tracking data into bucket of the given time unit.
+     * Move tracking data into bucket of the given time unit.
      *
      * For buckets that are larger than minute-size, the boundaries of the buckets
      * become timezone dependent.
@@ -180,9 +180,9 @@ public class BucketAggregationUtil {
      * @param timeZone the timezone used to calculate time ranges
      * @param aggregationLevel the bucket size
      *
-     * @return data aggregated into the specified bucket size for the given time zone.
+     * @return data moved into the specified bucket size for the given time zone.
      */
-    public TreeMap aggregateIntoBucketsForTimeZone(
+    public TreeMap shiftDataIntoUTCBuckets(
             TrackingMetricConfig trackingMetricConfig, TreeMap unaggregatedData, TimeZone timeZone, AggregationLevel aggregationLevel) {
 
         if(CollectionUtils.isEmpty(unaggregatedData)) {
@@ -213,7 +213,6 @@ public class BucketAggregationUtil {
 
                 currentBucketStart = currentBucketEnd + 1L;
                 currentBucketEnd = getAggregatedBucketEndTime(currentBucketStart, aggregationLevel, timeZone);
-                //aggregatedData.put(currentBucketStart, 0L);
             }
 
             //
@@ -226,11 +225,6 @@ public class BucketAggregationUtil {
             }
 
             // Add the value to the bucket
-
-            if(trackingMetricConfig.getAggregation() != Aggregation.SUM) {
-                throw new UnsupportedOperationException(
-                        trackingMetricConfig.getAggregation() + " not supported. Only " + Aggregation.SUM + " is supported");
-            }
 
             Object newValue = DataPointAggregationUtil.updateAggregatedValue(
                     aggregatedData.get(currentBucketStart), value, trackingMetricConfig.getAggregation());

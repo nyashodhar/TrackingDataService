@@ -149,46 +149,46 @@ public class BucketAggregationUtilTest {
     }
 
     //
-    // aggregateIntoBucketsForTimeZone()
+    // shiftDataIntoUTCBucket()
     //
 
     @Test
-    public void aggregateIntoBucketsForTimeZone_null_aggregated_data() {
+    public void testShiftDataIntoUTCBuckets_null_aggregated_data() {
 
         TrackingMetricConfig trackingMetricConfig =
                 new TrackingMetricConfig("something", Long.class, Long.class, Aggregation.SUM);
 
-        TreeMap aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
+        TreeMap aggregatedData = bucketAggregationUtil.shiftDataIntoUTCBuckets(
                 trackingMetricConfig, null, timeZonePST, AggregationLevel.MONTHS);
 
         Assert.assertNull(aggregatedData);
     }
 
     @Test
-    public void aggregateIntoBucketsForTimeZone_empty_aggregated_data() {
+    public void testShiftDataIntoUTCBuckets_empty_aggregated_data() {
 
         TrackingMetricConfig trackingMetricConfig =
                 new TrackingMetricConfig("something", Long.class, Long.class, Aggregation.SUM);
 
-        TreeMap aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
+        TreeMap aggregatedData = bucketAggregationUtil.shiftDataIntoUTCBuckets(
                 trackingMetricConfig, new TreeMap(), timeZonePST, AggregationLevel.MONTHS);
         Assert.assertNull(aggregatedData);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void aggregateIntoBucketsForTimeZone_timezone_missing() {
+    public void testShiftDataIntoUTCBuckets_timezone_missing() {
 
         TrackingMetricConfig trackingMetricConfig =
                 new TrackingMetricConfig("something", Long.class, Long.class, Aggregation.SUM);
 
         TreeMap unaggregatedData = new TreeMap();
         unaggregatedData.put(1L, 1L);
-        bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
+        bucketAggregationUtil.shiftDataIntoUTCBuckets(
                 trackingMetricConfig, unaggregatedData, null, AggregationLevel.MONTHS);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void aggregateIntoBucketsForTimeZone_bucketsize_missing() {
+    public void testShiftDataIntoUTCBuckets_bucketsize_missing() {
 
         TrackingMetricConfig trackingMetricConfig =
                 new TrackingMetricConfig("something", Long.class, Long.class, Aggregation.SUM);
@@ -196,11 +196,11 @@ public class BucketAggregationUtilTest {
         TreeMap unaggregatedData = new TreeMap();
 
         unaggregatedData.put(1L, 1L);
-        bucketAggregationUtil.aggregateIntoBucketsForTimeZone(trackingMetricConfig, unaggregatedData, timeZonePST, null);
+        bucketAggregationUtil.shiftDataIntoUTCBuckets(trackingMetricConfig, unaggregatedData, timeZonePST, null);
     }
 
     @Test
-    public void aggregateIntoBucketsForTimeZone_years_with_gap() {
+    public void testShiftDataIntoUTCBuckets_years_with_gap() {
 
         Calendar cal1 = BucketCalculator.getCalendar(2012, Calendar.MAY, 1, 0, 0, 0, timeZonePST);
         Calendar cal2 = BucketCalculator.getCalendar(2012, Calendar.MAY, 2, 0, 0, 0, timeZonePST);
@@ -214,7 +214,7 @@ public class BucketAggregationUtilTest {
         TrackingMetricConfig trackingMetricConfig =
                 new TrackingMetricConfig("something", Long.class, Long.class, Aggregation.SUM);
 
-        TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
+        TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.shiftDataIntoUTCBuckets(
                 trackingMetricConfig, unaggregatedData, timeZonePST, AggregationLevel.YEARS);
 
         long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.YEARS).getTimeInMillis();
@@ -228,7 +228,7 @@ public class BucketAggregationUtilTest {
     }
 
     @Test
-    public void aggregateIntoBucketsForTimeZone_months_with_gap() {
+    public void testShiftDataIntoUTCBuckets_months_with_gap() {
 
         Calendar cal1 = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 0, 0, 0, timeZonePST);
         Calendar cal2 = BucketCalculator.getCalendar(2014, Calendar.MAY, 2, 0, 0, 2, timeZonePST);
@@ -242,7 +242,7 @@ public class BucketAggregationUtilTest {
         TrackingMetricConfig trackingMetricConfig =
                 new TrackingMetricConfig("something", Long.class, Long.class, Aggregation.SUM);
 
-        TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
+        TreeMap<Long, Long> aggregatedData = bucketAggregationUtil.shiftDataIntoUTCBuckets(
                 trackingMetricConfig, unaggregatedData, timeZonePST, AggregationLevel.MONTHS);
 
         long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.MONTHS).getTimeInMillis();
@@ -256,7 +256,7 @@ public class BucketAggregationUtilTest {
     }
 
     @Test
-    public void aggregateIntoBucketsForTimeZone_weeks_with_gap() {
+    public void testShiftDataIntoUTCBuckets_weeks_with_gap() {
 
         //
         // Setup:
@@ -284,7 +284,7 @@ public class BucketAggregationUtilTest {
         TrackingMetricConfig trackingMetricConfig =
                 new TrackingMetricConfig("something", Long.class, Long.class, Aggregation.SUM);
 
-        TreeMap aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
+        TreeMap aggregatedData = bucketAggregationUtil.shiftDataIntoUTCBuckets(
                 trackingMetricConfig, unaggregatedData, timeZonePST, AggregationLevel.WEEKS);
         //
         // The aggregated data should be in 3 buckets
@@ -308,7 +308,7 @@ public class BucketAggregationUtilTest {
 
 
     @Test
-    public void aggregateIntoBucketsForTimeZone_days_with_gap() {
+    public void testShiftDataIntoUTCBuckets_days_with_gap() {
 
         Calendar cal1 = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 0, 0, 1, timeZonePST);
         Calendar cal2 = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 0, 0, 2, timeZonePST);
@@ -322,7 +322,7 @@ public class BucketAggregationUtilTest {
         TrackingMetricConfig trackingMetricConfig =
                 new TrackingMetricConfig("something", Long.class, Long.class, Aggregation.SUM);
 
-        TreeMap aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
+        TreeMap aggregatedData = bucketAggregationUtil.shiftDataIntoUTCBuckets(
                 trackingMetricConfig, unaggregatedData, timeZonePST, AggregationLevel.DAYS);
 
         long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.DAYS).getTimeInMillis();
@@ -337,7 +337,7 @@ public class BucketAggregationUtilTest {
 
 
     @Test
-    public void aggregateIntoBucketsForTimeZone_hours_with_gap() {
+    public void testShiftDataIntoUTCBuckets_hours_with_gap() {
 
         Calendar cal1 = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 1, 2, 0, timeZonePST);
         Calendar cal2 = BucketCalculator.getCalendar(2014, Calendar.MAY, 1, 1, 3, 0, timeZonePST);
@@ -351,7 +351,7 @@ public class BucketAggregationUtilTest {
         TrackingMetricConfig trackingMetricConfig =
                 new TrackingMetricConfig("something", Long.class, Long.class, Aggregation.SUM);
 
-        TreeMap aggregatedData = bucketAggregationUtil.aggregateIntoBucketsForTimeZone(
+        TreeMap aggregatedData = bucketAggregationUtil.shiftDataIntoUTCBuckets(
                 trackingMetricConfig, unaggregatedData, timeZonePST, AggregationLevel.HOURS);
 
         long bucket1Start = BucketCalculator.getBucketStartForCalendar(cal1, TimeUnit.HOURS).getTimeInMillis();
