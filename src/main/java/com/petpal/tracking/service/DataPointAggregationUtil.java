@@ -7,6 +7,32 @@ import org.springframework.util.Assert;
  */
 public class DataPointAggregationUtil {
 
+    public static Object initialAggregationValueForBucket(Object value, Aggregation aggregation) {
+
+        checkNotIllegalType(value);
+
+        if (aggregation == Aggregation.SUM) {
+
+            if(value instanceof String) {
+                throw new IllegalArgumentException("String not allowed as initial value for aggregation bucket for " + aggregation);
+            }
+
+            if(value instanceof Long) {
+                return value;
+            } else if(value instanceof Double) {
+                return value;
+            } else {
+                throw new IllegalStateException("Unable to determine initial " +
+                        aggregation + " aggregation bucket value for value " + value);
+            }
+        } else if (aggregation == Aggregation.AVERAGE) {
+            // TODO: Support roll-up of average into string
+            throw new IllegalArgumentException("Aggregation " + Aggregation.AVERAGE + " not supported");
+        } else {
+            throw new IllegalStateException("Unexpected aggregation " + aggregation);
+        }
+    }
+
     public static Object updateAggregatedValue(Object existingValue, Object objectToAdd, Aggregation aggregation) {
 
         Assert.notNull(existingValue, "Existing value can't be null");
@@ -23,6 +49,7 @@ public class DataPointAggregationUtil {
         }
     }
 
+
     protected static Object sumObjects(Object o1, Object o2) {
         if((o1 instanceof Long) && (o2 instanceof Long)) {
             return new Long(((Long) o1).longValue() + ((Long) o2).longValue());
@@ -35,6 +62,7 @@ public class DataPointAggregationUtil {
                     "), o2 = " + o2 + " (" + o2Type + ")");
         }
     }
+
 
     protected static void checkTypeForAggregationUpdate(Object obj1, Object obj2, Aggregation aggregation) {
 

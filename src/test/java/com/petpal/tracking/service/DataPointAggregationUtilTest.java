@@ -11,6 +11,45 @@ import java.util.HashMap;
 public class DataPointAggregationUtilTest {
 
     //
+    // initialAggregationValueForBucket
+    //
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInitialAggregationValueForBucket_value_null() {
+        DataPointAggregationUtil.initialAggregationValueForBucket(null, Aggregation.SUM);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInitialAggregationValueForBucket_illegal_type_for_value() {
+        DataPointAggregationUtil.initialAggregationValueForBucket(new HashMap(), Aggregation.SUM);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInitialAggregationValueForBucket_sum_string_type_not_allowed() {
+        DataPointAggregationUtil.initialAggregationValueForBucket("hello", Aggregation.SUM);
+    }
+
+    @Test
+    public void testInitialAggregationValueForBucket_sum_long_echo() {
+        Object initialValue = DataPointAggregationUtil.initialAggregationValueForBucket(new Long(744L), Aggregation.SUM);
+        Assert.assertTrue(initialValue instanceof Long);
+        Assert.assertEquals(744L, ((Long) initialValue).longValue());
+    }
+
+    @Test
+    public void testInitialAggregationValueForBucket_sum_double_echo() {
+        Object initialValue = DataPointAggregationUtil.initialAggregationValueForBucket(new Double(744.1D), Aggregation.SUM);
+        Assert.assertTrue(initialValue instanceof Double);
+        Assert.assertEquals(744.1D, ((Double) initialValue).doubleValue(), 0.0D);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInitialAggregationValueForBucket_average_not_supported() {
+        DataPointAggregationUtil.initialAggregationValueForBucket(new Double(7.2D), Aggregation.AVERAGE);
+    }
+
+
+    //
     // updateAggregatedValue()
     //
 

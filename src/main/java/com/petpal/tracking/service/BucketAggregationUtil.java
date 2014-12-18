@@ -118,7 +118,7 @@ public class BucketAggregationUtil {
             TimeZone aggregationTimeZone,
             AggregationLevel aggregationLevel) {
 
-        TreeMap aggregatedData = shiftDataIntoUTCBuckets(
+        TreeMap aggregatedData = convertRawToUTCAggregated(
                 trackingMetricConfig, shiftedUnaggregatedData, aggregationTimeZone, aggregationLevel);
 
         // For each bucket in the aggregated series, shift into a UTC timezone relative buckets
@@ -158,7 +158,7 @@ public class BucketAggregationUtil {
 
 
     /**
-     * Move tracking data into bucket of the given time unit.
+     * Organize the tracking data into buckets of the given time unit.
      *
      * For buckets that are larger than minute-size, the boundaries of the buckets
      * become timezone dependent.
@@ -182,7 +182,7 @@ public class BucketAggregationUtil {
      *
      * @return data moved into the specified bucket size for the given time zone.
      */
-    public TreeMap shiftDataIntoUTCBuckets(
+    public TreeMap convertRawToUTCAggregated(
             TrackingMetricConfig trackingMetricConfig, TreeMap unaggregatedData, TimeZone timeZone, AggregationLevel aggregationLevel) {
 
         if(CollectionUtils.isEmpty(unaggregatedData)) {
@@ -198,14 +198,13 @@ public class BucketAggregationUtil {
         long currentBucketEnd = getAggregatedBucketEndTime(currentBucketStart, aggregationLevel, timeZone);
         TreeMap aggregatedData = new TreeMap<Long, Object>();
 
-        aggregatedData.put(currentBucketStart, initialValue(trackingMetricConfig.getAggregationDataType()));
-
         for(Object timeStampObj : unaggregatedData.keySet()) {
 
             Long timeStamp = (Long) timeStampObj;
             Object value = unaggregatedData.get(timeStamp);
 
             while(!(currentBucketStart <= timeStamp && currentBucketEnd >= timeStamp)) {
+
                 //
                 // The value does not belong in the current bucket, make new buckets
                 // until we hit the timerange to which this value belongs
@@ -215,33 +214,18 @@ public class BucketAggregationUtil {
                 currentBucketEnd = getAggregatedBucketEndTime(currentBucketStart, aggregationLevel, timeZone);
             }
 
-            //
-            // At this point at least one value will be injected into the current bucket.
-            // Make sure it is created.
-            //
-
             if(aggregatedData.get(currentBucketStart) == null) {
-                aggregatedData.put(currentBucketStart, 0L);
+                Object initialValue = DataPointAggregationUtil.initialAggregationValueForBucket(
+                        value, trackingMetricConfig.getAggregation());
+                aggregatedData.put(currentBucketStart, initialValue);
+            } else {
+                Object newValue = DataPointAggregationUtil.updateAggregatedValue(
+                        aggregatedData.get(currentBucketStart), value, trackingMetricConfig.getAggregation());
+                aggregatedData.put(currentBucketStart, newValue);
             }
-
-            // Add the value to the bucket
-
-            Object newValue = DataPointAggregationUtil.updateAggregatedValue(
-                    aggregatedData.get(currentBucketStart), value, trackingMetricConfig.getAggregation());
-
-            aggregatedData.put(currentBucketStart, newValue);
         }
 
         return aggregatedData;
-    }
-
-    private Object initialValue(Type dataType) {
-        Assert.isTrue(dataType == Long.class || dataType == Double.class, "Unsupported datatype " + dataType);
-        if(dataType == Long.class) {
-            return new Long(0L);
-        } else {
-            return new Double(0D);
-        }
     }
 
     /**
