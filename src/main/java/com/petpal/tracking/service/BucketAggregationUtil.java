@@ -59,7 +59,8 @@ public class BucketAggregationUtil {
                 Object newAddedValue = newDataPoints.get(newAggregatedDataPoint);
                 Object existingValue = existingDataPoints.get(newAggregatedDataPoint) == null ?
                         new Long(0L) : existingDataPoints.get(newAggregatedDataPoint);
-                Object updatedValue = sumObjects(newAddedValue, existingValue, dataType);
+                Object updatedValue = DataPointAggregationUtil.updateAggregatedValue(
+                        existingValue, newAddedValue, aggregation);
                 updatedDataPoints.put(newAggregatedDataPoint, updatedValue);
             }
         }
@@ -231,21 +232,13 @@ public class BucketAggregationUtil {
                         trackingMetricConfig.getAggregation() + " not supported. Only " + Aggregation.SUM + " is supported");
             }
 
-            Object newValue = sumObjects(aggregatedData.get(currentBucketStart), value, trackingMetricConfig.getAggregationDataType());
+            Object newValue = DataPointAggregationUtil.updateAggregatedValue(
+                    aggregatedData.get(currentBucketStart), value, trackingMetricConfig.getAggregation());
 
             aggregatedData.put(currentBucketStart, newValue);
         }
 
         return aggregatedData;
-    }
-
-    private Object sumObjects(Object o1, Object o2, Type dataType) {
-        Assert.isTrue(dataType == Long.class || dataType == Double.class, "Unsupported datatype " + dataType);
-        if(dataType == Long.class) {
-            return new Long(((Long) o1).longValue() + ((Long) o2).longValue());
-        } else {
-            return new Double(((Double) o1).doubleValue() + ((Double) o2).doubleValue());
-        }
     }
 
     private Object initialValue(Type dataType) {
