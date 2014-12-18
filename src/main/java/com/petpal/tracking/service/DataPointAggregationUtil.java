@@ -7,6 +7,12 @@ import org.springframework.util.Assert;
  */
 public class DataPointAggregationUtil {
 
+    private static AggregatedAverageNumberUtil aggregatedAverageNumberUtil;
+
+    static {
+        aggregatedAverageNumberUtil = new AggregatedAverageNumberUtil();
+    }
+
     public static Object initialAggregationValueForBucket(Object value, Aggregation aggregation) {
 
         checkNotIllegalType(value);
@@ -26,8 +32,11 @@ public class DataPointAggregationUtil {
                         aggregation + " aggregation bucket value for value " + value);
             }
         } else if (aggregation == Aggregation.AVERAGE) {
-            // TODO: Support roll-up of average into string
-            throw new IllegalArgumentException("Aggregation " + Aggregation.AVERAGE + " not supported");
+            Assert.isTrue(!(value instanceof Long),
+                    "Long value " + value + " not allowed as initial input value for " + aggregation + " aggregation bucket");
+            Assert.isTrue(!(value instanceof String),
+                    "String value " + value + " not allowed as initial input value for " + aggregation + " aggregation bucket");
+            return aggregatedAverageNumberUtil.createNew((Double) value);
         } else {
             throw new IllegalStateException("Unexpected aggregation " + aggregation);
         }

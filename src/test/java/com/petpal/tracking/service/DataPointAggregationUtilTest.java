@@ -44,8 +44,20 @@ public class DataPointAggregationUtilTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testInitialAggregationValueForBucket_average_not_supported() {
-        DataPointAggregationUtil.initialAggregationValueForBucket(new Double(7.2D), Aggregation.AVERAGE);
+    public void testInitialAggregationValueForBucket_average_string_not_supported() {
+        DataPointAggregationUtil.initialAggregationValueForBucket("string", Aggregation.AVERAGE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInitialAggregationValueForBucket_average_long_not_supported() {
+        DataPointAggregationUtil.initialAggregationValueForBucket(new Long(5L), Aggregation.AVERAGE);
+    }
+
+    @Test
+    public void testInitialAggregationValueForBucket_average_serialized() {
+        Object initialValue = DataPointAggregationUtil.initialAggregationValueForBucket(new Double(5.555D), Aggregation.AVERAGE);
+        Assert.assertTrue(initialValue instanceof String);
+        Assert.assertEquals("{\"s\":\"5.555\",\"w\":\"1\"}", initialValue.toString());
     }
 
 
