@@ -1,4 +1,4 @@
-package com.petpal.tracking.service.timeseries;
+package com.petpal.tracking.service;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -57,12 +57,12 @@ public class AggregatedAverageNumberUtil {
         objectMapper = new ObjectMapper();
     }
 
-    public static String createNew(Double averageNumber) {
+    public String createNew(Double averageNumber) {
         Assert.notNull(averageNumber, ERROR_AVERAGE_NUMBER_MISSING);
         return createSerializedAverage(averageNumber, 1);
     }
 
-    protected static String createSerializedAverage(Double sum, Integer weights) {
+    protected String createSerializedAverage(Double sum, Integer weights) {
 
         Assert.notNull(sum, ERROR_SUM_MISSING);
         Assert.notNull(weights, ERROR_WEIGHTS_MISSING);
@@ -83,7 +83,7 @@ public class AggregatedAverageNumberUtil {
         }
     }
 
-    public static String updateSerializedAverage(Double averageNumber, String existingSerializedAverage) {
+    public String updateSerializedAverage(Double averageNumber, String existingSerializedAverage) {
 
         Assert.notNull(averageNumber, ERROR_SUM_MISSING);
         Assert.notNull(existingSerializedAverage, ERROR_SERIALIZED_AVERAGE_MISSING);
@@ -103,7 +103,7 @@ public class AggregatedAverageNumberUtil {
         }
     }
 
-    public static double getAverageFromSerializedAverage(String serializedAverage) {
+    public double getAverageFromSerializedAverage(String serializedAverage) {
         Assert.notNull(serializedAverage, ERROR_SERIALIZED_AVERAGE_MISSING);
 
         Map<String, String> deserializedAvgMap =
@@ -121,7 +121,7 @@ public class AggregatedAverageNumberUtil {
     }
 
 
-    protected static Map<String, String> deserializeExistingValue(String json) {
+    protected Map<String, String> deserializeExistingValue(String json) {
 
         Map<String, String> deserializedAvgMap;
 
