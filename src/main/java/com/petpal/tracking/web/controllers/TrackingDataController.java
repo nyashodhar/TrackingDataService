@@ -101,13 +101,6 @@ public class TrackingDataController {
      * that the actual query will run against is determined by the combination of tracking metrics
      * and the result buckets specified.
      *
-     * This API call uses absolute timing and allows the client to control the boundaries of
-     * each bucket.
-     *
-     * For example, if a call is made to get data from midnight 3 days ago in buckets spanning 1 day,
-     * then the first bucket will span 24 hours starting midnight 3 days ago. Bucket 2 will contain data
-     * spanning 24 hrs from midnight two days ago, etc.
-     *
      * @param deviceId the device id
      * @param aggregationLevel the resolution of the aggregated time series to query from.
      * @param startYear
@@ -115,11 +108,10 @@ public class TrackingDataController {
      * @param startWeek
      * @param startDay
      * @param startHour
+     * @param bucketsToFetch
      * @param trackingMetricsSet the metrics the clients wants to query for. If null, all known
      *                           metrics will be queried for.
-     * @param verboseResponse if set to true, the response will include buckets for which
-     *                       values were found for the metric. If null, it will default to 'false'
-     *                       and a sparse response will be sent.
+     * @param aggregationTimeZone
      * @return Tracking data results grouped by metric and in bucket of the specified size.
      */
     @RequestMapping(value="/metrics/device/{deviceId}/aggregate/{aggregationLevel}", method=RequestMethod.GET)
@@ -134,7 +126,6 @@ public class TrackingDataController {
             @RequestParam(value="startHour", required=false) Integer startHour,
             @RequestParam(value="bucketsToFetch", required=false) Integer bucketsToFetch,
             @RequestParam(value="trackingMetrics", required=false) Set<String> trackingMetricsSet,
-            @RequestParam(value="verboseResponse", required=false) Boolean verboseResponse,
             @RequestParam(value="aggregationTimeZone", required=false) TimeZone aggregationTimeZone) {
 
         StringBuilder str = new StringBuilder();
@@ -147,7 +138,6 @@ public class TrackingDataController {
         str.append(", startHour = ").append(startHour);
         str.append(", bucketsToFetch = ").append(bucketsToFetch);
         str.append(", trackingMetricsSet = ").append(trackingMetricsSet);
-        str.append(", verboseResponse = ").append(verboseResponse);
         str.append(", aggregationTimeZone = ");
 
         if(aggregationTimeZone != null) {
@@ -192,10 +182,8 @@ public class TrackingDataController {
             }
         }
 
-        boolean createVerboseResponse = (verboseResponse == null) ? false : verboseResponse;
-
         TrackingDataDownload trackingDataDownload = trackingDataService.getAggregatedTimeSeries(
-                tags, trackingMetricConfigs, utcBegin, utcEnd, aggregationLevel, aggregationTimeZone, 1, createVerboseResponse);
+                tags, trackingMetricConfigs, utcBegin, utcEnd, aggregationLevel, aggregationTimeZone, 1);
 
         logger.info("getTrackingMetricsForDevice(): Result: " + trackingDataDownload);
         return trackingDataDownload;

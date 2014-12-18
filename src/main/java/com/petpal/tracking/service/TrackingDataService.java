@@ -24,7 +24,6 @@ public interface TrackingDataService {
      * @param aggregationLevel
      * @param aggregationTimeZone
      * @param resultBucketMultiplier
-     * @param verboseResponse
      * @return time series data obtained from queries against aggregated time series.
      */
     TrackingDataDownload getAggregatedTimeSeries(
@@ -34,8 +33,7 @@ public interface TrackingDataService {
             Long utcEnd,
             AggregationLevel aggregationLevel,
             TimeZone aggregationTimeZone,
-            int resultBucketMultiplier,
-            boolean verboseResponse);
+            int resultBucketMultiplier);
 
     /**
      * Store tracking data. The raw data itself is persisted, but at

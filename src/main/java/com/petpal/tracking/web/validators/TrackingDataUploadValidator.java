@@ -89,17 +89,17 @@ public class TrackingDataUploadValidator implements Validator {
                 // The value has to have the value specified in the metric config
 
                 Object firstValue = dataPointsForMetric.get(firstKey);
-                if(trackingMetricConfig.getDataType() == Long.class) {
+                if(trackingMetricConfig.getRawDataType() == Long.class) {
                     if(!(firstValue instanceof Long)) {
                         logger.error("Value " + firstValue + " in metrics map for metric " + metricName + " is not a Long");
                         errors.reject("value.is.not.a.long");
                     }
-                } else if(trackingMetricConfig.getDataType() == Double.class) {
+                } else if(trackingMetricConfig.getRawDataType() == Double.class) {
                     if(!(firstValue instanceof Double)) {
                         logger.error("Value " + firstValue + " in metrics map for metric " + metricName + " is not a Double");
                         errors.reject("value.is.not.a.double");
                     }
-                } else if(trackingMetricConfig.getDataType() == String.class) {
+                } else if(trackingMetricConfig.getRawDataType() == String.class) {
                     if(!(firstValue instanceof String)) {
                         logger.error("Value " + firstValue + " in metrics map for metric " + metricName + " is not a String");
                         errors.reject("value.is.not.a.string");

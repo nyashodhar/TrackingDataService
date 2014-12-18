@@ -21,6 +21,7 @@ import java.util.TreeMap;
 public class BucketAggregationUtil {
 
     private static final long FORTY_EIGHT_HOURS = 48L*60L*60L*1000L;
+
     private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
     private Logger logger = Logger.getLogger(this.getClass());
@@ -58,7 +59,8 @@ public class BucketAggregationUtil {
                 Object newAddedValue = newDataPoints.get(newAggregatedDataPoint);
                 Object existingValue = existingDataPoints.get(newAggregatedDataPoint) == null ?
                         new Long(0L) : existingDataPoints.get(newAggregatedDataPoint);
-                Object updatedValue = sumObjects(newAddedValue, existingValue, dataType);
+                Object updatedValue = DataPointAggregationUtil.updateAggregatedValue(
+                        existingValue, newAddedValue, aggregation);
                 updatedDataPoints.put(newAggregatedDataPoint, updatedValue);
             }
         }
@@ -116,10 +118,10 @@ public class BucketAggregationUtil {
             TimeZone aggregationTimeZone,
             AggregationLevel aggregationLevel) {
 
-        TreeMap aggregatedData = aggregateIntoBucketsForTimeZone(
+        TreeMap aggregatedData = convertRawToUTCAggregated(
                 trackingMetricConfig, shiftedUnaggregatedData, aggregationTimeZone, aggregationLevel);
 
-        // For each bucket in the aggregated series, into a UTC timezone relative buckets
+        // For each bucket in the aggregated series, shift into a UTC timezone relative buckets
         TreeMap utcShiftedAggregatedData = shiftTimeSeriesToBoundariesForTimeZone(aggregatedData, aggregationTimeZone, UTC, aggregationLevel);
 
         //
@@ -156,7 +158,7 @@ public class BucketAggregationUtil {
 
 
     /**
-     * Organize tracking data into bucket of the given time unit.
+     * Organize the tracking data into buckets of the given time unit.
      *
      * For buckets that are larger than minute-size, the boundaries of the buckets
      * become timezone dependent.
@@ -178,9 +180,9 @@ public class BucketAggregationUtil {
      * @param timeZone the timezone used to calculate time ranges
      * @param aggregationLevel the bucket size
      *
-     * @return data aggregated into the specified bucket size for the given time zone.
+     * @return data moved into the specified bucket size for the given time zone.
      */
-    public TreeMap aggregateIntoBucketsForTimeZone(
+    public TreeMap convertRawToUTCAggregated(
             TrackingMetricConfig trackingMetricConfig, TreeMap unaggregatedData, TimeZone timeZone, AggregationLevel aggregationLevel) {
 
         if(CollectionUtils.isEmpty(unaggregatedData)) {
@@ -196,14 +198,13 @@ public class BucketAggregationUtil {
         long currentBucketEnd = getAggregatedBucketEndTime(currentBucketStart, aggregationLevel, timeZone);
         TreeMap aggregatedData = new TreeMap<Long, Object>();
 
-        aggregatedData.put(currentBucketStart, initialValue(trackingMetricConfig.getDataType()));
-
         for(Object timeStampObj : unaggregatedData.keySet()) {
 
             Long timeStamp = (Long) timeStampObj;
             Object value = unaggregatedData.get(timeStamp);
 
             while(!(currentBucketStart <= timeStamp && currentBucketEnd >= timeStamp)) {
+
                 //
                 // The value does not belong in the current bucket, make new buckets
                 // until we hit the timerange to which this value belongs
@@ -211,49 +212,20 @@ public class BucketAggregationUtil {
 
                 currentBucketStart = currentBucketEnd + 1L;
                 currentBucketEnd = getAggregatedBucketEndTime(currentBucketStart, aggregationLevel, timeZone);
-                //aggregatedData.put(currentBucketStart, 0L);
             }
-
-            //
-            // At this point at least one value will be injected into the current bucket.
-            // Make sure it is created.
-            //
 
             if(aggregatedData.get(currentBucketStart) == null) {
-                aggregatedData.put(currentBucketStart, 0L);
+                Object initialValue = DataPointAggregationUtil.initialAggregationValueForBucket(
+                        value, trackingMetricConfig.getAggregation());
+                aggregatedData.put(currentBucketStart, initialValue);
+            } else {
+                Object newValue = DataPointAggregationUtil.updateAggregatedValue(
+                        aggregatedData.get(currentBucketStart), value, trackingMetricConfig.getAggregation());
+                aggregatedData.put(currentBucketStart, newValue);
             }
-
-            // Add the value to the bucket
-
-            if(trackingMetricConfig.getAggregation() != Aggregation.SUM) {
-                throw new UnsupportedOperationException(
-                        trackingMetricConfig.getAggregation() + " not supported. Only " + Aggregation.SUM + " is supported");
-            }
-
-            Object newValue = sumObjects(aggregatedData.get(currentBucketStart), value, trackingMetricConfig.getDataType());
-
-            aggregatedData.put(currentBucketStart, newValue);
         }
 
         return aggregatedData;
-    }
-
-    private Object sumObjects(Object o1, Object o2, Type dataType) {
-        Assert.isTrue(dataType == Long.class || dataType == Double.class, "Unsupported datatype " + dataType);
-        if(dataType == Long.class) {
-            return new Long(((Long) o1).longValue() + ((Long) o2).longValue());
-        } else {
-            return new Double(((Double) o1).doubleValue() + ((Double) o2).doubleValue());
-        }
-    }
-
-    private Object initialValue(Type dataType) {
-        Assert.isTrue(dataType == Long.class || dataType == Double.class, "Unsupported datatype " + dataType);
-        if(dataType == Long.class) {
-            return new Long(0L);
-        } else {
-            return new Double(0D);
-        }
     }
 
     /**
@@ -283,7 +255,7 @@ public class BucketAggregationUtil {
         TreeMap shiftedData = new TreeMap();
         for(Object tsObj : dataPoints.keySet()) {
             Long ts = (Long) tsObj;
-            Object newTimeStamp = shiftTimeStamp(ts, FORTY_EIGHT_HOURS, forward);
+            Object newTimeStamp = shiftTimeStamp(ts.longValue(), FORTY_EIGHT_HOURS, forward);
             shiftedData.put(newTimeStamp, dataPoints.get(tsObj));
         }
 
@@ -297,7 +269,7 @@ public class BucketAggregationUtil {
      * @return a timestamp shifted 48 hours in the direction specified
      * by the 'forward' parameter.
      */
-    protected long shiftTimeStamp(long input, long shiftAmount, boolean forward) {
+    protected Long shiftTimeStamp(long input, long shiftAmount, boolean forward) {
         long newTimeStamp;
         if(forward) {
             newTimeStamp = input + shiftAmount;
@@ -311,25 +283,16 @@ public class BucketAggregationUtil {
     protected TreeMap shiftTimeSeriesToBoundariesForTimeZone(
             TreeMap dataPoints, TimeZone timeZone1, TimeZone timeZone2, AggregationLevel aggregationLevel) {
 
-        // For each bucket in the aggregated series, into a UTC timezone relative buckets
-
-        //System.out.println("****************** dataPoints = " + dataPoints + ", size() = " + dataPoints.size());
-
         TreeMap shiftedData = new TreeMap();
         for(Object timeStampObj : dataPoints.keySet()) {
             Long timeStamp = (Long) timeStampObj;
 
             Object value = dataPoints.get(timeStampObj);
-            //System.out.println("****************** value = " + value);
 
             long utcShiftedBucketTimestamp = getShiftedTimeStamp(timeStamp, timeZone1, timeZone2, aggregationLevel);
 
-            //System.out.println("****************** utcShiftedBucketTimestamp = " + utcShiftedBucketTimestamp);
-
             shiftedData.put(utcShiftedBucketTimestamp, value);
         }
-
-        //System.out.println("****************** shiftedData = " + shiftedData + ", size() = " + shiftedData.size());
 
         return shiftedData;
     }
@@ -359,33 +322,33 @@ public class BucketAggregationUtil {
         // less significance than the desired bucket size time unit
         //
 
-        Calendar utcShiftedBucketStartCal = Calendar.getInstance();
-        utcShiftedBucketStartCal.clear();
-        utcShiftedBucketStartCal.setTimeZone(timeZone2);
+        Calendar outputCal = Calendar.getInstance();
+        outputCal.clear();
+        outputCal.setTimeZone(timeZone2);
 
         if (aggregationLevel == AggregationLevel.YEARS) {
-            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
+            outputCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
         } else if (aggregationLevel == AggregationLevel.MONTHS) {
-            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
-            utcShiftedBucketStartCal.set(Calendar.MONTH, inputCal.get(Calendar.MONTH));
+            outputCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
+            outputCal.set(Calendar.MONTH, inputCal.get(Calendar.MONTH));
         } else if (aggregationLevel == AggregationLevel.WEEKS) {
-            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
-            utcShiftedBucketStartCal.set(Calendar.WEEK_OF_YEAR, inputCal.get(Calendar.WEEK_OF_YEAR));
-            utcShiftedBucketStartCal.set(Calendar.DAY_OF_WEEK, 1);
+            outputCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
+            outputCal.set(Calendar.WEEK_OF_YEAR, inputCal.get(Calendar.WEEK_OF_YEAR));
+            outputCal.set(Calendar.DAY_OF_WEEK, 1);
         } else if (aggregationLevel == AggregationLevel.DAYS) {
-            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
-            utcShiftedBucketStartCal.set(Calendar.MONTH, inputCal.get(Calendar.MONTH));
-            utcShiftedBucketStartCal.set(Calendar.DAY_OF_MONTH, inputCal.get(Calendar.DAY_OF_MONTH));
+            outputCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
+            outputCal.set(Calendar.MONTH, inputCal.get(Calendar.MONTH));
+            outputCal.set(Calendar.DAY_OF_MONTH, inputCal.get(Calendar.DAY_OF_MONTH));
         } else if (aggregationLevel == AggregationLevel.HOURS) {
-            utcShiftedBucketStartCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
-            utcShiftedBucketStartCal.set(Calendar.MONTH, inputCal.get(Calendar.MONTH));
-            utcShiftedBucketStartCal.set(Calendar.DAY_OF_MONTH, inputCal.get(Calendar.DAY_OF_MONTH));
-            utcShiftedBucketStartCal.set(Calendar.HOUR_OF_DAY, inputCal.get(Calendar.HOUR_OF_DAY));
+            outputCal.set(Calendar.YEAR, inputCal.get(Calendar.YEAR));
+            outputCal.set(Calendar.MONTH, inputCal.get(Calendar.MONTH));
+            outputCal.set(Calendar.DAY_OF_MONTH, inputCal.get(Calendar.DAY_OF_MONTH));
+            outputCal.set(Calendar.HOUR_OF_DAY, inputCal.get(Calendar.HOUR_OF_DAY));
         } else {
             throw new IllegalArgumentException("Unexpected aggregation level " + aggregationLevel);
         }
 
-        return utcShiftedBucketStartCal.getTimeInMillis();
+        return outputCal.getTimeInMillis();
     }
 
 

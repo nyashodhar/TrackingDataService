@@ -22,7 +22,7 @@ public interface TimeSeriesFacade {
      * @param utcEnd
      * @param resultBucketSize
      * @param resultBucketMultiplier
-     * @param verboseResponse
+     * @param performBucketAdjustment
      * @return query results for a single time series.
      */
     TreeMap querySingleTimeSeries(
@@ -33,7 +33,7 @@ public interface TimeSeriesFacade {
             Long utcEnd,
             TimeUnit resultBucketSize,
             int resultBucketMultiplier,
-            boolean verboseResponse);
+            boolean performBucketAdjustment);
 
     /**
      * Perform a time series query for multiple time series (using the same range and tagging parameters for
@@ -44,7 +44,7 @@ public interface TimeSeriesFacade {
      * @param utcEnd
      * @param resultBucketSize
      * @param resultBucketMultiplier
-     * @param verboseResponse
+     * @param performBucketAdjustment
      * @return Query result, grouped by the metric for each time series.
      */
     Map<String, TreeMap> queryMultipleTimeSeries(
@@ -54,7 +54,7 @@ public interface TimeSeriesFacade {
             Long utcEnd,
             TimeUnit resultBucketSize,
             int resultBucketMultiplier,
-            boolean verboseResponse);
+            boolean performBucketAdjustment);
 
     void storeDataForTimeSeries(TreeMap dataPoints, String timeSeriesName, Type dataType, Map<TrackingTag, String> tags);
 

@@ -10,23 +10,41 @@ import java.lang.reflect.Type;
 public class TrackingMetricConfig {
 
     private String name;
-    private Type dataType;
+    private Type aggregationDataType;
+    private Type rawDataType;
     private Aggregation aggregation;
     private String unaggregatedSeriesName;
 
-    public TrackingMetricConfig(String name, Type dataType, Aggregation aggregation) {
+    public TrackingMetricConfig(
+            String name,
+            Type rawDataType,
+            Type aggregationDataType,
+            Aggregation aggregation) {
+
         this.name = name;
-        this.dataType = dataType;
+        this.rawDataType = rawDataType;
+        this.aggregationDataType = aggregationDataType;
         this.aggregation = aggregation;
         this.unaggregatedSeriesName = name + "_RAW";
+
+        if(aggregation == Aggregation.AVERAGE) {
+            if(aggregationDataType != Double.class) {
+                throw new IllegalArgumentException("Metric " + name + " has aggregation " +
+                        aggregation + " but data type (" + aggregationDataType + " is not Double");
+            }
+        }
     }
 
     public String getName() {
         return name;
     }
 
-    public Type getDataType() {
-        return dataType;
+    public Type getRawDataType() {
+        return rawDataType;
+    }
+
+    public Type getAggregationDataType() {
+        return aggregationDataType;
     }
 
     public Aggregation getAggregation() {
@@ -45,7 +63,7 @@ public class TrackingMetricConfig {
     public String toString() {
         final StringBuilder sb = new StringBuilder("TrackingMetric{");
         sb.append("name='").append(name).append('\'');
-        sb.append(", dataType=").append(dataType);
+        sb.append(", aggregationDataType=").append(aggregationDataType);
         sb.append(", aggregation=").append(aggregation);
         sb.append('}');
         return sb.toString();
