@@ -261,7 +261,7 @@ public class BucketAggregationUtilTest {
         //
         // Setup:
         // DP1: 3 weeks ago - 5 steps
-        // DP2: 2 weeks - 1 day ago - 6 steps
+        // DP2: 2 weeks ago - 6 steps
         // DP3: Just now - 3 steps
         //
 
