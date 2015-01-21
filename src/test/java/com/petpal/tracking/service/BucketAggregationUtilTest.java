@@ -9,7 +9,6 @@ import org.kairosdb.client.builder.TimeUnit;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Calendar;
-import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -269,7 +268,6 @@ public class BucketAggregationUtilTest {
         Calendar cal1 = Calendar.getInstance();
         cal1.setTimeZone(timeZonePST);
         cal1.add(Calendar.WEEK_OF_YEAR, -3);
-        cal1.get(Calendar.WEEK_OF_YEAR);
 
         Calendar cal2 = Calendar.getInstance();
         cal2.setTimeZone(timeZonePST);
