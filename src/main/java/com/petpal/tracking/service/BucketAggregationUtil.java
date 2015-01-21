@@ -388,9 +388,21 @@ public class BucketAggregationUtil {
             bucketStartCal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
             bucketStartCal.set(Calendar.MONTH, cal.get(Calendar.MONTH));
         } else if (aggregationLevel == AggregationLevel.WEEKS) {
-            bucketStartCal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
-            bucketStartCal.set(Calendar.WEEK_OF_YEAR, cal.get(Calendar.WEEK_OF_YEAR));
+
+            //
+            // INSANE: Weeks don't follow years! For example Dec 28 of 2014 can belong
+            // to week 1! Apparently because week 1 is in some locales defined as the
+            // day to which Jan 1 belongs. Therefore, do full manual reset here to get
+            // the returned value correct when dealing with weeks.
+            //
+
+            bucketStartCal.setTimeInMillis(initialTimeStamp);
             bucketStartCal.set(Calendar.DAY_OF_WEEK, 1);
+            bucketStartCal.set(Calendar.HOUR_OF_DAY, 0);
+            bucketStartCal.set(Calendar.MINUTE, 0);
+            bucketStartCal.set(Calendar.SECOND, 0);
+            bucketStartCal.set(Calendar.MILLISECOND, 0);
+
         } else if (aggregationLevel == AggregationLevel.DAYS) {
             bucketStartCal.set(Calendar.YEAR, cal.get(Calendar.YEAR));
             bucketStartCal.set(Calendar.MONTH, cal.get(Calendar.MONTH));

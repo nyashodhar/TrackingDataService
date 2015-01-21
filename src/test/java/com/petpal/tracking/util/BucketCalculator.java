@@ -6,6 +6,7 @@ import org.kairosdb.client.builder.TimeUnit;
 import org.springframework.util.Assert;
 
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,9 +56,21 @@ public class BucketCalculator {
             output.set(Calendar.YEAR, input.get(Calendar.YEAR));
             output.set(Calendar.MONTH, input.get(Calendar.MONTH));
         } else if (bucketSize == TimeUnit.WEEKS) {
-            output.set(Calendar.YEAR, input.get(Calendar.YEAR));
-            output.set(Calendar.WEEK_OF_YEAR, input.get(Calendar.WEEK_OF_YEAR));
+
+            //
+            // INSANE: Weeks don't follow years! For example Dec 28 of 2014 can belong
+            // to week 1! Apparently because week 1 is in some locales defined as the
+            // day to which Jan 1 belongs. Therefore, do full manual reset here to get
+            // the returned value correct when dealing with weeks.
+            //
+
+            output.setTimeInMillis(input.getTimeInMillis());
             output.set(Calendar.DAY_OF_WEEK, 1);
+            output.set(Calendar.HOUR_OF_DAY, 0);
+            output.set(Calendar.MINUTE, 0);
+            output.set(Calendar.SECOND, 0);
+            output.set(Calendar.MILLISECOND, 0);
+
         } else if (bucketSize == TimeUnit.DAYS) {
             output.set(Calendar.YEAR, input.get(Calendar.YEAR));
             output.set(Calendar.MONTH, input.get(Calendar.MONTH));
