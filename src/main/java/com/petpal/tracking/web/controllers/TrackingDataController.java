@@ -60,9 +60,18 @@ public class TrackingDataController {
     @Autowired
     private TrackingMetricsConfig trackingMetricsConfig;
 
+    /**
+     * Client example:
+     *
+     *    curl -v -k -X POST -H "Content-Type: application/json" -H "Accept: application/json" "http://localhost:9000/tracking/device/5f17e09e-221b-4b82-a033-9318d3f09aaa?aggregationTimeZone=PST" -d '{"longMetrics":{"WALKINGSTEPS":{"1401346800000":3,"1404284400000":2,"1408690800000":233}}}'
+     *
+     * @param deviceId
+     * @param aggregationTimeZone
+     * @param trackingDataUpload
+     */
     @RequestMapping(value="/tracking/device/{deviceId}", method=RequestMethod.POST)
     @ResponseStatus( HttpStatus.NO_CONTENT )
-    public void serializeTest(
+    public void saveTrackingDataForDevice(
             @PathVariable String deviceId,
             @RequestParam(value="aggregationTimeZone", required=false) TimeZone aggregationTimeZone,
             @RequestBody @Validated TrackingDataUpload trackingDataUpload) {
@@ -100,6 +109,10 @@ public class TrackingDataController {
      * The metrics will be queries from aggregated time timeseries, the aggregated time series
      * that the actual query will run against is determined by the combination of tracking metrics
      * and the result buckets specified.
+     *
+     * Client example:
+     *
+     *    curl -v -k -X GET -H "Content-Type: application/json" -H "Accept: application/json" "http://localhost:9000/metrics/device/5f17e09e-221b-4b82-a033-9318d3f09aaa/aggregate/YEARS?startYear=2014"
      *
      * @param deviceId the device id
      * @param aggregationLevel the resolution of the aggregated time series to query from.
@@ -165,6 +178,19 @@ public class TrackingDataController {
 
         Long utcBegin = AggregatedQueryUtil.calculateUTCBegin(
                 startYear, startMonth, startWeek, startDay, startHour, aggregationLevel, aggregationTimeZone);
+
+        //
+        // Hack: There is an off by 1 problem with 'buckets to fetch' due to the way the
+        // bucket end is being calculated as being 1 ms prior to the beginning of the next
+        // bucket. Hence, when specifying a single bucket, the end time stamp will also
+        // belong to the first bucket. To get two buckets, we work around this here by
+        // increasing the value for 'bucketsToFetch' by 1.
+        //
+
+        if(bucketsToFetch != null) {
+            bucketsToFetch = new Integer(bucketsToFetch.intValue() + 1);
+        }
+
         Long utcEnd = AggregatedQueryUtil.calculateUTCEnd(
                 utcBegin, aggregationLevel, bucketsToFetch, aggregationTimeZone);
 
