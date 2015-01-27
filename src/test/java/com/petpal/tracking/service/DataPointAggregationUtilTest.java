@@ -176,6 +176,41 @@ public class DataPointAggregationUtilTest {
     }
 
     //
+    // checkTypeAggregationInitialization()
+    //
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCheckTypeAggregationInitialization_sum_illegal_type() {
+        DataPointAggregationUtil.checkTypeAggregationInitialization(new HashMap(), Aggregation.SUM);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCheckTypeAggregationInitialization_sum_invalid_type_for_sum() {
+        DataPointAggregationUtil.checkTypeAggregationInitialization("hello", Aggregation.SUM);
+    }
+
+    @Test
+    public void testCheckTypeAggregationInitialization_sum_type_ok() {
+        DataPointAggregationUtil.checkTypeAggregationInitialization(new Long(1L), Aggregation.SUM);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCheckTypeAggregationInitialization_avg_illegal_type() {
+        DataPointAggregationUtil.checkTypeAggregationInitialization(new HashMap(), Aggregation.AVERAGE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCheckTypeAggregationInitialization_avg_invalid_type_for_sum() {
+        DataPointAggregationUtil.checkTypeAggregationInitialization("hello", Aggregation.AVERAGE);
+    }
+
+    @Test
+    public void testCheckTypeAggregationInitialization_avg_type_ok() {
+        DataPointAggregationUtil.checkTypeAggregationInitialization(new Double(1.1D), Aggregation.AVERAGE);
+    }
+
+
+    //
     // checkTypeForAggregationUpdate()
     //
 

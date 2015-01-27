@@ -42,6 +42,27 @@ public class DataPointAggregationUtil {
         }
     }
 
+    /*
+    public static Object initializeAggregatedValue(Object value, Aggregation aggregation) {
+
+        Assert.notNull(value, "Can't initialize aggregated value from null");
+
+        if (aggregation == Aggregation.SUM) {
+            return sumObjects(existingValue, objectToAdd);
+        } else if (aggregation == Aggregation.AVERAGE) {
+            Double addedValue = (Double) objectToAdd;
+            return aggregatedAverageNumberUtil.updateSerializedAverage(existingValue.toString(), addedValue);
+        } else {
+            throw new IllegalStateException("Unexpected aggregation " + aggregation);
+        }
+
+        // TODO
+
+        return null;
+    }
+    */
+
+
     public static Object updateAggregatedValue(Object existingValue, Object objectToAdd, Aggregation aggregation) {
 
         Assert.notNull(existingValue, "Existing value can't be null");
@@ -69,6 +90,28 @@ public class DataPointAggregationUtil {
             String addedValueType = (addedValue == null) ? null : addedValue.getClass().toString();
             throw new IllegalStateException("Unexpected types. existingValue = " + existingValue + " (" + existingValueType +
                     "), o2 = " + addedValue + " (" + addedValueType + ")");
+        }
+    }
+
+    protected static void checkTypeAggregationInitialization(Object value, Aggregation aggregation) {
+
+        checkNotIllegalType(value);
+
+        if(aggregation == Aggregation.SUM) {
+
+            if(!(value instanceof Double) && !(value instanceof Long)) {
+                throw new IllegalArgumentException("Illegal type for sum aggregation: The value (" + value +
+                        ") is not a Double and also not aLong");
+            }
+
+        } else if(aggregation == Aggregation.AVERAGE) {
+
+            if(!(value instanceof Double)) {
+                throw new IllegalArgumentException("Illegal type for average aggregation: The value (" + value + " is not a Double");
+            }
+
+        } else {
+            throw new IllegalStateException("Unexpected aggregation " + aggregation);
         }
     }
 
