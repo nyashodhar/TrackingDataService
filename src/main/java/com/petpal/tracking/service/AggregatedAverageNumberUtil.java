@@ -83,9 +83,9 @@ public class AggregatedAverageNumberUtil {
         }
     }
 
-    public String updateSerializedAverage(Double averageNumber, String existingSerializedAverage) {
+    public String updateSerializedAverage(String existingSerializedAverage, Double addedValue) {
 
-        Assert.notNull(averageNumber, ERROR_SUM_MISSING);
+        Assert.notNull(addedValue, ERROR_SUM_MISSING);
         Assert.notNull(existingSerializedAverage, ERROR_SERIALIZED_AVERAGE_MISSING);
 
         Map<String, String> deserializedAvgMap =
@@ -96,9 +96,9 @@ public class AggregatedAverageNumberUtil {
         Assert.isTrue(existingWeights.intValue() > 0, PARSE_ERROR_WEIGHTS_NOT_POSITIVE_NUMBER);
 
         try {
-            return createSerializedAverage(existingSum + averageNumber, existingWeights + 1);
+            return createSerializedAverage(existingSum + addedValue, existingWeights + 1);
         } catch(Throwable t) {
-            throw new IllegalArgumentException("Unable to add value " + averageNumber +
+            throw new IllegalArgumentException("Unable to add value " + addedValue +
                     " to existing serialized average " + existingSerializedAverage, t);
         }
     }

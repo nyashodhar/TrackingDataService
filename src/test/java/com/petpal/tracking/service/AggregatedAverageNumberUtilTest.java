@@ -57,45 +57,45 @@ public class AggregatedAverageNumberUtilTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testUpdateSerializedAverage_null_average_number() {
-        aggregatedAverageNumberUtil.updateSerializedAverage(null, "{\"s\":\"11.11\",\"w\":\"23\"}");
+        aggregatedAverageNumberUtil.updateSerializedAverage("{\"s\":\"11.11\",\"w\":\"23\"}", null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUpdateSerializedAverage_null_serialized_average() {
-        aggregatedAverageNumberUtil.updateSerializedAverage(1.1, null);
+        aggregatedAverageNumberUtil.updateSerializedAverage(null, 1.1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUpdateSerializedAverage_weights_not_a_number_input() {
-        aggregatedAverageNumberUtil.updateSerializedAverage(1.1, "{\"s\":\"11.11\",\"w\":\"blah\"}");
+        aggregatedAverageNumberUtil.updateSerializedAverage("{\"s\":\"11.11\",\"w\":\"blah\"}", 1.1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUpdateSerializedAverage_weights_not_a_positive_number() {
-        aggregatedAverageNumberUtil.updateSerializedAverage(1.1, "{\"s\":\"11.11\",\"w\":\"0\"}");
+        aggregatedAverageNumberUtil.updateSerializedAverage("{\"s\":\"11.11\",\"w\":\"0\"}", 1.1);
     }
 
     @Test
     public void testUpdateSerializedAverage_sum_truncated() {
-        String serialized = aggregatedAverageNumberUtil.updateSerializedAverage(9.3333, "{\"s\":\"1.000\",\"w\":\"2\"}");
+        String serialized = aggregatedAverageNumberUtil.updateSerializedAverage("{\"s\":\"1.000\",\"w\":\"2\"}", 9.3333);
         Assert.assertEquals("{\"s\":\"10.333\",\"w\":\"3\"}", serialized);
     }
 
     @Test
     public void testUpdateSerializedAverage_sum_truncated_and_rounded() {
-        String serialized = aggregatedAverageNumberUtil.updateSerializedAverage(5.6667, "{\"s\":\"1.000\",\"w\":\"1\"}");
+        String serialized = aggregatedAverageNumberUtil.updateSerializedAverage("{\"s\":\"1.000\",\"w\":\"1\"}", 5.6667);
         Assert.assertEquals("{\"s\":\"6.667\",\"w\":\"2\"}", serialized);
     }
 
     @Test
     public void testUpdateSerializedAverage_sum_zero_padded() {
-        String serialized = aggregatedAverageNumberUtil.updateSerializedAverage(5.44, "{\"s\":\"1.000\",\"w\":\"1\"}");
+        String serialized = aggregatedAverageNumberUtil.updateSerializedAverage("{\"s\":\"1.000\",\"w\":\"1\"}", 5.44);
         Assert.assertEquals("{\"s\":\"6.440\",\"w\":\"2\"}", serialized);
     }
 
     @Test
     public void testUpdateSerializedAverage_sum_regular() {
-        String serialized = aggregatedAverageNumberUtil.updateSerializedAverage(0.111, "{\"s\":\"0.111\",\"w\":\"1\"}");
+        String serialized = aggregatedAverageNumberUtil.updateSerializedAverage("{\"s\":\"0.111\",\"w\":\"1\"}", 0.111);
         Assert.assertEquals("{\"s\":\"0.222\",\"w\":\"2\"}", serialized);
     }
 

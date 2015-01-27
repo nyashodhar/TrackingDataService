@@ -51,51 +51,57 @@ public class DataPointAggregationUtil {
         if (aggregation == Aggregation.SUM) {
             return sumObjects(existingValue, objectToAdd);
         } else if (aggregation == Aggregation.AVERAGE) {
-            // TODO: Support roll-up of average into string
-            throw new IllegalArgumentException("Aggregation " + Aggregation.AVERAGE + " not supported");
+            Double addedValue = (Double) objectToAdd;
+            return aggregatedAverageNumberUtil.updateSerializedAverage(existingValue.toString(), addedValue);
         } else {
             throw new IllegalStateException("Unexpected aggregation " + aggregation);
         }
     }
 
 
-    protected static Object sumObjects(Object o1, Object o2) {
-        if((o1 instanceof Long) && (o2 instanceof Long)) {
-            return new Long(((Long) o1).longValue() + ((Long) o2).longValue());
-        } else if((o1 instanceof Double) && (o2 instanceof Double)) {
-            return new Double(((Double) o1).doubleValue() + ((Double) o2).doubleValue());
+    protected static Object sumObjects(Object existingValue, Object addedValue) {
+        if((existingValue instanceof Long) && (addedValue instanceof Long)) {
+            return new Long(((Long) existingValue).longValue() + ((Long) addedValue).longValue());
+        } else if((existingValue instanceof Double) && (addedValue instanceof Double)) {
+            return new Double(((Double) existingValue).doubleValue() + ((Double) addedValue).doubleValue());
         } else {
-            String o1Type = (o1 == null) ? null : o1.getClass().toString();
-            String o2Type = (o2 == null) ? null : o2.getClass().toString();
-            throw new IllegalStateException("Unexpected types. o1 = " + o1 + " (" + o1Type +
-                    "), o2 = " + o2 + " (" + o2Type + ")");
+            String existingValueType = (existingValue == null) ? null : existingValue.getClass().toString();
+            String addedValueType = (addedValue == null) ? null : addedValue.getClass().toString();
+            throw new IllegalStateException("Unexpected types. existingValue = " + existingValue + " (" + existingValueType +
+                    "), o2 = " + addedValue + " (" + addedValueType + ")");
         }
     }
 
+    protected static void checkTypeForAggregationUpdate(Object existingVal, Object newVal, Aggregation aggregation) {
 
-    protected static void checkTypeForAggregationUpdate(Object obj1, Object obj2, Aggregation aggregation) {
-
-        checkNotIllegalType(obj1);
-        checkNotIllegalType(obj2);
+        checkNotIllegalType(newVal);
+        checkNotIllegalType(existingVal);
 
         if(aggregation == Aggregation.SUM) {
 
-            if((obj1 instanceof Long) && !(obj2 instanceof Long)) {
-                throw new IllegalArgumentException(obj1 + " is a Long, but " + obj2 + " is not a long");
+            if((newVal instanceof Long) && !(existingVal instanceof Long)) {
+                throw new IllegalArgumentException(newVal + " is a Long, but " + existingVal + " is not a long");
             }
 
-            if((obj1 instanceof Double) && !(obj2 instanceof Double)) {
-                throw new IllegalArgumentException(obj1 + " is a Double, but " + obj2 + " is not a Double");
+            if((newVal instanceof Double) && !(existingVal instanceof Double)) {
+                throw new IllegalArgumentException(newVal + " is a Double, but " + existingVal + " is not a Double");
             }
 
-            if((obj1 instanceof String) || (obj2 instanceof String)) {
+            if((newVal instanceof String) || (existingVal instanceof String)) {
                 throw new IllegalArgumentException("Sum aggregation update of data points not allowed " +
-                        "datapoints of type String, obj1 = " + obj1 + ", obj2 = " + obj2);
+                        "datapoints of type String, newVal = " + newVal + ", existingVal = " + existingVal);
             }
 
         } else if(aggregation == Aggregation.AVERAGE) {
-            // TODO: Support roll-up of average into string
-            throw new IllegalArgumentException("Aggregation " + Aggregation.AVERAGE + " not supported");
+
+            if(!(newVal instanceof Double)) {
+                throw new IllegalArgumentException("newVal (" + newVal + " is not a Double");
+            }
+
+            if(!(existingVal instanceof String)) {
+                throw new IllegalArgumentException("existingVal (" + existingVal + " is not a String");
+            }
+
         } else {
             throw new IllegalStateException("Unexpected aggregation " + aggregation);
         }

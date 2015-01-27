@@ -47,6 +47,12 @@ public class BucketAggregationUtil {
         if(CollectionUtils.isEmpty(existingDataPoints)) {
             logger.info("mergeExistingDataPointsIntoNew(): No existing data points found.");
             if(!CollectionUtils.isEmpty(newDataPoints)) {
+
+                //
+                // TODO: If aggregation is average, we need to serialize value into string, can't just
+                // stick it into the map here!
+                //
+
                 updatedDataPoints.putAll(newDataPoints);
             }
         } else {
@@ -57,6 +63,12 @@ public class BucketAggregationUtil {
             for(Object newAggregatedDataPointObj : newDataPoints.keySet()) {
                 Long newAggregatedDataPoint = (Long) newAggregatedDataPointObj;
                 Object newAddedValue = newDataPoints.get(newAggregatedDataPoint);
+
+                //
+                // TODO: Need to initialize the aggregated value properly here! Can't just hardcode
+                // to Long of zero value!
+                //
+
                 Object existingValue = existingDataPoints.get(newAggregatedDataPoint) == null ?
                         new Long(0L) : existingDataPoints.get(newAggregatedDataPoint);
                 Object updatedValue = DataPointAggregationUtil.updateAggregatedValue(

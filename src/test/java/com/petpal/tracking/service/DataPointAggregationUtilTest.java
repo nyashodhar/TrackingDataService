@@ -66,32 +66,27 @@ public class DataPointAggregationUtilTest {
     //
 
     @Test(expected = IllegalArgumentException.class)
-    public void testUpdateAggregatedValue_null_obj1() {
+    public void testUpdateAggregatedValue_sum_null_new_value() {
         DataPointAggregationUtil.updateAggregatedValue(null, new Long(1L), Aggregation.SUM);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testUpdateAggregatedValue_null_obj2() {
+    public void testUpdateAggregatedValue_sum_null_existing_value() {
         DataPointAggregationUtil.updateAggregatedValue(new Long(1L), null, Aggregation.SUM);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testUpdateAggregatedValue_obj1_illegal_type() {
+    public void testUpdateAggregatedValue_sum_new_value_illegal_type() {
         DataPointAggregationUtil.updateAggregatedValue(new HashMap(), new Long(1L), Aggregation.SUM);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testUpdateAggregatedValue_obj2_illegal_type() {
+    public void testUpdateAggregatedValue_sum_existing_value_illegal_type() {
         DataPointAggregationUtil.updateAggregatedValue(new Long(1L), new HashMap(), Aggregation.SUM);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testUpdateAggregatedValue_unsupported_aggregation() {
-        DataPointAggregationUtil.updateAggregatedValue(new Long(1L), new Long(2L), Aggregation.AVERAGE);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testUpdateAggregatedValue_sum_obj1_long_obj2_double() {
+    public void testUpdateAggregatedValue_sum_new_value_long_existing_value_double() {
         DataPointAggregationUtil.updateAggregatedValue(new Long(1L), new Double(2.2D), Aggregation.SUM);
     }
 
@@ -111,7 +106,7 @@ public class DataPointAggregationUtilTest {
     }
 
     @Test
-    public void testUpdateAggregatedValue_long_sum() {
+    public void testUpdateAggregatedValue_avg_long_sum() {
         Object sum = DataPointAggregationUtil.updateAggregatedValue(new Long(1L), new Long(2L), Aggregation.SUM);
         Assert.assertTrue(sum instanceof Long);
         Assert.assertEquals(3L, ((Long)sum).longValue());
@@ -123,6 +118,24 @@ public class DataPointAggregationUtilTest {
         Assert.assertTrue(sum instanceof Double);
         Assert.assertEquals(3.3D, ((Double)sum).doubleValue(), 0.00001D);
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testUpdateAggregatedValue_avg_existing_value_illegal_type() {
+        DataPointAggregationUtil.updateAggregatedValue(new Long(1L), new Double(2.2D), Aggregation.AVERAGE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testUpdateAggregatedValue_avg_new_value_illegal_type() {
+        DataPointAggregationUtil.updateAggregatedValue("hello", new Long(2L), Aggregation.AVERAGE);
+    }
+
+    @Test
+    public void testUpdateAggregatedValue_avg_updated_average() {
+        Object updated = DataPointAggregationUtil.updateAggregatedValue(
+                "{\"s\":\"8.0\",\"w\":\"1\"}", new Double(3.0D), Aggregation.AVERAGE);
+        Assert.assertEquals("{\"s\":\"11.000\",\"w\":\"2\"}", updated.toString());
+    }
+
 
     //
     // sumObjects()
@@ -167,47 +180,62 @@ public class DataPointAggregationUtilTest {
     //
 
     @Test(expected = IllegalArgumentException.class)
-    public void testCheckTypeForAggregationUpdate_null_obj1() {
+    public void testCheckTypeForAggregationUpdate_sum_new_value_is_null() {
         DataPointAggregationUtil.checkTypeForAggregationUpdate(null, new Long(1L), Aggregation.SUM);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testCheckTypeForAggregationUpdate_null_obj2() {
+    public void testCheckTypeForAggregationUpdate_sum_null_existing_value() {
         DataPointAggregationUtil.checkTypeForAggregationUpdate(new Long(1L), null, Aggregation.SUM);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testCheckTypeForAggregationUpdate_obj1_illegal_type() {
+    public void testCheckTypeForAggregationUpdate_sum_new_value_illegal_type() {
         DataPointAggregationUtil.checkTypeForAggregationUpdate(new HashMap(), new Long(1L), Aggregation.SUM);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testCheckTypeForAggregationUpdate_obj2_illegal_type() {
+    public void testCheckTypeForAggregationUpdate_sum_existing_value_illegal_type() {
         DataPointAggregationUtil.checkTypeForAggregationUpdate(new Long(1L), new HashMap(), Aggregation.SUM);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testCheckTypeForAggregationUpdate_unsupported_aggregation() {
-        DataPointAggregationUtil.checkTypeForAggregationUpdate(new Long(1L), new Long(2L), Aggregation.AVERAGE);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testCheckTypeForAggregationUpdate_sum_obj1_long_obj2_double() {
+    public void testCheckTypeForAggregationUpdate_sum_new_value_long_existingValue_double() {
         DataPointAggregationUtil.checkTypeForAggregationUpdate(new Long(1L), new Double(2.2D), Aggregation.SUM);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testCheckTypeForAggregationUpdate_sum_obj1_double_obj2_long() {
+    public void testCheckTypeForAggregationUpdate_sum_new_value_double_existing_value_long() {
         DataPointAggregationUtil.checkTypeForAggregationUpdate(new Double(1.0D), new Long(2L), Aggregation.SUM);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testCheckTypeForAggregationUpdate_sum_obj1_string() {
+    public void testCheckTypeForAggregationUpdate_sum_new_value_string() {
         DataPointAggregationUtil.checkTypeForAggregationUpdate("hello", new Long(2L), Aggregation.SUM);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testCheckTypeForAggregationUpdate_sum_obj2_string() {
+    public void testCheckTypeForAggregationUpdate_sum_existing_value_string() {
         DataPointAggregationUtil.checkTypeForAggregationUpdate(new Long(1L), "hello", Aggregation.SUM);
+    }
+
+    @Test
+    public void testCheckTypeForAggregationUpdate_sum_pass() {
+        DataPointAggregationUtil.checkTypeForAggregationUpdate(new Long(1L), new Long(2L), Aggregation.SUM);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCheckTypeForAggregationUpdate_avg_existing_value_illegal_type() {
+        DataPointAggregationUtil.checkTypeForAggregationUpdate(new Long(1L), new Double(2.2D), Aggregation.AVERAGE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCheckTypeForAggregationUpdate_avg_new_value_illegal_type() {
+        DataPointAggregationUtil.checkTypeForAggregationUpdate("hello", new Long(1L), Aggregation.AVERAGE);
+    }
+
+    @Test
+    public void testCheckTypeForAggregationUpdate_avg_pass() {
+        DataPointAggregationUtil.checkTypeForAggregationUpdate("hello", new Double(2.2D), Aggregation.AVERAGE);
     }
 }
