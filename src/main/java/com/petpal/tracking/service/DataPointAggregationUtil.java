@@ -42,25 +42,21 @@ public class DataPointAggregationUtil {
         }
     }
 
-    /*
+
     public static Object initializeAggregatedValue(Object value, Aggregation aggregation) {
 
         Assert.notNull(value, "Can't initialize aggregated value from null");
+        checkTypeForAggregationInitialization(value, aggregation);
 
         if (aggregation == Aggregation.SUM) {
-            return sumObjects(existingValue, objectToAdd);
+            return value;
         } else if (aggregation == Aggregation.AVERAGE) {
-            Double addedValue = (Double) objectToAdd;
-            return aggregatedAverageNumberUtil.updateSerializedAverage(existingValue.toString(), addedValue);
+            Double initValue = (Double) value;
+            return aggregatedAverageNumberUtil.createNew(initValue);
         } else {
             throw new IllegalStateException("Unexpected aggregation " + aggregation);
         }
-
-        // TODO
-
-        return null;
-    }
-    */
+   }
 
 
     public static Object updateAggregatedValue(Object existingValue, Object objectToAdd, Aggregation aggregation) {
@@ -79,7 +75,6 @@ public class DataPointAggregationUtil {
         }
     }
 
-
     protected static Object sumObjects(Object existingValue, Object addedValue) {
         if((existingValue instanceof Long) && (addedValue instanceof Long)) {
             return new Long(((Long) existingValue).longValue() + ((Long) addedValue).longValue());
@@ -93,7 +88,7 @@ public class DataPointAggregationUtil {
         }
     }
 
-    protected static void checkTypeAggregationInitialization(Object value, Aggregation aggregation) {
+    protected static void checkTypeForAggregationInitialization(Object value, Aggregation aggregation) {
 
         checkNotIllegalType(value);
 

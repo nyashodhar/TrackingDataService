@@ -62,6 +62,42 @@ public class DataPointAggregationUtilTest {
 
 
     //
+    // initializeAggregatedValue()
+    //
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInitializeAggregatedValue_sum_illegal_type() {
+        DataPointAggregationUtil.initializeAggregatedValue(new HashMap(), Aggregation.SUM);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInitializeAggregatedValue_sum_invalid_type_for_sum() {
+        DataPointAggregationUtil.initializeAggregatedValue("hello", Aggregation.SUM);
+    }
+
+    @Test
+    public void testInitializeAggregatedValue_sum_expected_value() {
+        Object initValue = DataPointAggregationUtil.initializeAggregatedValue(new Long(777L), Aggregation.SUM);
+        Assert.assertEquals(new Long(777), initValue);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInitializeAggregatedValue_avg_illegal_type() {
+        DataPointAggregationUtil.initializeAggregatedValue(new HashMap(), Aggregation.AVERAGE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInitializeAggregatedValue_avg_invalid_type_for_sum() {
+        DataPointAggregationUtil.initializeAggregatedValue("hello", Aggregation.AVERAGE);
+    }
+
+    @Test
+    public void testInitializeAggregatedValue_avg_type_ok() {
+        Object initValue = DataPointAggregationUtil.initializeAggregatedValue(new Double(1.1D), Aggregation.AVERAGE);
+        Assert.assertEquals("{\"s\":\"1.100\",\"w\":\"1\"}", initValue);
+    }
+
+    //
     // updateAggregatedValue()
     //
 
@@ -181,32 +217,32 @@ public class DataPointAggregationUtilTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testCheckTypeAggregationInitialization_sum_illegal_type() {
-        DataPointAggregationUtil.checkTypeAggregationInitialization(new HashMap(), Aggregation.SUM);
+        DataPointAggregationUtil.checkTypeForAggregationInitialization(new HashMap(), Aggregation.SUM);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testCheckTypeAggregationInitialization_sum_invalid_type_for_sum() {
-        DataPointAggregationUtil.checkTypeAggregationInitialization("hello", Aggregation.SUM);
+        DataPointAggregationUtil.checkTypeForAggregationInitialization("hello", Aggregation.SUM);
     }
 
     @Test
     public void testCheckTypeAggregationInitialization_sum_type_ok() {
-        DataPointAggregationUtil.checkTypeAggregationInitialization(new Long(1L), Aggregation.SUM);
+        DataPointAggregationUtil.checkTypeForAggregationInitialization(new Long(1L), Aggregation.SUM);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testCheckTypeAggregationInitialization_avg_illegal_type() {
-        DataPointAggregationUtil.checkTypeAggregationInitialization(new HashMap(), Aggregation.AVERAGE);
+        DataPointAggregationUtil.checkTypeForAggregationInitialization(new HashMap(), Aggregation.AVERAGE);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testCheckTypeAggregationInitialization_avg_invalid_type_for_sum() {
-        DataPointAggregationUtil.checkTypeAggregationInitialization("hello", Aggregation.AVERAGE);
+        DataPointAggregationUtil.checkTypeForAggregationInitialization("hello", Aggregation.AVERAGE);
     }
 
     @Test
     public void testCheckTypeAggregationInitialization_avg_type_ok() {
-        DataPointAggregationUtil.checkTypeAggregationInitialization(new Double(1.1D), Aggregation.AVERAGE);
+        DataPointAggregationUtil.checkTypeForAggregationInitialization(new Double(1.1D), Aggregation.AVERAGE);
     }
 
 
