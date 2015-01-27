@@ -1,5 +1,7 @@
 package com.petpal.tracking.web.controllers;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -9,8 +11,13 @@ import java.util.TreeMap;
  */
 public class TrackingDataDownload {
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Map<String, TreeMap> longMetrics;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Map<String, TreeMap> doubleMetrics;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Map<String, TreeMap> stringMetrics;
 
     public TrackingDataDownload() {
