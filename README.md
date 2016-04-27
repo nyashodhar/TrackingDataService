@@ -1,4 +1,0 @@
-TrackingDataService
-===================
-
-Time Series information
